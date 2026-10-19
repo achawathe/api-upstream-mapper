@@ -2,6 +2,7 @@ import { responseSamplesCard } from "./response-samples.js";
 import { api } from "../api.js";
 import { dropzone, h, mount, toast } from "../dom.js";
 import { canRun, refreshWorkspace, startRun, store } from "../state.js";
+import { jsonResponseInput } from "./json-response-input.js";
 
 const ROLES = [
   { role: "upstream", title: "Upstream spec", hint: "Upload the upstream spec together with its referenced model YAML/JSON files. Use Choose folder for nested references.", multiple: true },
@@ -82,16 +83,19 @@ function sampleCard() {
   const name = h("input", { type: "text", placeholder: "routing-service", "aria-label": "API name" });
   const method = h("select", { "aria-label": "HTTP method" }, ["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => h("option", {}, m)));
   const path = h("input", { type: "text", placeholder: "/payments/routing/{acctNum}", "aria-label": "Endpoint path" });
-  const files = h("input", { type: "file", multiple: true, accept: ".json", "aria-label": "Sample payloads" });
+  const responses = jsonResponseInput({ fileLabel: "Sample payloads",
+    pasteLabel: "JSON response for API without a spec", filename: "pasted-sample.json" });
   const add = () => {
-    if (!name.value.trim() || !path.value.trim() || !files.files.length) return toast("Name, path and at least one sample are needed");
-    act(api.addSampleEndpoint(name.value.trim(), method.value, path.value.trim(), [...files.files]), "Sample endpoint added");
+    if (!name.value.trim() || !path.value.trim()) return toast("API name and endpoint path are needed");
+    try {
+      act(api.addSampleEndpoint(name.value.trim(), method.value, path.value.trim(), responses.readFiles()), "Sample endpoint added");
+    } catch (error) { toast(error.message); }
   };
   return h(
     "div",
     { class: "card" },
     h("h2", {}, "API without a spec"),
-    h("p", { class: "muted small" }, "Upload JSON examples for an API that has no schema. To supplement an existing spec, use Documentation response examples above. The schema is inferred: a key is required only if every sample has it, and distinct values are used like an enum."),
+    h("p", { class: "muted small" }, "Upload or paste JSON examples for an API that has no schema. To supplement an existing spec, use Documentation response examples above. The schema is inferred: a key is required only if every sample has it, and distinct values are used like an enum."),
     h(
       "div",
       { class: "grid", style: { gridTemplateColumns: "1fr 90px 1.4fr" } },
@@ -99,7 +103,8 @@ function sampleCard() {
       h("label", { class: "field" }, "Method", method),
       h("label", { class: "field" }, "Path", path),
     ),
-    h("div", { class: "row", style: { marginTop: "10px" } }, files, h("span", { class: "spacer" }), h("button", { class: "btn", onclick: add }, "Add endpoint")),
+    h("div", { style: { marginTop: "10px" } }, responses.element),
+    h("div", { class: "row", style: { marginTop: "10px" } }, h("button", { class: "btn", onclick: add }, "Add endpoint")),
   );
 }
 

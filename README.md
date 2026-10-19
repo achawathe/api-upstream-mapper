@@ -109,14 +109,16 @@ Tests (unit, golden accuracy, mutation stress, 50-API scale):
    models alone; JSON examples are optional. Declared types, required fields and enums
    remain authoritative, and undeclared sample fields do not create new mapping fields.
 3. Under **Documentation response examples**, choose either the upstream or downstream
-   API, select its endpoint, and attach one or more JSON success-response bodies copied
-   from documentation. Preserve the response's nesting and array structure.
+   API, select its endpoint, and upload JSON files or expand **Or paste JSON** to paste a
+   success-response body copied from documentation. You can include files and pasted JSON
+   together. Preserve the response's nesting and array structure. Invalid JSON stays in
+   the editor for correction; pasted examples are identified as `pasted-response.json`.
 4. Configure the optional local model, save, and run mapping. Samples contribute
    observed-value evidence and bounded local NLP context. Sample filenames appear in
    mapping details and the JSON report. Examples persist with the workspace.
 
-The **API without a spec** card is a separate workflow that infers a downstream schema
-from JSON. Use documentation attachments when a Swagger/OpenAPI model already exists.
+The **API without a spec** card also accepts uploaded or pasted JSON and infers a downstream
+schema from it. Use documentation attachments when a Swagger/OpenAPI model already exists.
 Examples do not establish complete enum coverage or prove that two fields have the same
 meaning. Candidate compatibility checks and NLP review safeguards still apply.
 

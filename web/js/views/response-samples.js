@@ -1,6 +1,7 @@
 import { api } from "../api.js";
 import { h, toast } from "../dom.js";
 import { refreshWorkspace, store } from "../state.js";
+import { jsonResponseInput } from "./json-response-input.js";
 
 export function responseSamplesCard() {
   const specs = (store.workspace?.files ?? []).filter((f) => ["upstream", "downstream"].includes(f.role) && f.summary?.ok);
@@ -8,11 +9,11 @@ export function responseSamplesCard() {
     h("option", { value: "" }, "Choose an uploaded API"),
     specs.map((f) => h("option", { value: f.id }, `${f.role}: ${f.name}`)));
   const endpoint = h("select", { "aria-label": "Response endpoint", disabled: true }, h("option", {}, "Choose an API first"));
-  const files = h("input", { type: "file", multiple: true, accept: ".json", "aria-label": "Documentation JSON responses" });
+  const responses = jsonResponseInput({ fileLabel: "Documentation JSON responses",
+    pasteLabel: "Documentation JSON response", filename: "pasted-response.json" });
   const attach = h("button", { class: "btn", disabled: true, onclick: async () => {
-    if (!files.files.length) return toast("Choose at least one JSON response body");
     try {
-      await api.attachResponseSamples(selected.value, endpoint.value, [...files.files]);
+      await api.attachResponseSamples(selected.value, endpoint.value, responses.readFiles());
       toast("Response examples attached; run mapping to apply");
       await refreshWorkspace();
     } catch (error) { toast(error.message); }
@@ -46,8 +47,9 @@ export function responseSamplesCard() {
   });
   return h("div", { class: "card" },
     h("h2", {}, "Documentation response examples"),
-    h("p", { class: "small muted" }, "Attach JSON success-response bodies copied from documentation to an uploaded API endpoint. Examples help compare values and provide context for local NLP; the spec's fields, types and requirements remain authoritative."),
+    h("p", { class: "small muted" }, "Upload or paste JSON success-response bodies from documentation for an upstream or downstream endpoint. Examples help compare values and provide context for local NLP; the spec's fields, types and requirements remain authoritative."),
     h("label", { class: "field" }, "API", selected),
     h("label", { class: "field" }, "Endpoint", endpoint),
-    h("div", { class: "row", style: { marginTop: "10px" } }, files, attach), attachments);
+    h("div", { style: { marginTop: "10px" } }, responses.element),
+    h("div", { class: "row", style: { marginTop: "10px" } }, attach), attachments);
 }
