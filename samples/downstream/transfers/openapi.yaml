@@ -1,0 +1,62 @@
+# Decoy API: its fields look like account fields but describe money movement between accounts.
+# Nothing here should map to FDX account, balance or transaction fields.
+openapi: 3.0.3
+info:
+  title: Money Movement API
+  version: 2.0.0
+paths:
+  /transfers:
+    get:
+      operationId: listTransfers
+      responses:
+        '200':
+          description: Scheduled and completed transfers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transfers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transfer'
+  /transfers/{transferId}/accounts:
+    get:
+      operationId: getTransferAccounts
+      parameters:
+        - {name: transferId, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: Both sides of a transfer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sourceAccount:
+                    $ref: '#/components/schemas/TransferParty'
+                  destinationAccount:
+                    $ref: '#/components/schemas/TransferParty'
+components:
+  schemas:
+    Transfer:
+      type: object
+      properties:
+        transferId: {type: string}
+        fromAccountId: {type: string}
+        toAccountId: {type: string}
+        externalAccountId: {type: string}
+        amount: {type: number}
+        currency: {type: string}
+        scheduledDate: {type: string, format: date}
+        status:
+          type: string
+          enum: [SCHEDULED, COMPLETED, FAILED, CANCELLED]
+        memo: {type: string}
+    TransferParty:
+      type: object
+      properties:
+        id: {type: string}
+        maskedNumber: {type: string}
+        nickname: {type: string}
+        externalBankName: {type: string}

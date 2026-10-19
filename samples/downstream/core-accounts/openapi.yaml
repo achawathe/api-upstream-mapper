@@ -1,0 +1,136 @@
+openapi: 3.0.3
+info:
+  title: Northwind Core Banking - Accounts
+  version: 2.3.0
+  description: System of record for every account the bank holds, regardless of product.
+tags:
+  - name: Accounts
+paths:
+  /v2/accounts:
+    get:
+      operationId: listAccounts
+      tags: [Accounts]
+      parameters:
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: pageSize, in: query, schema: {type: integer, maximum: 200}}
+      responses:
+        '200':
+          description: Accounts visible to the caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountList'
+              example:
+                data:
+                  - account: {id: ACC-000123, number: '000123456789', maskedNumber: '6789', type: DDA, productCode: CHK-PLUS, productName: Everyday Checking, nickName: Bills, status: ACTIVE, currency: USD, openedOn: '2019-03-14'}
+                  - account: {id: ACC-000456, number: '000987654321', maskedNumber: '4321', type: CC, productCode: CC-REWARDS, productName: Rewards Card, status: ACTIVE, currency: USD, openedOn: '2021-08-02'}
+                paging: {next: 'eyJvIjoyfQ', total: 2}
+        '401':
+          $ref: '../common/errors.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: '../common/errors.yaml#/components/responses/ServerError'
+        '503':
+          $ref: '../common/errors.yaml#/components/responses/Unavailable'
+  /v2/accounts/{accountId}:
+    get:
+      operationId: getAccount
+      tags: [Accounts]
+      parameters:
+        - {name: accountId, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: One account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountEnvelope'
+        '401':
+          $ref: '../common/errors.yaml#/components/responses/Unauthorized'
+        '404':
+          $ref: '../common/errors.yaml#/components/responses/AccountNotFound'
+        '410':
+          $ref: '../common/errors.yaml#/components/responses/AccountClosed'
+        '503':
+          $ref: '../common/errors.yaml#/components/responses/Unavailable'
+components:
+  schemas:
+    AccountList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountEnvelope'
+        paging:
+          type: object
+          properties:
+            next:
+              type: string
+              description: Opaque cursor for the next page.
+            total:
+              type: integer
+    AccountEnvelope:
+      type: object
+      required: [account]
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+    Account:
+      type: object
+      required: [id, type, status, currency, productName]
+      properties:
+        id:
+          type: string
+          description: Stable internal account identifier. Never changes.
+          example: ACC-000123
+        number:
+          type: string
+          description: Full account number as printed on statements.
+          example: '000123456789'
+        maskedNumber:
+          type: string
+          description: Last four digits of the account number.
+          example: '6789'
+        type:
+          type: string
+          description: Product family code.
+          enum: [DDA, SAV, CD, MMA, LOAN, MTG, HELOC, CC, BRK]
+        productCode:
+          type: string
+          example: CHK-PLUS
+        productName:
+          type: string
+          example: Everyday Checking
+        nickName:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, DORMANT, CLOSED, PENDING_OPEN, FROZEN]
+        currency:
+          type: string
+          description: ISO 4217 currency code.
+          example: USD
+        openedOn:
+          type: string
+          format: date
+        branch:
+          type: object
+          properties:
+            code:
+              type: string
+            name:
+              type: string
+              description: Home branch name.
+        relatedAccounts:
+          type: array
+          description: Accounts linked to this one, such as an overdraft funding account.
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              relationship:
+                type: string
+                enum: [OVERDRAFT_LINKED, SWEEP]

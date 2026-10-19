@@ -1,0 +1,2726 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "description": "Production",
+      "url": "https://production.plaid.com"
+    },
+    {
+      "description": "Sandbox",
+      "url": "https://sandbox.plaid.com"
+    }
+  ],
+  "info": {
+    "title": "The Plaid API",
+    "version": "2020-09-14_1.778.0",
+    "description": "The Plaid REST API. Please see https://plaid.com/docs/api for more details.",
+    "contact": {
+      "name": "Plaid Developer Team",
+      "url": "https://plaid.com"
+    },
+    "termsOfService": "https://plaid.com/legal/"
+  },
+  "tags": [
+    {
+      "name": "plaid",
+      "description": "The Plaid API"
+    }
+  ],
+  "security": [
+    {
+      "clientId": [],
+      "secret": [],
+      "plaidVersion": []
+    }
+  ],
+  "paths": {
+    "/auth/get": {
+      "post": {
+        "tags": [
+          "plaid"
+        ],
+        "summary": "Retrieve auth data",
+        "externalDocs": {
+          "url": "/api/products/auth/#authget"
+        },
+        "operationId": "authGet",
+        "security": [
+          {
+            "clientId": [],
+            "secret": [],
+            "plaidVersion": []
+          },
+          {
+            "oauth2": [
+              "auth:read"
+            ]
+          }
+        ],
+        "description": "The `/auth/get` endpoint returns the bank account and bank identification numbers (such as routing numbers, for US accounts) associated with an Item's checking, savings, and cash management accounts, along with high-level account data and balances when available.\n\nVersioning note: In API version 2017-03-08, the schema of the `numbers` object returned by this endpoint is substantially different. For details, see [Plaid API versioning](https://plaid.com/docs/api/versioning/#version-2018-05-22).",
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthGetResponse"
+                },
+                "examples": {
+                  "example-1": {
+                    "value": {
+                      "accounts": [
+                        {
+                          "account_id": "vzeNDwK7KQIm4yEog683uElbp9GRLEFXGK98D",
+                          "apy": 0,
+                          "balances": {
+                            "available": 100,
+                            "current": 110,
+                            "limit": null,
+                            "iso_currency_code": "USD",
+                            "unofficial_currency_code": null
+                          },
+                          "mask": "9606",
+                          "name": "Plaid Checking",
+                          "official_name": "Plaid Gold Checking",
+                          "subtype": "checking",
+                          "type": "depository"
+                        }
+                      ],
+                      "numbers": {
+                        "ach": [
+                          {
+                            "account": "9900009606",
+                            "account_id": "vzeNDwK7KQIm4yEog683uElbp9GRLEFXGK98D",
+                            "routing": "011401533",
+                            "wire_routing": "021000021",
+                            "is_tokenized_account_number": false
+                          }
+                        ],
+                        "eft": [
+                          {
+                            "account": "111122223333",
+                            "account_id": "vzeNDwK7KQIm4yEog683uElbp9GRLEFXGK98D",
+                            "institution": "021",
+                            "branch": "01140"
+                          }
+                        ],
+                        "international": [
+                          {
+                            "account_id": "vzeNDwK7KQIm4yEog683uElbp9GRLEFXGK98D",
+                            "bic": "NWBKGB21",
+                            "iban": "GB29NWBK60161331926819"
+                          }
+                        ],
+                        "bacs": [
+                          {
+                            "account": "31926819",
+                            "account_id": "vzeNDwK7KQIm4yEog683uElbp9GRLEFXGK98D",
+                            "sort_code": "601613"
+                          }
+                        ]
+                      },
+                      "item": {
+                        "available_products": [
+                          "balance",
+                          "identity",
+                          "payment_initiation",
+                          "transactions"
+                        ],
+                        "billed_products": [
+                          "assets",
+                          "auth"
+                        ],
+                        "consent_expiration_time": null,
+                        "error": null,
+                        "institution_id": "ins_117650",
+                        "institution_name": "Royal Bank of Plaid",
+                        "item_id": "DWVAAPWq4RHGlEaNyGKRTAnPLaEmo8Cvq7na6",
+                        "update_type": "background",
+                        "webhook": "https://www.genericwebhookurl.com/webhook",
+                        "auth_method": "INSTANT_AUTH"
+                      },
+                      "request_id": "m8MDnv9okwxFNBV"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaidError"
+                }
+              }
+            },
+            "description": "Default error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthGetRequest"
+              },
+              "examples": {}
+            }
+          },
+          "description": ""
+        }
+      }
+    },
+    "/transactions/get": {
+      "post": {
+        "tags": [
+          "plaid"
+        ],
+        "summary": "Get transaction data",
+        "externalDocs": {
+          "url": "/api/products/transactions/#transactionsget"
+        },
+        "operationId": "transactionsGet",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionsGetResponse"
+                },
+                "examples": {
+                  "example-1": {
+                    "value": {
+                      "accounts": [
+                        {
+                          "account_id": "BxBXxLj1m4HMXBm9WZZmCWVbPjX16EHwv99vp",
+                          "apy": 0,
+                          "balances": {
+                            "available": 110.94,
+                            "current": 110.94,
+                            "iso_currency_code": "USD",
+                            "limit": null,
+                            "unofficial_currency_code": null
+                          },
+                          "mask": "0000",
+                          "name": "Plaid Checking",
+                          "official_name": "Plaid Gold Standard 0% Interest Checking",
+                          "subtype": "checking",
+                          "type": "depository"
+                        }
+                      ],
+                      "transactions": [
+                        {
+                          "account_id": "BxBXxLj1m4HMXBm9WZZmCWVbPjX16EHwv99vp",
+                          "account_owner": null,
+                          "amount": 28.34,
+                          "iso_currency_code": "USD",
+                          "unofficial_currency_code": null,
+                          "check_number": null,
+                          "counterparties": [
+                            {
+                              "name": "DoorDash",
+                              "type": "marketplace",
+                              "logo_url": "https://plaid-counterparty-logos.plaid.com/doordash_1.png",
+                              "website": "doordash.com",
+                              "entity_id": "YNRJg5o2djJLv52nBA1Yn1KpL858egYVo4dpm",
+                              "confidence_level": "HIGH"
+                            },
+                            {
+                              "name": "Burger King",
+                              "type": "merchant",
+                              "logo_url": "https://plaid-merchant-logos.plaid.com/burger_king_155.png",
+                              "website": "burgerking.com",
+                              "entity_id": "mVrw538wamwdm22mK8jqpp7qd5br0eeV9o4a1",
+                              "confidence_level": "VERY_HIGH"
+                            }
+                          ],
+                          "date": "2023-09-28",
+                          "datetime": "2023-09-28T15:10:09Z",
+                          "authorized_date": "2023-09-27",
+                          "authorized_datetime": "2023-09-27T08:01:58Z",
+                          "location": {
+                            "address": null,
+                            "city": null,
+                            "region": null,
+                            "postal_code": null,
+                            "country": null,
+                            "lat": null,
+                            "lon": null,
+                            "store_number": null
+                          },
+                          "name": "Dd Doordash Burgerkin",
+                          "merchant_name": "Burger King",
+                          "merchant_entity_id": "mVrw538wamwdm22mK8jqpp7qd5br0eeV9o4a1",
+                          "merchant_category_code": "5814",
+                          "logo_url": "https://plaid-merchant-logos.plaid.com/burger_king_155.png",
+                          "website": "burgerking.com",
+                          "payment_meta": {
+                            "by_order_of": null,
+                            "payee": null,
+                            "payer": null,
+                            "payment_method": null,
+                            "payment_processor": null,
+                            "ppd_id": null,
+                            "reason": null,
+                            "reference_number": null
+                          },
+                          "payment_channel": "online",
+                          "pending": true,
+                          "pending_transaction_id": null,
+                          "personal_finance_category": {
+                            "primary": "FOOD_AND_DRINK",
+                            "detailed": "FOOD_AND_DRINK_FAST_FOOD",
+                            "confidence_level": "VERY_HIGH"
+                          },
+                          "personal_finance_category_icon_url": "https://plaid-category-icons.plaid.com/PFC_FOOD_AND_DRINK.png",
+                          "transaction_id": "yhnUVvtcGGcCKU0bcz8PDQr5ZUxUXebUvbKC0",
+                          "transaction_code": null,
+                          "transaction_type": "digital"
+                        },
+                        {
+                          "account_id": "BxBXxLj1m4HMXBm9WZZmCWVbPjX16EHwv99vp",
+                          "account_owner": null,
+                          "amount": 72.1,
+                          "iso_currency_code": "USD",
+                          "unofficial_currency_code": null,
+                          "check_number": null,
+                          "counterparties": [
+                            {
+                              "name": "Walmart",
+                              "type": "merchant",
+                              "logo_url": "https://plaid-merchant-logos.plaid.com/walmart_1100.png",
+                              "website": "walmart.com",
+                              "entity_id": "O5W5j4dN9OR3E6ypQmjdkWZZRoXEzVMz2ByWM",
+                              "confidence_level": "VERY_HIGH"
+                            }
+                          ],
+                          "date": "2023-09-24",
+                          "datetime": "2023-09-24T11:01:01Z",
+                          "authorized_date": "2023-09-22",
+                          "authorized_datetime": "2023-09-22T10:34:50Z",
+                          "location": {
+                            "address": "13425 Community Rd",
+                            "city": "Poway",
+                            "region": "CA",
+                            "postal_code": "92064",
+                            "country": "US",
+                            "lat": 32.959068,
+                            "lon": -117.037666,
+                            "store_number": "1700"
+                          },
+                          "name": "PURCHASE WM SUPERCENTER #1700",
+                          "merchant_name": "Walmart",
+                          "merchant_entity_id": "O5W5j4dN9OR3E6ypQmjdkWZZRoXEzVMz2ByWM",
+                          "merchant_category_code": "5411",
+                          "running_balance": 110.94,
+                          "logo_url": "https://plaid-merchant-logos.plaid.com/walmart_1100.png",
+                          "website": "walmart.com",
+                          "payment_meta": {
+                            "by_order_of": null,
+                            "payee": null,
+                            "payer": null,
+                            "payment_method": null,
+                            "payment_processor": null,
+                            "ppd_id": null,
+                            "reason": null,
+                            "reference_number": null
+                          },
+                          "payment_channel": "in store",
+                          "pending": false,
+                          "pending_transaction_id": "no86Eox18VHMvaOVL7gPUM9ap3aR1LsAVZ5nc",
+                          "personal_finance_category": {
+                            "primary": "GENERAL_MERCHANDISE",
+                            "detailed": "GENERAL_MERCHANDISE_SUPERSTORES",
+                            "confidence_level": "VERY_HIGH"
+                          },
+                          "personal_finance_category_icon_url": "https://plaid-category-icons.plaid.com/PFC_GENERAL_MERCHANDISE.png",
+                          "transaction_id": "lPNjeW1nR6CDn5okmGQ6hEpMo4lLNoSrzqDje",
+                          "transaction_code": null,
+                          "transaction_type": "place"
+                        }
+                      ],
+                      "item": {
+                        "available_products": [
+                          "balance",
+                          "identity",
+                          "investments"
+                        ],
+                        "billed_products": [
+                          "assets",
+                          "auth",
+                          "liabilities",
+                          "transactions"
+                        ],
+                        "consent_expiration_time": null,
+                        "error": null,
+                        "institution_id": "ins_56",
+                        "institution_name": "Chase",
+                        "item_id": "eVBnVMp7zdTJLkRNr33Rs6zr7KNJqBFL9DrE6",
+                        "update_type": "background",
+                        "webhook": "https://www.genericwebhookurl.com/webhook",
+                        "auth_method": "INSTANT_AUTH"
+                      },
+                      "total_transactions": 2,
+                      "request_id": "45QSn"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaidError"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "description": "Note: All new implementations are encouraged to use `/transactions/sync` rather than `/transactions/get`. `/transactions/sync` provides the same functionality as `/transactions/get` and improves developer ease-of-use for handling transactions updates.\nThe `/transactions/get` endpoint allows developers to receive user-authorized transaction data for credit, depository, and loan-type accounts (coverage may be limited). For transaction history from investment accounts, use the [Investments endpoint](https://plaid.com/docs/api/products/investments/) instead. Transaction data is standardized across financial institutions, and in many cases transactions are linked to a clean name, entity type, location, and category. Similarly, account data is standardized and returned with a clean name, number, balance, and other meta information where available.\nTransactions are returned in reverse-chronological order, and the sequence of transaction ordering is stable and will not shift.  Transactions are not immutable and can also be removed altogether by the institution; a removed transaction will no longer appear in `/transactions/get`.  For more details, see [Pending and posted transactions](https://plaid.com/docs/transactions/transactions-data/#pending-and-posted-transactions).\nDue to the potentially large number of transactions associated with an Item, results are paginated. Manipulate the `count` and `offset` parameters in conjunction with the `total_transactions` response body field to fetch all available transactions.\nData returned by `/transactions/get` will be the data available for the Item as of the most recent successful check for new transactions. Plaid typically checks for new data multiple times a day, but these checks may occur less frequently, such as once a day, depending on the institution. To find out when the Item was last updated, use the [Item Debugger](https://plaid.com/docs/account/activity/#troubleshooting-with-item-debugger) or call `/item/get`; the `item.status.transactions.last_successful_update` field will show the timestamp of the most recent successful update. To force Plaid to check for new transactions, you can use the `/transactions/refresh` endpoint.\n\n\nNote that data may not be immediately available to `/transactions/get`. Plaid will begin to prepare transactions data upon Item link, if Link was initialized with `transactions`, or upon the first call to `/transactions/get`, if it wasn't. To be alerted when transaction data is ready to be fetched, listen for the [`INITIAL_UPDATE`](https://plaid.com/docs/api/products/transactions/#initial_update) and [`HISTORICAL_UPDATE`](https://plaid.com/docs/api/products/transactions/#historical_update) webhooks. If no transaction history is ready when `/transactions/get` is called, it will return a `PRODUCT_NOT_READY` error.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionsGetRequest"
+              },
+              "examples": {}
+            }
+          }
+        }
+      }
+    },
+    "/accounts/get": {
+      "post": {
+        "tags": [
+          "plaid"
+        ],
+        "summary": "Retrieve accounts",
+        "externalDocs": {
+          "url": "/api/accounts/#accountsget"
+        },
+        "operationId": "accountsGet",
+        "description": "The `/accounts/get` endpoint can be used to retrieve a list of accounts associated with any linked Item. Plaid will only return active bank accounts -- that is, accounts that are not closed and are capable of carrying a balance.\nTo return new accounts that were created after the user linked their Item, you can listen for the [`NEW_ACCOUNTS_AVAILABLE`](https://plaid.com/docs/api/items/#new_accounts_available) webhook and then use Link's [update mode](https://plaid.com/docs/link/update-mode/) to request that the user share this new account with you.\n\n`/accounts/get` is free to use and retrieves cached information, rather than extracting fresh information from the institution. The balance returned will reflect the balance at the time of the last successful Item update. If the Item is enabled for a regularly updating product, such as Transactions, Investments, or Liabilities, the balance will typically update about once a day, as long as the Item is healthy. If the Item is enabled only for products that do not frequently update, such as Auth or Identity, balance data may be much older.\n\nFor real-time balance information, use the paid endpoints `/accounts/balance/get` or `/signal/evaluate` instead.",
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountsGetResponse"
+                },
+                "examples": {
+                  "example-1": {
+                    "value": {
+                      "accounts": [
+                        {
+                          "account_id": "blgvvBlXw3cq5GMPwqB6s6q4dLKB9WcVqGDGo",
+                          "apy": 0,
+                          "balances": {
+                            "available": 100,
+                            "current": 110,
+                            "iso_currency_code": "USD",
+                            "limit": null,
+                            "unofficial_currency_code": null
+                          },
+                          "holder_category": "personal",
+                          "mask": "0000",
+                          "name": "Plaid Checking",
+                          "official_name": "Plaid Gold Standard 0% Interest Checking",
+                          "subtype": "checking",
+                          "type": "depository"
+                        },
+                        {
+                          "account_id": "6PdjjRP6LmugpBy5NgQvUqpRXMWxzktg3rwrk",
+                          "apy": null,
+                          "balances": {
+                            "available": null,
+                            "current": 23631.9805,
+                            "iso_currency_code": "USD",
+                            "limit": null,
+                            "unofficial_currency_code": null
+                          },
+                          "mask": "6666",
+                          "name": "Plaid 401k",
+                          "official_name": null,
+                          "subtype": "401k",
+                          "type": "investment"
+                        },
+                        {
+                          "account_id": "XMBvvyMGQ1UoLbKByoMqH3nXMj84ALSdE5B58",
+                          "apy": null,
+                          "balances": {
+                            "available": null,
+                            "current": 65262,
+                            "iso_currency_code": "USD",
+                            "limit": null,
+                            "unofficial_currency_code": null
+                          },
+                          "mask": "7777",
+                          "name": "Plaid Student Loan",
+                          "official_name": null,
+                          "subtype": "student",
+                          "type": "loan"
+                        }
+                      ],
+                      "item": {
+                        "available_products": [
+                          "balance",
+                          "identity",
+                          "payment_initiation",
+                          "transactions"
+                        ],
+                        "billed_products": [
+                          "assets",
+                          "auth"
+                        ],
+                        "consent_expiration_time": null,
+                        "error": null,
+                        "institution_id": "ins_117650",
+                        "institution_name": "Royal Bank of Plaid",
+                        "item_id": "DWVAAPWq4RHGlEaNyGKRTAnPLaEmo8Cvq7na6",
+                        "update_type": "background",
+                        "webhook": "https://www.genericwebhookurl.com/webhook",
+                        "auth_method": "INSTANT_AUTH"
+                      },
+                      "request_id": "bkVE1BHWMAZ9Rnr"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaidError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountsGetRequest"
+              },
+              "examples": {
+                "example-1": {
+                  "value": {
+                    "client_id": "string",
+                    "secret": "string",
+                    "access_token": "string",
+                    "options": {
+                      "account_ids": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/identity/get": {
+      "post": {
+        "tags": [
+          "plaid"
+        ],
+        "summary": "Retrieve identity data",
+        "externalDocs": {
+          "url": "/api/products/identity/#identityget"
+        },
+        "operationId": "identityGet",
+        "security": [
+          {
+            "clientId": [],
+            "secret": [],
+            "plaidVersion": []
+          },
+          {
+            "oauth2": [
+              "identity:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityGetResponse"
+                },
+                "examples": {
+                  "example-1": {
+                    "value": {
+                      "accounts": [
+                        {
+                          "account_id": "BxBXxLj1m4HMXBm9WZZmCWVbPjX16EHwv99vp",
+                          "apy": 0,
+                          "balances": {
+                            "available": 100,
+                            "current": 110,
+                            "iso_currency_code": "USD",
+                            "limit": null,
+                            "unofficial_currency_code": null
+                          },
+                          "mask": "0000",
+                          "name": "Plaid Checking",
+                          "official_name": "Plaid Gold Standard 0% Interest Checking",
+                          "owners": [
+                            {
+                              "addresses": [
+                                {
+                                  "data": {
+                                    "city": "Malakoff",
+                                    "country": "US",
+                                    "postal_code": "14236",
+                                    "region": "NY",
+                                    "street": "2992 Cameron Road"
+                                  },
+                                  "primary": true
+                                },
+                                {
+                                  "data": {
+                                    "city": "San Matias",
+                                    "country": "US",
+                                    "postal_code": "93405-2255",
+                                    "region": "CA",
+                                    "street": "2493 Leisure Lane"
+                                  },
+                                  "primary": false
+                                }
+                              ],
+                              "emails": [
+                                {
+                                  "data": "accountholder0@example.com",
+                                  "primary": true,
+                                  "type": "primary"
+                                },
+                                {
+                                  "data": "accountholder1@example.com",
+                                  "primary": false,
+                                  "type": "secondary"
+                                },
+                                {
+                                  "data": "extraordinarily.long.email.username.123456@reallylonghostname.com",
+                                  "primary": false,
+                                  "type": "other"
+                                }
+                              ],
+                              "names": [
+                                "Alberta Bobbeth Charleson"
+                              ],
+                              "phone_numbers": [
+                                {
+                                  "data": "2025550123",
+                                  "primary": false,
+                                  "type": "home"
+                                },
+                                {
+                                  "data": "1112224444",
+                                  "primary": false,
+                                  "type": "work"
+                                },
+                                {
+                                  "data": "1112225555",
+                                  "primary": false,
+                                  "type": "mobile"
+                                }
+                              ]
+                            }
+                          ],
+                          "subtype": "checking",
+                          "type": "depository"
+                        },
+                        {
+                          "account_id": "3gE5gnRzNyfXpBK5wEEKcymJ5albGVUqg77gr",
+                          "apy": 0.1,
+                          "balances": {
+                            "available": 200,
+                            "current": 210,
+                            "iso_currency_code": "USD",
+                            "limit": null,
+                            "unofficial_currency_code": null
+                          },
+                          "mask": "1111",
+                          "name": "Plaid Saving",
+                          "official_name": "Plaid Silver Standard 0.1% Interest Saving",
+                          "owners": [
+                            {
+                              "addresses": [
+                                {
+                                  "data": {
+                                    "city": "Malakoff",
+                                    "country": "US",
+                                    "postal_code": "14236",
+                                    "region": "NY",
+                                    "street": "2992 Cameron Road"
+                                  },
+                                  "primary": true
+                                },
+                                {
+                                  "data": {
+                                    "city": "San Matias",
+                                    "country": "US",
+                                    "postal_code": "93405-2255",
+                                    "region": "CA",
+                                    "street": "2493 Leisure Lane"
+                                  },
+                                  "primary": false
+                                }
+                              ],
+                              "emails": [
+                                {
+                                  "data": "accountholder0@example.com",
+                                  "primary": true,
+                                  "type": "primary"
+                                },
+                                {
+                                  "data": "accountholder1@example.com",
+                                  "primary": false,
+                                  "type": "secondary"
+                                },
+                                {
+                                  "data": "extraordinarily.long.email.username.123456@reallylonghostname.com",
+                                  "primary": false,
+                                  "type": "other"
+                                }
+                              ],
+                              "names": [
+                                "Alberta Bobbeth Charleson"
+                              ],
+                              "phone_numbers": [
+                                {
+                                  "data": "2025550123",
+                                  "primary": false,
+                                  "type": "home"
+                                },
+                                {
+                                  "data": "1112224444",
+                                  "primary": false,
+                                  "type": "work"
+                                },
+                                {
+                                  "data": "1112225555",
+                                  "primary": false,
+                                  "type": "mobile"
+                                }
+                              ]
+                            }
+                          ],
+                          "subtype": "savings",
+                          "type": "depository"
+                        }
+                      ],
+                      "item": {
+                        "available_products": [
+                          "balance",
+                          "investments"
+                        ],
+                        "billed_products": [
+                          "assets",
+                          "auth",
+                          "identity",
+                          "liabilities",
+                          "transactions"
+                        ],
+                        "consent_expiration_time": null,
+                        "error": null,
+                        "institution_id": "ins_56",
+                        "institution_name": "Chase",
+                        "item_id": "eVBnVMp7zdTJLkRNr33Rs6zr7KNJqBFL9DrE6",
+                        "update_type": "background",
+                        "webhook": "https://www.genericwebhookurl.com/webhook",
+                        "auth_method": "INSTANT_AUTH"
+                      },
+                      "request_id": "3nARps6TOYtbACO"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaidError"
+                }
+              }
+            }
+          }
+        },
+        "description": "The `/identity/get` endpoint allows you to retrieve various account holder information on file with the financial institution, including names, emails, phone numbers, and addresses. Only name data is guaranteed to be returned; other fields will be empty arrays if not provided by the institution.\n\nNote: In API versions 2018-05-22 and earlier, the `owners` object is not returned, and instead identity information is returned in the top level `identity` object. For more details, see [Plaid API versioning](https://plaid.com/docs/api/versioning/#version-2019-05-29).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityGetRequest"
+              }
+            }
+          },
+          "description": ""
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IdentityGetRequest": {
+        "type": "object",
+        "description": "IdentityGetRequest defines the request schema for `/identity/get`",
+        "properties": {
+          "client_id": {
+            "$ref": "#/components/schemas/APIClientID"
+          },
+          "secret": {
+            "$ref": "#/components/schemas/APISecret"
+          },
+          "access_token": {
+            "$ref": "#/components/schemas/AccessToken"
+          },
+          "options": {
+            "$ref": "#/components/schemas/IdentityGetRequestOptions"
+          }
+        },
+        "required": [
+          "access_token"
+        ]
+      },
+      "IdentityGetRequestOptions": {
+        "type": "object",
+        "description": "An optional object to filter `/identity/get` results.",
+        "properties": {
+          "account_ids": {
+            "type": "array",
+            "description": "A list of `account_ids` to retrieve for the Item.\nNote: An error will be returned if a provided `account_id` is not associated with the Item.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AccessToken": {
+        "title": "AccessToken",
+        "type": "string",
+        "description": "The access token associated with the Item for which data is being requested."
+      },
+      "APISecret": {
+        "title": "APISecret",
+        "type": "string",
+        "description": "Your Plaid API `secret`. The `secret` is required and may be provided either in the `PLAID-SECRET` header or as part of a request body."
+      },
+      "APIClientID": {
+        "title": "ClientID",
+        "type": "string",
+        "description": "Your Plaid API `client_id`. The `client_id` is required and may be provided either in the `PLAID-CLIENT-ID` header or as part of a request body."
+      },
+      "PlaidError": {
+        "description": "Errors are identified by `error_code` and categorized by `error_type`. Use these in preference to HTTP status codes to identify and handle specific errors. HTTP status codes are set and provide the broadest categorization of errors: 4xx codes are for developer- or user-related errors, and 5xx codes are for Plaid-related errors, and the status will be 2xx in non-error cases. An Item with a non-`null` error object will only be part of an API response when calling `/item/get` to view Item status. Otherwise, error fields will be `null` if no error has occurred; if an error has occurred, an error code will be returned instead.",
+        "type": "object",
+        "additionalProperties": true,
+        "title": "Error",
+        "nullable": true,
+        "properties": {
+          "error_type": {
+            "$ref": "#/components/schemas/PlaidErrorType"
+          },
+          "error_code": {
+            "description": "The particular error code. Safe for programmatic use.",
+            "type": "string"
+          },
+          "error_code_reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "The specific reason for the error code. Currently, reasons are only supported for OAuth-based item errors; the field is omitted otherwise. Safe for programmatic use.\n\nPossible values:\n\n`OAUTH_INVALID_TOKEN`: The user's OAuth connection to this institution has been invalidated.\n\n`OAUTH_CONSENT_EXPIRED`: The user's access consent for this OAuth connection to this institution has expired.\n\n`OAUTH_USER_REVOKED`: The user's OAuth connection to this institution is invalid because the user revoked their connection."
+          },
+          "error_message": {
+            "description": "A developer-friendly representation of the error code. This may change over time and is not safe for programmatic use.",
+            "type": "string"
+          },
+          "display_message": {
+            "description": "A user-friendly representation of the error code. `null` if the error is not related to user action.\n\nThis may change over time and is not safe for programmatic use.",
+            "type": "string",
+            "nullable": true
+          },
+          "request_id": {
+            "type": "string",
+            "description": "A unique ID identifying the request, to be used for troubleshooting purposes. This field will be omitted in errors provided by webhooks."
+          },
+          "causes": {
+            "type": "array",
+            "description": "In this product, a request can pertain to more than one Item. If an error is returned for such a request, `causes` will return an array of errors containing a breakdown of these errors on the individual Item level, if any can be identified.\n\n`causes` will be provided for the `error_type` `ASSET_REPORT_ERROR` or `CHECK_REPORT_ERROR`, and for the `USER_ERROR` codes `USER_ITEM_ASSOCIATION_FAILED` and `USER_ITEM_REMOVAL_FAILED`. `causes` will also not be populated inside an error nested within a `warning` object.",
+            "items": {}
+          },
+          "status": {
+            "type": "integer",
+            "description": "The HTTP status code associated with the error. This will only be returned in the response body when the error information is provided via a webhook.",
+            "nullable": true
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "The URL of a Plaid documentation page with more information about the error"
+          },
+          "suggested_action": {
+            "type": "string",
+            "nullable": true,
+            "description": "Suggested steps for resolving the error"
+          },
+          "required_account_subtypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of the account subtypes that were requested via the `account_filters` parameter in `/link/token/create`. Currently only populated for `NO_ACCOUNTS` errors from Items with `investments_auth` as an enabled product.\n"
+          },
+          "provided_account_subtypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of the account subtypes that were extracted but did not match the requested subtypes via the `account_filters` parameter in `/link/token/create`. Currently only populated for `NO_ACCOUNTS` errors from Items with `investments_auth` as an enabled product.\n"
+          }
+        },
+        "required": [
+          "error_type",
+          "error_code",
+          "error_message",
+          "display_message"
+        ]
+      },
+      "PlaidErrorType": {
+        "title": "PlaidErrorType",
+        "type": "string",
+        "description": "A broad categorization of the error. Safe for programmatic use.",
+        "enum": [
+          "INVALID_REQUEST",
+          "INVALID_RESULT",
+          "INVALID_INPUT",
+          "INSTITUTION_ERROR",
+          "RATE_LIMIT_EXCEEDED",
+          "API_ERROR",
+          "ITEM_ERROR",
+          "ASSET_REPORT_ERROR",
+          "BASE_REPORT_ERROR",
+          "RECAPTCHA_ERROR",
+          "OAUTH_ERROR",
+          "PAYMENT_ERROR",
+          "BANK_TRANSFER_ERROR",
+          "INCOME_VERIFICATION_ERROR",
+          "MICRODEPOSITS_ERROR",
+          "SANDBOX_ERROR",
+          "PARTNER_ERROR",
+          "SIGNAL_ERROR",
+          "TRANSACTIONS_ERROR",
+          "TRANSACTION_ERROR",
+          "TRANSFER_ERROR",
+          "CHECK_REPORT_ERROR",
+          "CONSUMER_REPORT_ERROR",
+          "USER_ERROR",
+          "IDEMPOTENCY_ERROR",
+          "ASSETS_ERROR",
+          "CRA_MONITORING_ERROR",
+          "CREDIT_PROFILE_REPORT_ERROR",
+          "ENCOMPASS_ERROR",
+          "ENRICH_ERROR",
+          "FRAUD_INSIGHTS_ERROR",
+          "FREDDIE_MAC_ERROR",
+          "LINK_DELIVERY_ERROR",
+          "PROFILE_ERROR",
+          "RECURRING_TRANSACTIONS_ERROR",
+          "STATEMENTS_ERROR",
+          "TRANSFER_RECURRING_ERROR",
+          "TRANSFER_REFUND_ERROR",
+          "CRA_REPORT_ERROR",
+          "CRA_PARTNER_INSIGHTS_ERROR"
+        ]
+      },
+      "IdentityGetResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "IdentityGetResponse defines the response schema for `/identity/get`",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "description": "The accounts for which Identity data has been requested",
+            "items": {
+              "$ref": "#/components/schemas/AccountIdentity"
+            }
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/RequestID"
+          }
+        },
+        "required": [
+          "accounts",
+          "item",
+          "request_id"
+        ]
+      },
+      "RequestID": {
+        "title": "RequestID",
+        "type": "string",
+        "description": "A unique identifier for the request, which can be used for troubleshooting. This identifier, like all Plaid identifiers, is case sensitive."
+      },
+      "Item": {
+        "description": "Metadata about the Item.",
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "item_id": {
+            "description": "The Plaid Item ID. The `item_id` is always unique; linking the same account at the same institution twice will result in two Items with different `item_id` values. Like all Plaid identifiers, the `item_id` is case-sensitive.",
+            "type": "string"
+          },
+          "institution_id": {
+            "description": "The Plaid Institution ID associated with the Item. Field is omitted for Items created without an institution connection, such as Items created via Same-Day Micro-deposits.",
+            "type": "string",
+            "nullable": true
+          },
+          "institution_name": {
+            "description": "The name of the institution associated with the Item. Field is omitted for Items created without an institution connection, such as Items created via Same-Day Micro-deposits.",
+            "type": "string",
+            "nullable": true
+          },
+          "webhook": {
+            "description": "The URL registered to receive webhooks for the Item. Empty string if no webhook is set.",
+            "type": "string",
+            "nullable": true
+          },
+          "auth_method": {
+            "$ref": "#/components/schemas/ItemAuthMethod"
+          },
+          "error": {
+            "$ref": "#/components/schemas/PlaidError"
+          },
+          "available_products": {
+            "description": "A list of products available for the Item that have not yet been accessed. The contents of this array will be mutually exclusive with `billed_products`.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Products"
+            }
+          },
+          "billed_products": {
+            "description": "A list of products that have been billed for the Item. The contents of this array will be mutually exclusive with `available_products`. Note - `billed_products` is populated in all environments but only requests in Production are billed. Also note that products that are billed on a pay-per-call basis rather than a pay-per-Item basis, such as `balance`, will not appear here.\n",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Products"
+            }
+          },
+          "products": {
+            "description": "A list of products added to the Item. In almost all cases, this will be the same as the `billed_products` field. For some products, it is possible for the product to be added to an Item but not yet billed (e.g. Assets, before `/asset_report/create` has been called, or Auth or Identity when added as Optional Products but before their endpoints have been called), in which case the product may appear in `products` but not in `billed_products`.\n",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Products"
+            }
+          },
+          "consented_products": {
+            "description": "A list of products that the user has consented to for the Item via [Data Transparency Messaging](https://plaid.com/docs/link/data-transparency-messaging-migration-guide). This will consist of all products where both of the following are true: the user has consented to the required data scopes for that product and you have Production access for that product.\n",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Products"
+            },
+            "x-override-enum-values-shown": [
+              "assets",
+              "auth",
+              "balance",
+              "balance_plus",
+              "beacon",
+              "identity",
+              "identity_match",
+              "investments",
+              "investments_auth",
+              "liabilities",
+              "transactions",
+              "income",
+              "income_verification",
+              "transfer",
+              "employment",
+              "recurring_transactions",
+              "signal",
+              "statements",
+              "processor_payments",
+              "processor_identity",
+              "cra_base_report",
+              "cra_income_insights",
+              "cra_lend_score",
+              "cra_partner_insights",
+              "cra_cashflow_insights",
+              "cra_monitoring",
+              "layer"
+            ]
+          },
+          "consent_expiration_time": {
+            "description": "The date and time at which the Item's access consent will expire, in [ISO 8601](https://wikipedia.org/wiki/ISO_8601) format. If the Item does not have consent expiration scheduled, this field will be `null`. Currently, only institutions in Europe and a small number of institutions in the US have expiring consent. For a list of US institutions that currently expire consent, see the [OAuth Guide](https://plaid.com/docs/link/oauth/#refreshing-item-consent).",
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "update_type": {
+            "type": "string",
+            "description": "Indicates whether an Item requires user interaction to be updated, which can be the case for Items with some forms of two-factor authentication.\n\n`background` - Item can be updated in the background\n\n`user_present_required` - Item requires user interaction to be updated",
+            "enum": [
+              "background",
+              "user_present_required"
+            ]
+          },
+          "paired_item_id": {
+            "description": "The `item_id` of the Item that was created alongside this one in a single Link session. Only present for Items created in a hybrid Link flow that produces separate Plaid Inc and Plaid Check items; `null` for every other Item.",
+            "type": "string",
+            "nullable": true,
+            "x-hidden-from-docs": true
+          }
+        },
+        "required": [
+          "item_id",
+          "webhook",
+          "error",
+          "available_products",
+          "billed_products",
+          "consent_expiration_time",
+          "update_type"
+        ]
+      },
+      "Products": {
+        "title": "Products",
+        "enum": [
+          "assets",
+          "auth",
+          "balance",
+          "balance_plus",
+          "beacon",
+          "identity",
+          "identity_match",
+          "investments",
+          "investments_auth",
+          "liabilities",
+          "payment_initiation",
+          "identity_verification",
+          "transactions",
+          "credit_details",
+          "income",
+          "income_verification",
+          "standing_orders",
+          "transfer",
+          "employment",
+          "recurring_transactions",
+          "transactions_refresh",
+          "signal",
+          "statements",
+          "processor_payments",
+          "processor_identity",
+          "profile",
+          "cra_base_report",
+          "cra_income_insights",
+          "cra_partner_insights",
+          "cra_network_insights",
+          "cra_cashflow_insights",
+          "cra_monitoring",
+          "cra_lend_score",
+          "cra_plaid_credit_score",
+          "cra_qualify",
+          "cra_home_lending",
+          "layer",
+          "pay_by_bank",
+          "protect_linked_bank",
+          "protect_transactions"
+        ],
+        "description": "A list of products that an institution can support. All Items must be initialized with at least one product. The Balance product is always available and does not need to be specified during initialization.",
+        "type": "string"
+      },
+      "ItemAuthMethod": {
+        "description": "The method used to populate Auth data for the Item. This field is only populated for Items that have had Auth numbers data set on at least one of their accounts, and will be omitted otherwise. For info about the various flows, see our [Auth coverage documentation](https://plaid.com/docs/auth/coverage/).\n\n`INSTANT_AUTH`: The Item's Auth data was provided directly by the user's institution connection.\n\n`INSTANT_MATCH`: The Item's Auth data was provided via the Instant Match fallback flow.\n\n`AUTOMATED_MICRODEPOSITS`: The Item's Auth data was provided via the Automated Micro-deposits flow.\n\n`SAME_DAY_MICRODEPOSITS`: The Item's Auth data was provided via the Same-Day Micro-deposits flow.\n\n`INSTANT_MICRODEPOSITS`: The Item's Auth data was provided via the Instant Micro-deposits flow.\n\n`DATABASE_MATCH`: The Item's Auth data was provided via the Database Match flow.\n\n`DATABASE_INSIGHTS`: The Item's Auth data was provided via the Database Insights flow.\n\n`TRANSFER_MIGRATED`: The Item's Auth data was provided via [`/transfer/migrate_account`](https://plaid.com/docs/api/products/transfer/account-linking/#migrate-account-into-transfers).\n\n`INVESTMENTS_FALLBACK`: The Item's Auth data for Investments Move was provided via a [fallback flow](https://plaid.com/docs/investments-move/#fallback-flows).",
+        "type": "string",
+        "nullable": true,
+        "enum": [
+          "INSTANT_AUTH",
+          "INSTANT_MATCH",
+          "AUTOMATED_MICRODEPOSITS",
+          "SAME_DAY_MICRODEPOSITS",
+          "INSTANT_MICRODEPOSITS",
+          "DATABASE_MATCH",
+          "DATABASE_INSIGHTS",
+          "TRANSFER_MIGRATED",
+          "INVESTMENTS_FALLBACK",
+          null
+        ]
+      },
+      "AccountIdentity": {
+        "description": "Identity information about an account",
+        "title": "AccountIdentity",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AccountBase"
+          },
+          {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "official_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "mask": {
+                "type": "string",
+                "nullable": true
+              },
+              "verification_name": {
+                "type": "string"
+              },
+              "owners": {
+                "type": "array",
+                "description": "Data returned by the financial institution about the account owner or owners. Only returned by Identity or Assets endpoints. For business accounts, the name reported may be either the name of the individual or the name of the business, depending on the institution. To determine whether the linked account is a business account, use the `holder_category` field on the account object. Multiple owners on a single account will be represented in the same `owner` object, not in multiple owner objects within the array. In API versions 2018-05-22 and earlier, the `owners` object is not returned, and instead identity information is returned in the top level `identity` object. For more details, see [Plaid API versioning](https://plaid.com/docs/api/versioning/#version-2019-05-29)",
+                "items": {
+                  "$ref": "#/components/schemas/Owner"
+                }
+              }
+            },
+            "required": [
+              "owners"
+            ]
+          }
+        ]
+      },
+      "Owner": {
+        "title": "Owner",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Data returned from the financial institution about the owner or owners of an account. Only the `names` array must be non-empty.",
+        "properties": {
+          "names": {
+            "description": "A list of names associated with the account by the financial institution. In the case of a joint account, Plaid will make a best effort to report the names of all account holders.\n\nIf an Item contains multiple accounts with different owner names, some institutions will report all names associated with the Item in each account's `names` array.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "phone_numbers": {
+            "type": "array",
+            "description": "A list of phone numbers associated with the account by the financial institution. May be an empty array if no relevant information is returned from the financial institution.",
+            "items": {
+              "$ref": "#/components/schemas/PhoneNumber"
+            }
+          },
+          "emails": {
+            "type": "array",
+            "description": "A list of email addresses associated with the account by the financial institution. May be an empty array if no relevant information is returned from the financial institution.",
+            "items": {
+              "$ref": "#/components/schemas/Email"
+            }
+          },
+          "addresses": {
+            "type": "array",
+            "description": "Data about the various addresses associated with the account by the financial institution. May be an empty array if no relevant information is returned from the financial institution.",
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            }
+          }
+        },
+        "required": [
+          "names",
+          "phone_numbers",
+          "emails",
+          "addresses"
+        ]
+      },
+      "Address": {
+        "title": "Address",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A physical mailing address.",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AddressData"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "When `true`, identifies the address as the primary address on an account."
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AddressData": {
+        "title": "AddressData",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Data about the components comprising an address.",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "The full city name",
+            "nullable": true
+          },
+          "region": {
+            "type": "string",
+            "description": "The region or state. In API versions 2018-05-22 and earlier, this field is called `state`.\nExample: `\"NC\"`",
+            "nullable": true
+          },
+          "street": {
+            "type": "string",
+            "description": "The full street address\nExample: `\"564 Main Street, APT 15\"`",
+            "nullable": true
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "The postal code. In API versions 2018-05-22 and earlier, this field is called `zip`.",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "description": "The ISO 3166-1 alpha-2 country code",
+            "nullable": true
+          }
+        },
+        "required": [
+          "city",
+          "region",
+          "street",
+          "postal_code",
+          "country"
+        ]
+      },
+      "Email": {
+        "title": "Email",
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "The email address."
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "When `true`, identifies the email address as the primary email on an account."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "secondary",
+              "other"
+            ],
+            "description": "The type of email account as described by the financial institution."
+          }
+        },
+        "required": [
+          "data",
+          "primary",
+          "type"
+        ],
+        "description": "An object representing an email address"
+      },
+      "PhoneNumber": {
+        "title": "PhoneNumber",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A phone number",
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "The phone number."
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "When `true`, identifies the phone number as the primary number on an account."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "home",
+              "work",
+              "office",
+              "mobile",
+              "mobile1",
+              "other"
+            ],
+            "description": "The type of phone number."
+          }
+        },
+        "required": [
+          "data",
+          "primary",
+          "type"
+        ]
+      },
+      "AccountBase": {
+        "title": "Account",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A single account at a financial institution.",
+        "x-examples": {
+          "example-1": {}
+        },
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Plaid's unique identifier for the account. This value will not change unless Plaid can't reconcile the account with the data returned by the financial institution. This may occur, for example, when the name of the account changes. If this happens a new `account_id` will be assigned to the account.\n\nThe `account_id` can also change if the `access_token` is deleted and the same credentials that were used to generate that `access_token` are used to generate a new `access_token` on a later date. In that case, the new `account_id` will be different from the old `account_id`.\n\nIf an account with a specific `account_id` disappears instead of changing, the account is likely closed. Closed accounts are not returned by the Plaid API.\n\nWhen using a CRA endpoint (an endpoint associated with Plaid Check Consumer Report, i.e. any endpoint beginning with `/cra/`), the `account_id` returned will not match the `account_id` returned by a non-CRA endpoint.\n\nLike all Plaid identifiers, the `account_id` is case sensitive."
+          },
+          "balances": {
+            "$ref": "#/components/schemas/AccountBalance"
+          },
+          "mask": {
+            "type": "string",
+            "nullable": true,
+            "description": "The last 2-4 alphanumeric characters of either the account's displayed mask or the account's official account number. Note that the mask may be non-unique between an Item's accounts."
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the account, either assigned by the user or by the financial institution itself"
+          },
+          "official_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The official name of the account as given by the financial institution"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AccountType"
+          },
+          "subtype": {
+            "$ref": "#/components/schemas/AccountSubtype"
+          },
+          "verification_status": {
+            "type": "string",
+            "enum": [
+              "automatically_verified",
+              "pending_automatic_verification",
+              "pending_manual_verification",
+              "unsent",
+              "manually_verified",
+              "verification_expired",
+              "verification_failed",
+              "database_matched",
+              "database_insights_pass",
+              "database_insights_pass_with_caution",
+              "database_insights_fail"
+            ],
+            "description": "Indicates an Item's micro-deposit-based verification or database verification status. This field is only populated when using Auth and falling back to micro-deposit or database verification. Possible values are:\n\n`pending_automatic_verification`: The Item is pending automatic verification.\n\n`pending_manual_verification`: The Item is pending manual micro-deposit verification. Items remain in this state until the user successfully verifies the code.\n\n`automatically_verified`: The Item has successfully been automatically verified.\n\n`manually_verified`: The Item has successfully been manually verified.\n\n`verification_expired`: Plaid was unable to automatically verify the deposit within 7 calendar days and will no longer attempt to validate the Item. Users may retry by submitting their information again through Link.\n\n`verification_failed`: The Item failed manual micro-deposit verification because the user exhausted all 3 verification attempts. Users may retry by submitting their information again through Link.\n\n`unsent`: The Item is pending micro-deposit verification, but Plaid has not yet sent the micro-deposit.\n\n`database_insights_fail`: The Item's numbers have been verified using Plaid's data sources and have signal for being invalid and/or have no signal for being valid. Typically this indicates that the routing number is invalid, the account number does not match the account number format associated with the routing number, or the account has been reported as closed or frozen. Only returned for Auth Items created via Database Auth.\n\n`database_insights_pass`: The Item's numbers have been verified using Plaid's data sources: the routing and account number match a routing and account number of an account recognized on the Plaid network, and the account is not known by Plaid to be frozen or closed. Only returned for Auth Items created via Database Auth.\n\n`database_insights_pass_with_caution`: The Item's numbers have been verified using Plaid's data sources and have some signal for being valid: the routing and account number were not recognized on the Plaid network, but the routing number is valid and the account number is a potential valid account number for that routing number. Only returned for Auth Items created via Database Auth.\n\n`database_matched`: (deprecated) The Item has successfully been verified using Plaid's data sources. Only returned for Auth Items created via Database Match.\n\nOmitted or empty string: Neither micro-deposit-based verification nor database verification are being used for the Item."
+          },
+          "verification_name": {
+            "type": "string",
+            "description": "The account holder name that was used for micro-deposit and/or database verification. Only returned for Auth Items created via micro-deposit or database verification. This name was manually-entered by the user during Link, unless it was otherwise provided via the `user.legal_name` request field in `/link/token/create` for the Link session that created the Item."
+          },
+          "verification_insights": {
+            "$ref": "#/components/schemas/AccountVerificationInsights"
+          },
+          "persistent_account_id": {
+            "type": "string",
+            "description": "A unique and persistent identifier for accounts that can be used to trace multiple instances of the same account across different Items for depository accounts. This field is currently supported only for Items at institutions that use Tokenized Account Numbers (i.e., Chase, PNC, and US Bank). Because these accounts have a different account number each time they are linked, this field may be used instead of the account number to uniquely identify an account across multiple Items for payments use cases, helping to reduce duplicate Items or attempted fraud. In Sandbox, this field is populated for TAN-based institutions (`ins_56`, `ins_13`, `ins_127990`) as well as the OAuth Sandbox institution (`ins_127287`); in Production, it will only be populated for accounts at applicable institutions."
+          },
+          "apy": {
+            "type": "number",
+            "format": "double",
+            "description": "The annual percentage yield (APY) on an interest-bearing deposit account, expressed as a percentage (e.g. `4.25` means 4.25%). In the event that the APY is not provided by the financial institution, Plaid will return a value of `null`.",
+            "nullable": true
+          },
+          "holder_category": {
+            "$ref": "#/components/schemas/AccountHolderCategory"
+          },
+          "paired_account_id": {
+            "type": "string",
+            "nullable": true,
+            "x-hidden-from-docs": true,
+            "description": "The `account_id` of the account on the paired Item (see `paired_item_id`) that represents the same bank account as this one. For an account on a Plaid Inc Item, this is the matching account on its paired Plaid Check Item, and the reverse for an account on a Plaid Check Item. Only returned for accounts on an Item that has a paired Item. `null` means the Item has a paired Item but Plaid could not confidently match this account to an account on it. Like `account_id`, this value can change if Plaid re-creates the paired account."
+          }
+        },
+        "required": [
+          "account_id",
+          "balances",
+          "mask",
+          "name",
+          "official_name",
+          "type",
+          "subtype"
+        ]
+      },
+      "AccountHolderCategory": {
+        "type": "string",
+        "nullable": true,
+        "title": "HolderCategory",
+        "description": "Indicates the account's categorization as either a personal or a business account. This field is currently in beta; to request access, contact your account manager. Coverage varies by institution, with approximately 70% of accounts populated overall.",
+        "enum": [
+          "business",
+          "personal",
+          "unrecognized"
+        ]
+      },
+      "AccountVerificationInsights": {
+        "title": "VerificationInsights",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Insights from performing database verification for the account. Only returned for Auth Items using Database Auth.",
+        "properties": {
+          "name_match_score": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Indicates the score of the name match between the given name provided during database verification (available in the [`verification_name`](https://plaid.com/docs/api/products/auth/#auth-get-response-accounts-verification-name) field if using standard Database Auth, or provided in the request if using `/auth/verify`) and matched Plaid network accounts. If defined, will be a value between 0 and 100. Will be undefined if name matching was not enabled for the database verification session or if there were no eligible Plaid network matches to compare the given name with. For Items at Canadian institutions, name matching is not currently supported, so this field will always be omitted."
+          },
+          "network_status": {
+            "$ref": "#/components/schemas/AccountVerificationInsightsNetworkStatus"
+          },
+          "previous_returns": {
+            "$ref": "#/components/schemas/AccountVerificationInsightsPreviousReturns"
+          },
+          "account_number_format": {
+            "$ref": "#/components/schemas/AccountVerificationInsightsAccountNumberFormat"
+          }
+        },
+        "required": [
+          "network_status",
+          "account_number_format"
+        ]
+      },
+      "AccountVerificationInsightsAccountNumberFormat": {
+        "title": "VerificationInsightsAccountNumberFormat",
+        "type": "string",
+        "enum": [
+          "valid",
+          "invalid",
+          "unknown"
+        ],
+        "description": "Indicator of account number format validity for institution.\n\n`valid`: indicates that the account number has a correct format for the institution.\n\n`invalid`: indicates that the account number has an incorrect format for the institution.\n\n`unknown`: indicates that there was not enough information to determine whether the format is correct for the institution."
+      },
+      "AccountVerificationInsightsPreviousReturns": {
+        "title": "AccountVerificationInsightsPreviousReturns",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Information about known ACH returns for the account and routing number.",
+        "properties": {
+          "has_previous_administrative_return": {
+            "type": "boolean",
+            "description": "Indicates whether Plaid's data sources include a known administrative ACH return for this account and routing number."
+          }
+        },
+        "required": [
+          "has_previous_administrative_return"
+        ]
+      },
+      "AccountVerificationInsightsNetworkStatus": {
+        "title": "VerificationInsightsNetworkStatus",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Status information about the account and routing number in the Plaid network.",
+        "properties": {
+          "has_numbers_match": {
+            "type": "boolean",
+            "description": "Indicates whether we found at least one matching account for the ACH account and routing number."
+          },
+          "is_numbers_match_verified": {
+            "type": "boolean",
+            "description": "Indicates if at least one matching account for the ACH account and routing number is already verified."
+          }
+        },
+        "required": [
+          "has_numbers_match",
+          "is_numbers_match_verified"
+        ]
+      },
+      "AccountSubtype": {
+        "type": "string",
+        "nullable": true,
+        "title": "AccountSubtype",
+        "description": "See the [Account type schema](https://plaid.com/docs/api/accounts/#account-type-schema) for a full listing of account types and corresponding subtypes.",
+        "enum": [
+          "401a",
+          "401k",
+          "403B",
+          "457b",
+          "529",
+          "auto",
+          "brokerage",
+          "business",
+          "cash isa",
+          "cash management",
+          "cd",
+          "checking",
+          "commercial",
+          "commercial line of credit",
+          "construction",
+          "consumer",
+          "credit card",
+          "crypto exchange",
+          "ebt",
+          "education savings account",
+          "fhsa",
+          "fixed annuity",
+          "gic",
+          "health reimbursement arrangement",
+          "home equity",
+          "home equity loan",
+          "hsa",
+          "isa",
+          "ira",
+          "keogh",
+          "lif",
+          "life insurance",
+          "limited purpose checking",
+          "line of credit",
+          "lira",
+          "loan",
+          "lrif",
+          "lrsp",
+          "money market",
+          "mortgage",
+          "mutual fund",
+          "non-custodial wallet",
+          "non-taxable brokerage account",
+          "other",
+          "other insurance",
+          "other annuity",
+          "overdraft",
+          "paypal",
+          "payroll",
+          "pension",
+          "prediction market",
+          "prepaid",
+          "prif",
+          "profit sharing plan",
+          "qshr",
+          "rdsp",
+          "resp",
+          "retirement",
+          "rlif",
+          "roth",
+          "roth 401k",
+          "roth 403B",
+          "roth 457b",
+          "roth pension",
+          "roth profit sharing plan",
+          "roth thrift savings plan",
+          "rrif",
+          "rrsp",
+          "sarsep",
+          "savings",
+          "sep ira",
+          "simple ira",
+          "sipp",
+          "stock plan",
+          "student",
+          "thrift savings plan",
+          "tfsa",
+          "trust",
+          "ugma",
+          "utma",
+          "variable annuity"
+        ]
+      },
+      "AccountType": {
+        "type": "string",
+        "title": "AccountType",
+        "enum": [
+          "investment",
+          "credit",
+          "depository",
+          "loan",
+          "brokerage",
+          "other"
+        ],
+        "description": "`investment:` Investment account. In API versions 2018-05-22 and earlier, this type is called `brokerage` instead.\n\n`credit:` Credit card\n\n`depository:` Depository account\n\n`loan:` Loan account\n\n`other:` Non-specified account type\n\nSee the [Account type schema](https://plaid.com/docs/api/accounts#account-type-schema) for a full listing of account types and corresponding subtypes."
+      },
+      "AccountBalance": {
+        "title": "AccountBalance",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A set of fields describing the balance for an account. For real-time values, use `/accounts/balance/get` or `/signal/evaluate` (with a Balance-only ruleset), which are fetched live from the institution at request time. Values returned by other endpoints may be cached, or adjusted by Plaid to reflect transaction activity received since the last refresh.",
+        "properties": {
+          "available": {
+            "type": "number",
+            "format": "double",
+            "description": "The amount of funds available to be withdrawn from the account, as determined by the financial institution.\n\nFor `credit`-type accounts, the `available` balance typically equals the `limit` less the `current` balance, less any pending outflows plus any pending inflows.\n\nFor `depository`-type accounts, the `available` balance typically equals the `current` balance less any pending outflows plus any pending inflows. For `depository`-type accounts, the `available` balance does not include the overdraft limit.\n\nFor `investment`-type accounts (or `brokerage`-type accounts for API versions 2018-05-22 and earlier), the `available` balance is the total cash available to withdraw as presented by the institution.\n\nNote that not all institutions calculate the `available`  balance. In the event that `available` balance is unavailable, Plaid will return an `available` balance value of `null`.\n\nAvailable balance may be cached and is not guaranteed to be up-to-date in real-time unless the value was returned by `/accounts/balance/get`, or by `/signal/evaluate` with a Balance-only ruleset.\n\nIf `current` is `null` this field is guaranteed not to be `null`, unless you have opted into enabling [limited-purpose checking accounts](https://plaid.com/docs/auth/#enabling-limited-purpose-checking-accounts-for-rent-or-mortgage), which always have `null` values for both `available` and `current` balance.",
+            "nullable": true
+          },
+          "current": {
+            "type": "number",
+            "format": "double",
+            "description": "The total amount of funds in or owed by the account.\n\nFor `credit`-type accounts, a positive balance indicates the amount owed; a negative amount indicates the lender owing the account holder.\n\nFor `loan`-type accounts, the current balance is the principal remaining on the loan, except in the case of student loan accounts at Sallie Mae (`ins_116944`). For Sallie Mae student loans, the account's balance includes both principal and any outstanding interest. Similar to `credit`-type accounts, a positive balance is typically expected, while a negative amount indicates the lender owing the account holder.\n\nFor `investment`-type accounts (or `brokerage`-type accounts for API versions 2018-05-22 and earlier), the current balance is the total value of assets as presented by the institution.\n\nNote that balance information may be cached unless the value was returned by `/accounts/balance/get` or by `/signal/evaluate` with a Balance-only ruleset; if the Item is enabled for Transactions, the balance will be at least as recent as the most recent Transaction update. If you require real-time balance information, use the `available` balance as provided by `/accounts/balance/get` or `/signal/evaluate` called with a Balance-only `ruleset_key`.\n\nWhen returned by `/accounts/balance/get`, this field may be `null`. When this happens, `available` is guaranteed not to be `null`, unless you have opted into enabling [limited-purpose checking accounts](https://plaid.com/docs/auth/#enabling-limited-purpose-checking-accounts-for-rent-or-mortgage), which always have `null` values for both `available` and `current` balance.",
+            "nullable": true
+          },
+          "limit": {
+            "type": "number",
+            "format": "double",
+            "description": "For `credit`-type accounts, this represents the credit limit.\n\nFor `depository`-type accounts, this represents the pre-arranged overdraft limit, which is common for current (checking) accounts in Europe.\n\nIn North America, this field is typically only available for `credit`-type accounts.",
+            "nullable": true
+          },
+          "iso_currency_code": {
+            "type": "string",
+            "description": "The ISO-4217 currency code of the balance. Always null if `unofficial_currency_code` is non-null.",
+            "nullable": true
+          },
+          "unofficial_currency_code": {
+            "type": "string",
+            "description": "The unofficial currency code associated with the balance. Always null if `iso_currency_code` is non-null. Unofficial currency codes are used for currencies that do not have official ISO currency codes, such as cryptocurrencies and the currencies of certain countries.\n\nSee the [currency code schema](https://plaid.com/docs/api/accounts#currency-code-schema) for a full listing of supported `unofficial_currency_code`s.",
+            "nullable": true
+          },
+          "last_updated_datetime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format (`YYYY-MM-DDTHH:mm:ssZ`) indicating the last time the balance was updated.\n\nThis field is returned only when the institution is `ins_128026` (Capital One) or `ins_136439` (Apple Card).",
+            "nullable": true
+          }
+        },
+        "required": [
+          "available",
+          "current",
+          "limit",
+          "iso_currency_code",
+          "unofficial_currency_code"
+        ]
+      },
+      "AccountsGetRequest": {
+        "type": "object",
+        "description": "AccountsGetRequest defines the request schema for `/accounts/get`",
+        "properties": {
+          "client_id": {
+            "$ref": "#/components/schemas/APIClientID"
+          },
+          "secret": {
+            "$ref": "#/components/schemas/APISecret"
+          },
+          "access_token": {
+            "$ref": "#/components/schemas/AccessToken"
+          },
+          "options": {
+            "$ref": "#/components/schemas/AccountsGetRequestOptions"
+          }
+        },
+        "required": [
+          "access_token"
+        ],
+        "x-examples": {
+          "example-1": {}
+        }
+      },
+      "AccountsGetRequestOptions": {
+        "type": "object",
+        "description": "An optional object to filter `/accounts/get` results.",
+        "properties": {
+          "account_ids": {
+            "type": "array",
+            "description": "An array of `account_ids` to retrieve for the Account.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AccountsGetResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "AccountsGetResponse defines the response schema for `/accounts/get` and `/accounts/balance/get`.",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "description": "An array of financial institution accounts associated with the Item.\nIf `/accounts/balance/get` was called, each account will include real-time balance information.",
+            "items": {
+              "$ref": "#/components/schemas/AccountBase"
+            }
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/RequestID"
+          }
+        },
+        "required": [
+          "accounts",
+          "item",
+          "request_id"
+        ]
+      },
+      "TransactionsGetRequest": {
+        "type": "object",
+        "description": "TransactionsGetRequest defines the request schema for `/transactions/get`",
+        "properties": {
+          "client_id": {
+            "$ref": "#/components/schemas/APIClientID"
+          },
+          "options": {
+            "$ref": "#/components/schemas/TransactionsGetRequestOptions"
+          },
+          "access_token": {
+            "$ref": "#/components/schemas/AccessToken"
+          },
+          "secret": {
+            "$ref": "#/components/schemas/APISecret"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The earliest date for which data should be returned. Dates should be formatted as YYYY-MM-DD. Plaid returns all transaction history stored for the Item (up to 2 years prior to the initial linking of the Item)."
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The latest date for which data should be returned. Dates should be formatted as YYYY-MM-DD."
+          }
+        },
+        "required": [
+          "access_token",
+          "start_date",
+          "end_date"
+        ]
+      },
+      "TransactionsGetRequestOptions": {
+        "type": "object",
+        "description": "An optional object to be used with the request. If specified, `options` must not be `null`.",
+        "properties": {
+          "account_ids": {
+            "type": "array",
+            "description": "A list of `account_ids` to retrieve for the Item\n\nNote: An error will be returned if a provided `account_id` is not associated with the Item.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "default": 100,
+            "description": "The number of transactions to fetch.",
+            "minimum": 1,
+            "maximum": 500,
+            "exclusiveMinimum": false
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0,
+            "description": "The number of transactions to skip. The default value is 0.",
+            "minimum": 0
+          },
+          "include_original_description": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include the raw unparsed transaction description from the financial institution.",
+            "nullable": true
+          },
+          "include_personal_finance_category_beta": {
+            "type": "boolean",
+            "default": false,
+            "description": "Personal finance categories are now returned by default.",
+            "deprecated": true,
+            "x-hidden-from-docs": true
+          },
+          "include_personal_finance_category": {
+            "type": "boolean",
+            "default": false,
+            "description": "Personal finance categories are now returned by default.",
+            "deprecated": true,
+            "x-hidden-from-docs": true
+          },
+          "include_logo_and_counterparty_beta": {
+            "type": "boolean",
+            "default": false,
+            "description": "Counterparties and extra merchant fields are now returned by default.",
+            "deprecated": true,
+            "x-hidden-from-docs": true
+          },
+          "personal_finance_category_version": {
+            "$ref": "#/components/schemas/PersonalFinanceCategoryVersion"
+          },
+          "days_requested": {
+            "description": "This field only applies to calls for Items where the Transactions product has not already been initialized (i.e. by specifying `transactions` in the `products`, `optional_products`, or `required_if_supported_products` array when calling `/link/token/create` or by making a previous call to `/transactions/sync` or `/transactions/get`). In those cases, the field controls the maximum number of days of transaction history that Plaid will request from the financial institution. The more transaction history is requested, the longer the historical update poll will take. If no value is specified, 90 days of history will be requested by default. In Production, if a value under 30 is provided, a minimum of 30 days of history will be requested.\n\nIf you are initializing your Items with transactions during the `/link/token/create` call (e.g. by including `transactions` in the `/link/token/create` `products` array), you must use the [`transactions.days_requested`](https://plaid.com/docs/api/link/#link-token-create-request-transactions-days-requested) field in the `/link/token/create` request instead of in the `/transactions/get` request.\n\nIf the Item has already been initialized with the Transactions product, this field will have no effect. The maximum amount of transaction history to request on an Item cannot be updated if Transactions has already been added to the Item. To request older transaction history on an Item where Transactions has already been added, you must delete the Item via `/item/remove` and send the user through Link to create a new Item.\n\nCustomers using [Recurring Transactions](https://plaid.com/docs/api/products/transactions/#transactionsrecurringget) should request at least 180 days of history for optimal results.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 730,
+            "default": 90
+          }
+        }
+      },
+      "PersonalFinanceCategoryVersion": {
+        "title": "PersonalFinanceCategoryVersion",
+        "type": "string",
+        "description": "Indicates which version of the personal finance category taxonomy is being used. [View PFCv2 and PFCv1 taxonomies](https://plaid.com/documents/pfc-taxonomy-all.csv).\n\nIf you enabled Transactions or Enrich before December 3, 2025 you will receive the `v1` taxonomy by default and may request `v2` by explicitly setting this field to `v2` in the request.\n\nIf you enabled Transactions or Enrich on or after December 3, 2025, you may only receive the `v2` taxonomy.\n",
+        "enum": [
+          "v1",
+          "v2"
+        ]
+      },
+      "TransactionsGetResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "TransactionsGetResponse defines the response schema for `/transactions/get`",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "description": "An array containing the `accounts` associated with the Item for which transactions are being returned. Each transaction can be mapped to its corresponding account via the `account_id` field.",
+            "items": {
+              "$ref": "#/components/schemas/AccountBase"
+            }
+          },
+          "transactions": {
+            "type": "array",
+            "description": "An array containing transactions from the account. Transactions are returned in reverse chronological order, with the most recent at the beginning of the array. The maximum number of transactions returned is determined by the `count` parameter.",
+            "items": {
+              "$ref": "#/components/schemas/Transaction"
+            }
+          },
+          "total_transactions": {
+            "type": "integer",
+            "description": "The total number of transactions available within the date range specified. If `total_transactions` is larger than the size of the `transactions` array, more transactions are available and can be fetched via manipulating the `offset` parameter."
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/RequestID"
+          }
+        },
+        "required": [
+          "accounts",
+          "transactions",
+          "total_transactions",
+          "item",
+          "request_id"
+        ]
+      },
+      "Transaction": {
+        "title": "Transaction",
+        "description": "A representation of a transaction",
+        "x-examples": {},
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TransactionBase"
+          },
+          {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "authorized_date": {
+                "type": "string",
+                "format": "date",
+                "description": "The date that the transaction was authorized. For posted transactions, the `date` field will indicate the posted date, but `authorized_date` will indicate the day the transaction was authorized by the financial institution. If presenting transactions to the user in a UI, the `authorized_date`, when available, is generally preferable to use over the `date` field for posted transactions, as it will generally represent the date the user actually made the transaction. Dates are returned in an [ISO 8601](https://wikipedia.org/wiki/ISO_8601) format ( `YYYY-MM-DD` ).",
+                "nullable": true
+              },
+              "authorized_datetime": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Date and time when a transaction was authorized in [ISO 8601](https://wikipedia.org/wiki/ISO_8601) format ( `YYYY-MM-DDTHH:mm:ssZ` ). For posted transactions, the `datetime` field will indicate the posted date, but `authorized_datetime` will indicate the day the transaction was authorized by the financial institution. If presenting transactions to the user in a UI, the `authorized_datetime`, when available, is generally preferable to use over the `datetime` field for posted transactions, as it will generally represent the date the user actually made the transaction.\n\nThis field is returned for select financial institutions and comes as provided by the institution. It may contain default time values (such as 00:00:00). This field is only populated in API version 2019-05-29 and later.",
+                "nullable": true
+              },
+              "datetime": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Date and time when a transaction was posted in [ISO 8601](https://wikipedia.org/wiki/ISO_8601) format ( `YYYY-MM-DDTHH:mm:ssZ` ). For the date that the transaction was initiated, rather than posted, see the `authorized_datetime` field.\n\nThis field is returned for select financial institutions and comes as provided by the institution. It may contain default time values (such as 00:00:00). This field is only populated in API version 2019-05-29 and later.",
+                "nullable": true
+              },
+              "payment_channel": {
+                "type": "string",
+                "enum": [
+                  "online",
+                  "in store",
+                  "other"
+                ],
+                "description": "The channel used to make a payment.\n`online:` transactions that took place online.\n\n`in store:` transactions that were made at a physical location.\n\n`other:` transactions that relate to banks, e.g. fees or deposits.\n\nThis field replaces the `transaction_type` field.\n"
+              },
+              "personal_finance_category": {
+                "$ref": "#/components/schemas/PersonalFinanceCategory"
+              },
+              "business_finance_category": {
+                "$ref": "#/components/schemas/BusinessFinanceCategory"
+              },
+              "transaction_code": {
+                "$ref": "#/components/schemas/TransactionCode"
+              },
+              "personal_finance_category_icon_url": {
+                "type": "string",
+                "description": "The URL of an icon associated with the primary personal finance category. The icon will always be a 100\u00d7100 pixel PNG file."
+              },
+              "counterparties": {
+                "type": "array",
+                "description": "The counterparties present in the transaction. Counterparties, such as the merchant or the financial institution, are extracted by Plaid from the raw description.",
+                "items": {
+                  "$ref": "#/components/schemas/TransactionCounterparty"
+                }
+              },
+              "merchant_entity_id": {
+                "type": "string",
+                "description": "A unique, stable, Plaid-generated ID that maps to the merchant. In the case of a merchant with multiple retail locations, this field will map to the broader merchant, not a specific location or store.",
+                "nullable": true
+              },
+              "merchant_category_code": {
+                "type": "string",
+                "description": "The merchant category code for the transaction, typically a four-digit [ISO 18245](https://www.iso.org/standard/33365.html) string. This field is in beta: it is populated primarily for card transactions, coverage varies by institution, and values are subject to change.",
+                "nullable": true
+              },
+              "running_balance": {
+                "type": "number",
+                "format": "double",
+                "description": "The balance of the account after this transaction was applied, as reported by the financial institution. Returned on posted transactions only, and not populated for every institution or every transaction. May not reconcile with the balances returned by `/accounts/balance/get`.",
+                "nullable": true,
+                "x-hidden-from-docs": true
+              },
+              "client_customization": {
+                "$ref": "#/components/schemas/ClientCustomization"
+              }
+            },
+            "required": [
+              "account_owner",
+              "pending_transaction_id",
+              "payment_channel",
+              "payment_meta",
+              "name",
+              "location",
+              "authorized_date",
+              "authorized_datetime",
+              "datetime",
+              "transaction_code"
+            ]
+          }
+        ]
+      },
+      "ClientCustomization": {
+        "title": "ClientCustomization",
+        "nullable": true,
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Custom client fields",
+        "x-hidden-from-docs": true,
+        "properties": {
+          "custom_entity_id": {
+            "type": "string",
+            "description": "Custom entity ID that maps to a merchant or counterparty. This is different from the `merchant_entity_id` as well as the `entity_id` on the counterparties object to meet client specific needs."
+          }
+        }
+      },
+      "TransactionCounterparty": {
+        "type": "object",
+        "title": "Counterparty",
+        "additionalProperties": true,
+        "description": "The counterparty, such as the merchant or financial institution, is extracted by Plaid from the raw description.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the counterparty, such as the merchant or the financial institution, as extracted by Plaid from the raw description."
+          },
+          "entity_id": {
+            "type": "string",
+            "description": "A unique, stable, Plaid-generated ID that maps to the counterparty.",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/CounterpartyType"
+          },
+          "website": {
+            "type": "string",
+            "description": "The website associated with the counterparty.",
+            "nullable": true
+          },
+          "logo_url": {
+            "type": "string",
+            "description": "The URL of a logo associated with the counterparty, if available. The logo will always be a 100\u00d7100 pixel PNG file.",
+            "nullable": true
+          },
+          "confidence_level": {
+            "type": "string",
+            "description": "A description of how confident we are that the provided counterparty is involved in the transaction.\n\n`VERY_HIGH`: We recognize this counterparty and we are more than 98% confident that it is involved in this transaction.\n\n`HIGH`: We recognize this counterparty and we are more than 90% confident that it is involved in this transaction.\n\n`MEDIUM`: We are moderately confident that this counterparty was involved in this transaction, but some details may differ from our records.\n\n`LOW`: We didn't find a matching counterparty in our records, so we are returning a cleansed name parsed out of the request description.\n\n`UNKNOWN`: We don't know the confidence level for this counterparty.",
+            "nullable": true
+          },
+          "account_numbers": {
+            "$ref": "#/components/schemas/CounterpartyNumbers"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "logo_url",
+          "website"
+        ]
+      },
+      "CounterpartyNumbers": {
+        "type": "object",
+        "title": "CounterpartyNumbers",
+        "additionalProperties": true,
+        "description": "Account numbers associated with the counterparty, when available.\nThis field is currently only filled in for select financial institutions in Europe.",
+        "nullable": true,
+        "properties": {
+          "bacs": {
+            "$ref": "#/components/schemas/CounterpartyNumbersBACS"
+          },
+          "international": {
+            "$ref": "#/components/schemas/CounterpartyNumbersInternational"
+          }
+        }
+      },
+      "CounterpartyNumbersInternational": {
+        "type": "object",
+        "title": "CounterpartyNumbersInternational",
+        "description": "Account numbers using the International Bank Account Number and BIC/SWIFT code format.",
+        "nullable": true,
+        "properties": {
+          "iban": {
+            "$ref": "#/components/schemas/NumbersIBANNullable"
+          },
+          "bic": {
+            "type": "string",
+            "description": "Business Identifier Code (BIC) for this counterparty.",
+            "nullable": true,
+            "minLength": 8,
+            "maxLength": 11
+          }
+        }
+      },
+      "NumbersIBANNullable": {
+        "type": "string",
+        "description": "International Bank Account Number (IBAN).",
+        "nullable": true,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NumbersIBAN"
+          }
+        ]
+      },
+      "NumbersIBAN": {
+        "type": "string",
+        "description": "International Bank Account Number (IBAN).",
+        "minLength": 15,
+        "maxLength": 34
+      },
+      "CounterpartyNumbersBACS": {
+        "type": "object",
+        "title": "CounterpartyNumbersBACS",
+        "description": "Identifying information for a UK bank account via Bacs.",
+        "nullable": true,
+        "properties": {
+          "account": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Bacs account number for the account."
+          },
+          "sort_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Bacs sort code for the account."
+          }
+        }
+      },
+      "CounterpartyType": {
+        "title": "CounterpartyType",
+        "description": "The counterparty type.\n\n`merchant`: a provider of goods or services for purchase\n\n`financial_institution`: a financial entity (bank, credit union, BNPL, fintech)\n\n`payment_app`: a transfer or P2P app (e.g. Zelle)\n\n`marketplace`: a marketplace (e.g. DoorDash, Google Play Store)\n\n`payment_terminal`: a point-of-sale payment terminal (e.g. Square, Toast)\n\n`income_source`: the payer in an income transaction (e.g., an employer, client, or government agency)",
+        "type": "string",
+        "enum": [
+          "merchant",
+          "financial_institution",
+          "payment_app",
+          "marketplace",
+          "payment_terminal",
+          "income_source"
+        ]
+      },
+      "TransactionCode": {
+        "type": "string",
+        "title": "transaction_code",
+        "description": "An identifier classifying the transaction type.\n\nThis field is populated for European institutions, as well as certain institutions in the United States. For institutions where this classification is not available, this field is set to `null`.\n\n`adjustment:` Bank adjustment\n\n`atm:` Cash deposit or withdrawal via an automated teller machine\n\n`bank charge:` Charge or fee levied by the institution\n\n`bill payment`: Payment of a bill\n\n`cash:` Cash deposit or withdrawal\n\n`cash advance:` Cash advance drawn against a credit card or line of credit\n\n`cashback:` Cash withdrawal while making a debit card purchase\n\n`cheque:` Document ordering the payment of money to another person or organization\n\n`direct debit:` Automatic withdrawal of funds initiated by a third party at a regular interval\n\n`interest:` Interest earned or incurred\n\n`late fee:` Fee associated with a late or past-due payment\n\n`membership fee:` Annual or recurring membership fee\n\n`payment:` One-off outbound payment not classified as a bill payment, direct debit, or standing order\n\n`purchase:` Purchase made with a debit or credit card\n\n`refund:` Merchant credit or return, such as a refund of a prior purchase\n\n`returned item fee:` Fee for a returned item, such as a returned check or stop payment\n\n`standing order:` Payment instructed by the account holder to a third party at a regular interval\n\n`transfer:` Transfer of money between accounts",
+        "enum": [
+          "adjustment",
+          "atm",
+          "bank charge",
+          "bill payment",
+          "cash",
+          "cash advance",
+          "cashback",
+          "cheque",
+          "direct debit",
+          "interest",
+          "late fee",
+          "membership fee",
+          "payment",
+          "purchase",
+          "refund",
+          "returned item fee",
+          "standing order",
+          "transfer",
+          null
+        ],
+        "nullable": true
+      },
+      "BusinessFinanceCategory": {
+        "title": "BusinessFinanceCategory",
+        "nullable": true,
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Information describing the intent of the transaction. Most relevant for business finance use cases, but not limited to such use cases.",
+        "x-hidden-from-docs": true,
+        "properties": {
+          "primary": {
+            "type": "string",
+            "description": "A high level category that communicates the broad category of the transaction."
+          },
+          "detailed": {
+            "type": "string",
+            "description": "A granular category conveying the transaction's intent. This field can also be used as a unique identifier for the category."
+          },
+          "confidence_level": {
+            "type": "string",
+            "description": "A description of how confident we are that the provided categories accurately describe the transaction intent.\n\n`VERY_HIGH`: We are more than 98% confident that this category reflects the intent of the transaction.\n\n`HIGH`: We are more than 90% confident that this category reflects the intent of the transaction.\n\n`MEDIUM`: We are moderately confident that this category reflects the intent of the transaction.\n\n`LOW`: This category may reflect the intent, but there may be other categories that are more accurate.\n\n`UNKNOWN`: We don't know the confidence level for this category.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "primary",
+          "detailed"
+        ]
+      },
+      "PersonalFinanceCategory": {
+        "title": "PersonalFinanceCategory",
+        "nullable": true,
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Information describing the intent of the transaction. Most relevant for personal finance use cases, but not limited to such use cases.\n\nSee the [taxonomy CSV file](https://plaid.com/documents/pfc-taxonomy-all.csv) for a full list of personal finance categories. If you are migrating to personal finance categories from the legacy categories, also refer to the [migration guide](https://plaid.com/docs/transactions/pfc-migration/).",
+        "properties": {
+          "primary": {
+            "type": "string",
+            "description": "A high level category that communicates the broad category of the transaction."
+          },
+          "detailed": {
+            "type": "string",
+            "description": "A granular category conveying the transaction's intent. This field can also be used as a unique identifier for the category."
+          },
+          "confidence_level": {
+            "type": "string",
+            "description": "A description of how confident we are that the provided categories accurately describe the transaction intent.\n\n`VERY_HIGH`: We are more than 98% confident that this category reflects the intent of the transaction.\n\n`HIGH`: We are more than 90% confident that this category reflects the intent of the transaction.\n\n`MEDIUM`: We are moderately confident that this category reflects the intent of the transaction.\n\n`LOW`: This category may reflect the intent, but there may be other categories that are more accurate.\n\n`UNKNOWN`: We don't know the confidence level for this category.",
+            "nullable": true
+          },
+          "version": {
+            "$ref": "#/components/schemas/PersonalFinanceCategoryVersion"
+          }
+        },
+        "required": [
+          "primary",
+          "detailed"
+        ]
+      },
+      "TransactionBase": {
+        "title": "TransactionBase",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A representation of a transaction",
+        "x-examples": {},
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The ID of the account in which this transaction occurred."
+          },
+          "amount": {
+            "type": "number",
+            "format": "double",
+            "description": "The settled value of the transaction, denominated in the transaction's currency, as stated in `iso_currency_code` or `unofficial_currency_code`. For all products except Income: Positive values when money moves out of the account; negative values when money moves in. For example, debit card purchases are positive; credit card payments, direct deposits, and refunds are negative. For Income endpoints, values are positive when representing income."
+          },
+          "iso_currency_code": {
+            "type": "string",
+            "description": "The ISO-4217 currency code of the transaction. Always `null` if `unofficial_currency_code` is non-null.",
+            "nullable": true
+          },
+          "unofficial_currency_code": {
+            "type": "string",
+            "description": "The unofficial currency code associated with the transaction. Always `null` if `iso_currency_code` is non-`null`. Unofficial currency codes are used for currencies that do not have official ISO currency codes, such as cryptocurrencies and the currencies of certain countries.\n\nSee the [currency code schema](https://plaid.com/docs/api/accounts#currency-code-schema) for a full listing of supported `unofficial_currency_code`s.",
+            "nullable": true
+          },
+          "category": {
+            "deprecated": true,
+            "type": "array",
+            "description": "A hierarchical array of the categories to which this transaction belongs. For a full list of categories, see [`/categories/get`](https://plaid.com/docs/api/products/transactions/#categoriesget).\n\nAll Transactions implementations are recommended to use the new `personal_finance_category` instead of `category`, as it provides greater accuracy and more meaningful categorization.\n\nIf the `transactions` object was returned by an Assets endpoint such as `/asset_report/get` or `/asset_report/pdf/get`, this field will only appear in an Asset Report with Insights.",
+            "nullable": true,
+            "x-hidden-from-docs": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "category_id": {
+            "deprecated": true,
+            "description": "The ID of the category to which this transaction belongs. For a full list of categories, see [`/categories/get`](https://plaid.com/docs/api/products/transactions/#categoriesget).\n\nAll Transactions implementations are recommended to use the new `personal_finance_category` instead of `category`, as it provides greater accuracy and more meaningful categorization.\n\nIf the `transactions` object was returned by an Assets endpoint such as `/asset_report/get` or `/asset_report/pdf/get`, this field will only appear in an Asset Report with Insights.",
+            "type": "string",
+            "nullable": true,
+            "x-hidden-from-docs": true
+          },
+          "check_number": {
+            "type": "string",
+            "description": "The check number of the transaction. This field is only populated for check transactions.",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "For pending transactions, the date that the transaction occurred; for posted transactions, the date that the transaction posted. Both dates are returned in an [ISO 8601](https://wikipedia.org/wiki/ISO_8601) format ( `YYYY-MM-DD` ). To receive information about the date that a posted transaction was initiated, see the `authorized_date` field."
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "name": {
+            "type": "string",
+            "deprecated": true,
+            "description": "The merchant name or transaction description.\n\nNote: While Plaid does not currently plan to remove this field, it is a legacy field that is not actively maintained. Use `merchant_name` instead for the merchant name.\n\nIf the `transactions` object was returned by a Transactions endpoint such as `/transactions/sync` or `/transactions/get`, this field will always appear. If the `transactions` object was returned by an Assets endpoint such as `/asset_report/get` or `/asset_report/pdf/get`, this field will only appear in an Asset Report with Insights."
+          },
+          "merchant_name": {
+            "type": "string",
+            "description": "The merchant name, as enriched by Plaid from the `name` field. This is typically a more human-readable version of the merchant counterparty in the transaction. For some bank transactions (such as checks or account transfers) where there is no meaningful merchant name, this value will be `null`.",
+            "nullable": true
+          },
+          "original_description": {
+            "type": "string",
+            "description": "The string returned by the financial institution to describe the transaction. For transactions returned by `/transactions/sync` or `/transactions/get`, this field will only be included if the client has set `options.include_original_description` to `true`.",
+            "nullable": true
+          },
+          "payment_meta": {
+            "$ref": "#/components/schemas/PaymentMeta"
+          },
+          "pending": {
+            "type": "boolean",
+            "description": "When `true`, identifies the transaction as pending or unsettled. Pending transaction details (name, type, amount, category ID) may change before they are settled. Not all institutions provide pending transactions."
+          },
+          "pending_transaction_id": {
+            "type": "string",
+            "description": "The ID of a posted transaction's associated pending transaction, where applicable. Not all institutions provide pending transactions.",
+            "nullable": true
+          },
+          "account_owner": {
+            "type": "string",
+            "description": "This field is not typically populated and only relevant when dealing with sub-accounts. A sub-account most commonly exists in cases where a single account is linked to multiple cards, each with its own card number and card holder name; each card will be considered a sub-account. If the account does have sub-accounts, this field will typically be some combination of the sub-account owner's name and/or the sub-account mask. The format of this field is not standardized and will vary based on institution.",
+            "nullable": true
+          },
+          "transaction_id": {
+            "type": "string",
+            "description": "The unique ID of the transaction. Like all Plaid identifiers, the `transaction_id` is case sensitive."
+          },
+          "transaction_type": {
+            "type": "string",
+            "enum": [
+              "digital",
+              "place",
+              "special",
+              "unresolved"
+            ],
+            "description": "Please use the `payment_channel` field, `transaction_type` will be deprecated in the future.\n\n`digital:` transactions that took place online.\n\n`place:` transactions that were made at a physical location.\n\n`special:` transactions that relate to banks, e.g. fees or deposits.\n\n`unresolved:` transactions that do not fit into the other three types.\n",
+            "deprecated": true
+          },
+          "logo_url": {
+            "type": "string",
+            "description": "The URL of a logo associated with this transaction, if available. The logo will always be a 100\u00d7100 pixel PNG file.",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "description": "The website associated with this transaction, if available.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "transaction_id",
+          "pending",
+          "date",
+          "unofficial_currency_code",
+          "iso_currency_code",
+          "amount",
+          "account_id"
+        ]
+      },
+      "PaymentMeta": {
+        "title": "PaymentMeta",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Transaction information specific to inter-bank transfers. If the transaction was not an inter-bank transfer, all fields will be `null`.\n\nIf the `transactions` object was returned by a Transactions endpoint such as `/transactions/sync` or `/transactions/get`, the `payment_meta` key will always appear, but no data elements are guaranteed. If the `transactions` object was returned by an Assets endpoint such as `/asset_report/get` or `/asset_report/pdf/get`, this field will only appear in an Asset Report with Insights.",
+        "properties": {
+          "reference_number": {
+            "type": "string",
+            "description": "The transaction reference number supplied by the financial institution.",
+            "nullable": true
+          },
+          "ppd_id": {
+            "type": "string",
+            "description": "The ACH PPD ID for the payer.",
+            "nullable": true
+          },
+          "payee": {
+            "type": "string",
+            "description": "For transfers, the party that is receiving the transaction.",
+            "nullable": true
+          },
+          "by_order_of": {
+            "type": "string",
+            "description": "The party initiating a wire transfer. Will be `null` if the transaction is not a wire transfer.",
+            "nullable": true
+          },
+          "payer": {
+            "type": "string",
+            "description": "For transfers, the party that is paying the transaction.",
+            "nullable": true
+          },
+          "payment_method": {
+            "type": "string",
+            "description": "The type of transfer, e.g. 'ACH'",
+            "nullable": true
+          },
+          "payment_processor": {
+            "type": "string",
+            "description": "The name of the payment processor",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "description": "The payer-supplied description of the transfer.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "reference_number",
+          "ppd_id",
+          "payee",
+          "by_order_of",
+          "payer",
+          "payment_method",
+          "payment_processor",
+          "reason"
+        ]
+      },
+      "Location": {
+        "title": "Transaction Location",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A representation of where a transaction took place. Location data is provided only for transactions at physical locations, not for online transactions. Location data availability depends primarily on the merchant and is most likely to be populated for transactions at large retail chains; small, local businesses are less likely to have location data available.",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The street address where the transaction occurred.",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "description": "The city where the transaction occurred.",
+            "nullable": true
+          },
+          "region": {
+            "type": "string",
+            "description": "The region or state where the transaction occurred. In API versions 2018-05-22 and earlier, this field is called `state`.",
+            "nullable": true
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "The postal code where the transaction occurred. In API versions 2018-05-22 and earlier, this field is called `zip`.",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "description": "The ISO 3166-1 alpha-2 country code where the transaction occurred.",
+            "nullable": true
+          },
+          "lat": {
+            "type": "number",
+            "format": "double",
+            "description": "The latitude where the transaction occurred.",
+            "nullable": true
+          },
+          "lon": {
+            "type": "number",
+            "format": "double",
+            "description": "The longitude where the transaction occurred.",
+            "nullable": true
+          },
+          "store_number": {
+            "type": "string",
+            "description": "The merchant defined store number where the transaction occurred.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "address",
+          "city",
+          "region",
+          "postal_code",
+          "country",
+          "lat",
+          "lon",
+          "store_number"
+        ]
+      },
+      "AuthGetRequest": {
+        "type": "object",
+        "description": "AuthGetRequest defines the request schema for `/auth/get`",
+        "properties": {
+          "client_id": {
+            "$ref": "#/components/schemas/APIClientID"
+          },
+          "secret": {
+            "$ref": "#/components/schemas/APISecret"
+          },
+          "access_token": {
+            "$ref": "#/components/schemas/AccessToken"
+          },
+          "options": {
+            "$ref": "#/components/schemas/AuthGetRequestOptions"
+          }
+        },
+        "required": [
+          "access_token"
+        ]
+      },
+      "AuthGetRequestOptions": {
+        "type": "object",
+        "description": "An optional object to filter `/auth/get` results.",
+        "properties": {
+          "account_ids": {
+            "type": "array",
+            "description": "A list of `account_ids` to retrieve for the Item.\nNote: An error will be returned if a provided `account_id` is not associated with the Item.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AuthGetResponse": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "AuthGetResponse defines the response schema for `/auth/get`",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "description": "The Item's accounts, or the accounts specified in `options.account_ids`. Accounts that don't support Auth, such as credit, loan, or investment accounts, are included but have no entry in `numbers`.",
+            "items": {
+              "$ref": "#/components/schemas/AccountBase"
+            }
+          },
+          "numbers": {
+            "$ref": "#/components/schemas/AuthGetNumbers"
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/RequestID"
+          }
+        },
+        "required": [
+          "accounts",
+          "numbers",
+          "item",
+          "request_id"
+        ]
+      },
+      "AuthGetNumbers": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "An object containing identifying numbers used for making electronic transfers to and from the `accounts`. The identifying number type (ACH, EFT, IBAN, or Bacs) used will depend on the country of the account. An account may have more than one number type. If a particular identifying number type is not used by any `accounts` for which data has been requested, the array for that type will be empty.",
+        "properties": {
+          "ach": {
+            "type": "array",
+            "description": "An array of ACH numbers identifying accounts.",
+            "items": {
+              "$ref": "#/components/schemas/NumbersACH"
+            }
+          },
+          "eft": {
+            "type": "array",
+            "description": "An array of EFT numbers identifying accounts.",
+            "items": {
+              "$ref": "#/components/schemas/NumbersEFT"
+            }
+          },
+          "international": {
+            "type": "array",
+            "description": "An array of IBAN numbers identifying accounts.",
+            "items": {
+              "$ref": "#/components/schemas/NumbersInternational"
+            }
+          },
+          "bacs": {
+            "type": "array",
+            "description": "An array of Bacs numbers identifying accounts.",
+            "items": {
+              "$ref": "#/components/schemas/NumbersBACS"
+            }
+          }
+        },
+        "required": [
+          "ach",
+          "eft",
+          "international",
+          "bacs"
+        ]
+      },
+      "NumbersBACS": {
+        "title": "NumbersBACS",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Identifying information for transferring money to or from a UK bank account via Bacs.",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The Plaid account ID associated with the account numbers"
+          },
+          "account": {
+            "type": "string",
+            "description": "The Bacs account number for the account"
+          },
+          "sort_code": {
+            "type": "string",
+            "description": "The Bacs sort code for the account"
+          }
+        },
+        "required": [
+          "account_id",
+          "account",
+          "sort_code"
+        ]
+      },
+      "NumbersInternational": {
+        "title": "NumbersInternational",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Identifying information for transferring money to or from an international bank account via wire transfer.",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The Plaid account ID associated with the account numbers"
+          },
+          "iban": {
+            "type": "string",
+            "description": "The International Bank Account Number (IBAN) for the account"
+          },
+          "bic": {
+            "type": "string",
+            "description": "The Business Identifier Code (BIC) for the account"
+          }
+        },
+        "required": [
+          "account_id",
+          "iban",
+          "bic"
+        ]
+      },
+      "NumbersEFT": {
+        "title": "NumbersEFT",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Identifying information for transferring money to or from a Canadian bank account via EFT.",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The Plaid account ID associated with the account numbers"
+          },
+          "account": {
+            "type": "string",
+            "description": "The EFT account number for the account"
+          },
+          "institution": {
+            "type": "string",
+            "description": "The EFT institution number for the account"
+          },
+          "branch": {
+            "type": "string",
+            "description": "The EFT branch number for the account"
+          }
+        },
+        "required": [
+          "account_id",
+          "account",
+          "institution",
+          "branch"
+        ]
+      },
+      "NumbersACH": {
+        "title": "NumbersACH",
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Identifying information for transferring money to or from a US account via ACH or wire transfer.",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The Plaid account ID associated with the account numbers"
+          },
+          "account": {
+            "type": "string",
+            "description": "The ACH account number for the account.\n\nAt certain institutions, including Chase, PNC, and US Bank, you will receive a \"tokenized\" account number, which is not the user's actual account number. For important details on how this may impact your integration and on how to avoid fraud, user confusion, and ACH returns, see [Tokenized account numbers](https://plaid.com/docs/auth/#tokenized-account-numbers)."
+          },
+          "is_tokenized_account_number": {
+            "type": "boolean",
+            "description": "Indicates whether the account number is tokenized by the institution. For important details on how tokenized account numbers may impact your integration, see [Tokenized account numbers](https://plaid.com/docs/auth/#tokenized-account-numbers)."
+          },
+          "routing": {
+            "type": "string",
+            "description": "The ACH routing number for the account. For more information, see [Tokenized account numbers](https://plaid.com/docs/auth/#tokenized-account-numbers)."
+          },
+          "wire_routing": {
+            "type": "string",
+            "description": "The wire transfer routing number for the account. This field is only populated if the institution is known to use a separate wire transfer routing number. Many institutions do not have a separate wire routing number and use the ACH routing number for wires instead. It is recommended to have the end user manually confirm their wire routing number before sending any wires to their account, especially if this field is `null`.",
+            "nullable": true
+          },
+          "can_transfer_in": {
+            "type": "boolean",
+            "description": "Whether the account supports ACH transfers into the account",
+            "nullable": true,
+            "x-hidden-from-docs": true
+          },
+          "can_transfer_out": {
+            "type": "boolean",
+            "description": "Whether the account supports ACH transfers out of the account",
+            "nullable": true,
+            "x-hidden-from-docs": true
+          }
+        },
+        "required": [
+          "account_id",
+          "account",
+          "routing",
+          "wire_routing"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "clientId": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "PLAID-CLIENT-ID"
+      },
+      "secret": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "PLAID-SECRET"
+      },
+      "plaidVersion": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Plaid-Version"
+      },
+      "oauth2": {
+        "type": "oauth2",
+        "description": "The Plaid API supports client credentials, authorization code, and custom delegation flows.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://api.plaid.com/oauth2/apiv2/token",
+            "scopes": {
+              "cra:read": "Read CRA report data.",
+              "user:write": "Write user data.",
+              "item:read": "Read Item data.",
+              "link:write": "Create Link tokens.",
+              "item:write": "Exchange a public token for an access token.",
+              "auth:read": "Read Auth data.",
+              "accounts:read": "Read account data.",
+              "identity:read": "Read Identity data.",
+              "transactions:read": "Read Transactions data.",
+              "issues:read": "Read institution issue data.",
+              "issues:write": "Manage institution issue subscriptions."
+            }
+          }
+        }
+      }
+    }
+  }
+}

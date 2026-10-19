@@ -1,0 +1,255 @@
+"""HTTP API behind the GUI. Every action the GUI offers maps to one route here."""
+
+import asyncio
+import json
+import os
+from pathlib import Path
+from typing import Annotated, Any
+
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
+
+from api_mapper.api.workspace import FileRole, Workspace, parse_override
+from api_mapper.errors.catalog import load_error_catalog
+from api_mapper.errors.error_mapper import ErrorMapper
+from api_mapper.matching.assigner import Thresholds
+from api_mapper.matching.semantic import NlpSettings
+from api_mapper.reporting.excel_report import write_excel_report
+from api_mapper.reporting.serialize import (
+    candidate_to_dict,
+    execution_to_dict,
+    grade_to_dict,
+    mapping_to_dict,
+    plan_to_dict,
+    run_to_dict,
+)
+from api_mapper.validation.executor import PlanExecutor
+from api_mapper.validation.mock_downstream import FaultPlan, MockDownstreams
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+WEB_ROOT = PROJECT_ROOT / "web"
+SAMPLES = PROJECT_ROOT / "samples"
+CANDIDATE_SEARCH_LIMIT = 25
+EVENT_POLL_SECONDS = 0.05
+
+workspace = Workspace(Path(os.environ.get("API_MAPPER_WORKSPACE", PROJECT_ROOT / "projects" / "default")))
+app = FastAPI(title="API Mapper")
+
+
+@app.middleware("http")
+async def revalidate_static_files(request: Request, call_next):
+    """The GUI is plain files; make browsers re-check them so an upgrade never runs stale code."""
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+class NlpBody(BaseModel):
+    model_path: str = ""
+    min_similarity: float = Field(default=0.80, gt=0, le=1)
+    top_k: int = Field(default=10, ge=1, le=100, strict=True)
+
+
+class SettingsBody(BaseModel):
+    auto: float = Field(ge=0, le=1)
+    review: float = Field(ge=0, le=1)
+    nlp: NlpBody | None = None
+
+
+class ValidateBody(BaseModel):
+    endpoint: str
+    params: dict[str, Any] = {}
+    variant_hint: str | None = None
+    include_review: bool = True
+    latency_ms: float = 0
+    faults: dict[str, int] = {}
+
+
+@app.get("/")
+def index() -> FileResponse:
+    return FileResponse(WEB_ROOT / "index.html")
+
+
+@app.get("/api/state")
+def state() -> dict[str, Any]:
+    return workspace.state()
+
+
+@app.post("/api/files")
+async def upload(role: Annotated[FileRole, Form()], files: Annotated[list[UploadFile], File()]) -> dict[str, Any]:
+    uploads = [(f.filename or "upload", await f.read()) for f in files]
+    stored = workspace.add_files(role, uploads)
+    return {"files": [s.__dict__ for s in stored]}
+
+
+@app.post("/api/sample-endpoints")
+async def add_sample_endpoint(
+    api_name: Annotated[str, Form()], path: Annotated[str, Form()],
+    files: Annotated[list[UploadFile], File()], method: Annotated[str, Form()] = "GET",
+) -> dict[str, Any]:
+    payloads = [(f.filename or "sample.json", await f.read()) for f in files]
+    stored = workspace.add_sample_endpoint(api_name, method, path, payloads)
+    return {"file": stored.__dict__}
+
+
+@app.delete("/api/files/{file_id}")
+def remove_file(file_id: str) -> dict[str, Any]:
+    workspace.remove_file(file_id)
+    return workspace.state()
+
+
+@app.post("/api/demo")
+def demo() -> dict[str, Any]:
+    workspace.load_demo(SAMPLES)
+    return workspace.state()
+
+
+@app.post("/api/reset")
+def reset() -> dict[str, Any]:
+    workspace.reset()
+    return workspace.state()
+
+
+@app.put("/api/settings")
+def settings(body: SettingsBody) -> dict[str, Any]:
+    if body.review > body.auto:
+        raise HTTPException(400, "the review threshold cannot be above the automatic threshold")
+    nlp = NlpSettings(**body.nlp.model_dump()) if body.nlp else workspace.nlp
+    workspace.configure(Thresholds(auto=body.auto, review=body.review), nlp)
+    return workspace.state()
+
+
+@app.post("/api/runs")
+def start_run() -> dict[str, str]:
+    return {"run_id": workspace.start_run().id}
+
+
+@app.get("/api/runs/{run_id}/events")
+async def run_events(run_id: str) -> StreamingResponse:
+    run = workspace.runs.get(run_id)
+    if run is None:
+        raise HTTPException(404, "unknown run")
+
+    async def stream():
+        sent = 0
+        while True:
+            while sent < len(run.events):
+                yield f"data: {json.dumps(run.events[sent])}\n\n"
+                sent += 1
+            if run.done:
+                yield f"event: done\ndata: {json.dumps({'error': run.error})}\n\n"
+                return
+            await asyncio.sleep(EVENT_POLL_SECONDS)
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.get("/api/result")
+def result() -> dict[str, Any]:
+    run = _require_result().run
+    payload = run_to_dict(run)
+    report = workspace.grade()
+    payload["accuracy"] = grade_to_dict(report) if report else None
+    payload["overrides"] = [o.__dict__ for o in workspace.overrides]
+    return payload
+
+
+@app.get("/api/candidates")
+def candidates(target_key: str, q: str = "") -> dict[str, Any]:
+    prepared = _require_result().prepared
+    words = [w for w in q.lower().split() if w]
+    if words:
+        matches = [key for key in prepared.sources if all(w in key.lower() for w in words)]
+    elif target_key in prepared.targets:
+        matches = [p.node.key for p in prepared.index.candidates_for(prepared.targets[target_key])]
+    else:
+        matches = []
+    scored = [c for c in (prepared.score_pair(target_key, key) for key in matches) if c is not None]
+    scored.sort(key=lambda c: (-c.score, c.source.key))
+    return {"candidates": [candidate_to_dict(c) for c in scored[:CANDIDATE_SEARCH_LIMIT]], "total": len(matches)}
+
+
+@app.post("/api/overrides")
+def set_override(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        override = parse_override(payload)
+    except (KeyError, ValueError) as error:
+        raise HTTPException(400, f"invalid override: {error}") from error
+    warnings = workspace.set_override(override, override.target_key)
+    return _after_override(override.target_key, warnings)
+
+
+@app.delete("/api/overrides")
+def clear_override(target_key: str) -> dict[str, Any]:
+    return _after_override(target_key, workspace.set_override(None, target_key))
+
+
+@app.get("/api/report.xlsx")
+def excel() -> FileResponse:
+    run = _require_result().run
+    path = write_excel_report(run, workspace.root / "output" / "mapping-report.xlsx")
+    return FileResponse(path, filename="mapping-report.xlsx")
+
+
+@app.get("/api/report.json")
+def json_report() -> JSONResponse:
+    return JSONResponse(run_to_dict(_require_result().run), headers={"Content-Disposition": "attachment; filename=mapping-report.json"})
+
+
+@app.get("/api/validate/options")
+def validate_options() -> dict[str, Any]:
+    run = _require_result().run
+    options = []
+    for endpoint in run.upstream.endpoints:
+        plan = next(p for p in run.call_plans if p.upstream_endpoint == endpoint.key)
+        targets = [m.target for m in run.mappings if m.target.endpoint == endpoint.key and m.target.variant]
+        variants = sorted({(t.variant, (t.condition or "").rpartition("= ")[2]) for t in targets})
+        options.append(
+            {
+                "endpoint": endpoint.key,
+                "path_params": [p.name for p in endpoint.parameters if p.location == "path"],
+                "query_params": [p.name for p in endpoint.parameters if p.location == "query"],
+                "context_params": sorted({b.parameter for s in plan.steps for b in s.bindings if b.source.value == "unresolved"}),
+                "variants": [{"name": v, "value": value} for v, value in variants],
+                "steps": len(plan.steps),
+            }
+        )
+    apis = [{"name": s.name, "statuses": sorted({r.status for e in s.endpoints for r in e.error_responses})} for s in run.downstreams]
+    return {"endpoints": options, "apis": apis}
+
+
+@app.post("/api/validate")
+async def validate(body: ValidateBody) -> dict[str, Any]:
+    result = _require_result()
+    if not any(p.upstream_endpoint == body.endpoint for p in result.run.call_plans):
+        raise HTTPException(404, f"unknown upstream endpoint {body.endpoint}")
+    lexicon = workspace.pipeline.lexicon
+    catalog_file = next((f for f in workspace.files if f.role == FileRole.CATALOG), None)
+    resolver = ErrorMapper(load_error_catalog(Path(catalog_file.path)), lexicon).map if catalog_file else None
+    mocks = MockDownstreams(result.run.downstreams, lexicon, FaultPlan(statuses=body.faults, latency_ms=body.latency_ms))
+    executor = PlanExecutor(result.run, mocks, resolver, include_review=body.include_review)
+    return execution_to_dict(await executor.execute(body.endpoint, body.params, body.variant_hint))
+
+
+def _after_override(target_key: str, warnings: list[str]) -> dict[str, Any]:
+    run = _require_result().run
+    mapping = next((m for m in run.mappings if m.target.key == target_key), None)
+    return {
+        "mapping": mapping_to_dict(mapping) if mapping else None,
+        "summary": run.status_counts(),
+        "call_plans": [plan_to_dict(p) for p in run.call_plans],
+        "overrides": [o.__dict__ for o in workspace.overrides],
+        "warnings": warnings,
+    }
+
+
+def _require_result():
+    if workspace.result is None:
+        raise HTTPException(409, "run the mapping first")
+    return workspace.result
+
+
+app.mount("/static", StaticFiles(directory=WEB_ROOT), name="static")

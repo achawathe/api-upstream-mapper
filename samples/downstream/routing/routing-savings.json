@@ -1,0 +1,8 @@
+{
+  "acctNum": "000555000111",
+  "routing": {"aba": "010088889", "wire": null},
+  "networks": [
+    {"rail": "ACH", "inbound": true, "outbound": true},
+    {"rail": "RTP", "inbound": true, "outbound": true}
+  ]
+}

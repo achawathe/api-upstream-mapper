@@ -1,0 +1,20 @@
+openapi: 3.0.0
+info: {title: Cyclic, version: "1"}
+paths:
+  /nodes:
+    get:
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Node'}
+components:
+  schemas:
+    Node:
+      type: object
+      properties:
+        id: {type: string}
+        parent: {$ref: '#/components/schemas/Node'}
+        missing: {$ref: '#/components/schemas/DoesNotExist'}
+        shared: {$ref: 'shared.yaml#/Amount'}

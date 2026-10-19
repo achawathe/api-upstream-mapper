@@ -1,0 +1,11 @@
+# No spec exists for this service; its shape is inferred from captured responses.
+name: routing
+title: Payment Routing Service
+description: Payment rails and routing numbers for an account number.
+endpoints:
+  - method: GET
+    path: /payments/routing/{acctNum}
+    samples: [routing-checking.json, routing-savings.json]
+    errors:
+      "404": [routing-404.json]
+      "502": [routing-502.json]

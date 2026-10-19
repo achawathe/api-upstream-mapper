@@ -1,0 +1,40 @@
+[
+  {
+    "name": "uk",
+    "repository": "OpenBankingUK/read-write-api-specs",
+    "revision": "484a1795680d9852600247878b9fd2bfe584c0aa",
+    "url": "https://raw.githubusercontent.com/OpenBankingUK/read-write-api-specs/484a1795680d9852600247878b9fd2bfe584c0aa/dist/openapi/account-info-openapi.yaml",
+    "file": "uk.yaml",
+    "sha256": "705bbf8a4a6533b4da37798ce2920da933278a50118811ed44df8f189197565a",
+    "bytes": 578472,
+    "fixture": "uk/openapi.json",
+    "fixture_sha256": "a971b699f76f45684e4e30e15ca4ad632645646ebdafa0b5f45ea0d7068f5fa9",
+    "selected_paths": [
+      "/accounts",
+      "/accounts/{AccountId}",
+      "/accounts/{AccountId}/balances",
+      "/accounts/{AccountId}/party",
+      "/accounts/{AccountId}/statements",
+      "/accounts/{AccountId}/transactions"
+    ],
+    "adaptation": "Selected paths and transitive components only; response schemas, descriptions, enums, examples and paths unchanged."
+  },
+  {
+    "name": "plaid",
+    "repository": "plaid/plaid-openapi",
+    "revision": "655434566cd8f5e90c34b007da32f461b976f350",
+    "url": "https://raw.githubusercontent.com/plaid/plaid-openapi/655434566cd8f5e90c34b007da32f461b976f350/2020-09-14.yml",
+    "file": "plaid.yaml",
+    "sha256": "ea443cd78f6f6bb648c6f0c13f4b00095c3520dcaf45fc7930c36594227a43ee",
+    "bytes": 3287800,
+    "fixture": "plaid/openapi.json",
+    "fixture_sha256": "3caaa12b50c51dcd202eee122acfada84b2555d1b7eba3aed50c22f2c7737f7e",
+    "selected_paths": [
+      "/auth/get",
+      "/transactions/get",
+      "/accounts/get",
+      "/identity/get"
+    ],
+    "adaptation": "Selected paths and transitive components only; response schemas, descriptions, enums, examples and paths unchanged."
+  }
+]

@@ -1,0 +1,20 @@
+# Upstream error codes. Core Exchange documents errors in prose, not in `responses`,
+# so they are listed here. Only codes stated in core-exchange-6.4.yaml are included;
+# add others from the full FDX spec as needed.
+body:
+  code: code
+  message: message
+  debug: debugMessage
+errors:
+  - code: "703"
+    http_status: "400"
+    message: Invalid date range
+    keywords: [invalid, date, range, start, end, from, to, window]
+  - code: "705"
+    http_status: "409"
+    message: Account is closed
+    keywords: [account, closed, close]
+  - code: "706"
+    http_status: "403"
+    message: Access forbidden
+    keywords: [access, forbidden, locked, lock, denied]

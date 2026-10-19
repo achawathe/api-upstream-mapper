@@ -1,0 +1,114 @@
+{
+  "openapi": "3.0.3",
+  "info": {"title": "Transaction Ledger API", "version": "5.2.0", "description": "Posted and pending entries for any account."},
+  "paths": {
+    "/ledger/accounts/{acctId}/entries": {
+      "get": {
+        "operationId": "listEntries",
+        "parameters": [
+          {"name": "acctId", "in": "path", "required": true, "schema": {"type": "string"}},
+          {"name": "from", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "to", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "cursor", "in": "query", "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries in the window",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/EntryPage"},
+                "example": {
+                  "entries": [
+                    {"txnId": "T-9001", "refTxnId": null, "txnTs": 1760572800000, "postedTs": 1760659200000, "amt": 40000, "ccy": "USD", "drCrInd": "D", "status": "BOOKED", "narrative": "check for latest ACME invoice", "chequeNo": 1234, "merchant": {"name": "ACME LLC", "mcc": "5045"}, "category": {"primary": "Business services", "detailed": "Office supplies"}, "txnCode": "PMT"},
+                    {"txnId": "T-9002", "refTxnId": "T-9001", "txnTs": 1760745600000, "postedTs": null, "amt": 80, "ccy": "USD", "drCrInd": "C", "status": "PDNG", "narrative": "adjustment", "txnCode": "ADJ"}
+                  ],
+                  "nextCursor": "c2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad window",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/LedgerError"},
+                "example": {"code": "INVALID_RANGE", "message": "from must be before to"}
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown account",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/LedgerError"},
+                "example": {"code": "ACCOUNT_UNKNOWN", "message": "No ledger for account"}
+              }
+            }
+          },
+          "500": {
+            "description": "Ledger failure",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LedgerError"}}}
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EntryPage": {
+        "type": "object",
+        "required": ["entries"],
+        "properties": {
+          "entries": {"type": "array", "items": {"$ref": "#/components/schemas/Entry"}},
+          "nextCursor": {"type": "string", "nullable": true}
+        }
+      },
+      "Entry": {
+        "type": "object",
+        "required": ["txnId", "txnTs", "amt", "drCrInd", "status"],
+        "properties": {
+          "txnId": {"type": "string"},
+          "refTxnId": {"type": "string", "nullable": true, "description": "Entry this one reverses or adjusts."},
+          "txnTs": {"type": "integer", "format": "int64", "description": "When the transaction happened, epoch milliseconds."},
+          "postedTs": {"type": "integer", "format": "int64", "nullable": true, "description": "When the entry posted, epoch milliseconds."},
+          "amt": {"type": "integer", "format": "int64", "description": "Absolute amount in minor units (cents)."},
+          "ccy": {"type": "string"},
+          "drCrInd": {"type": "string", "enum": ["D", "C", "M"]},
+          "status": {"type": "string", "enum": ["PDNG", "BOOKED", "AUTH", "MEMO"]},
+          "narrative": {"type": "string"},
+          "chequeNo": {"type": "integer"},
+          "merchant": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "mcc": {"type": "string", "description": "Merchant category code."}
+            }
+          },
+          "category": {
+            "type": "object",
+            "properties": {
+              "primary": {"type": "string"},
+              "detailed": {"type": "string"}
+            }
+          },
+          "foreign": {
+            "type": "object",
+            "properties": {
+              "amt": {"type": "integer", "description": "Original amount in minor units (cents)."},
+              "ccy": {"type": "string"}
+            }
+          },
+          "txnCode": {"type": "string", "enum": ["PUR", "PMT", "FEE", "INT", "ADJ", "WDL", "CHK"]}
+        }
+      },
+      "LedgerError": {
+        "type": "object",
+        "required": ["code"],
+        "properties": {
+          "code": {"type": "string", "enum": ["INVALID_RANGE", "ACCOUNT_UNKNOWN", "INTERNAL"]},
+          "message": {"type": "string"}
+        }
+      }
+    }
+  }
+}

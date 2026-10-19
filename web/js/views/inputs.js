@@ -1,0 +1,124 @@
+import { api } from "../api.js";
+import { dropzone, h, mount, toast } from "../dom.js";
+import { canRun, refreshWorkspace, startRun, store } from "../state.js";
+
+const ROLES = [
+  { role: "upstream", title: "Upstream spec", hint: "The requirement: an OpenAPI 3 / Swagger 2 spec (YAML or JSON) or a schema-only fragment.", multiple: false },
+  { role: "downstream", title: "Downstream APIs", hint: "Specs of the APIs you call. Drop a spec together with files it $refs.", multiple: true },
+  { role: "catalog", title: "Upstream error catalog", hint: "Optional. Upstream error codes with HTTP status and keywords.", multiple: false },
+  { role: "lexicon", title: "Extra lexicon", hint: "Optional. Your own abbreviations and synonyms, merged over the built-in finance lexicon.", multiple: true },
+  { role: "answer_key", title: "Answer key", hint: "Optional. Expected mappings; enables the accuracy report.", multiple: false },
+];
+
+export function renderInputs(container) {
+  const files = store.workspace?.files ?? [];
+  mount(
+    container,
+    h(
+      "div",
+      { class: "card row" },
+      h("div", {}, h("strong", {}, "Try it with the bundled example"), h("p", { class: "muted" }, "FDX 6.4 (Plaid Core Exchange) as the upstream, eight Northwind Bank downstream APIs, including a decoy.")),
+      h("span", { class: "spacer" }),
+      h("button", { class: "btn", onclick: () => act(api.demo(), "Example loaded") }, "Load example"),
+      h("button", { class: "btn danger", onclick: () => act(api.reset(), "Workspace cleared") }, "Clear workspace"),
+    ),
+    h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, ROLES.map((role) => roleCard(role, files))),
+    h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, sampleCard(), settingsCard()),
+    h(
+      "div",
+      { class: "row", style: { marginTop: "18px" } },
+      h("span", { class: "spacer" }),
+      !canRun() && h("span", { class: "muted" }, "Add an upstream spec and at least one downstream API to run."),
+      h("button", { class: "btn primary", onclick: startRun, disabled: !canRun() }, "Run mapping →"),
+    ),
+  );
+}
+
+function roleCard({ role, title, hint, multiple }, files) {
+  const mine = files.filter((f) => f.role === role);
+  return h(
+    "div",
+    { class: "card" },
+    h("h2", {}, title, mine.length > 1 ? ` (${mine.length})` : ""),
+    h("p", { class: "muted small" }, hint),
+    dropzone(multiple ? "Drop files here or click to choose" : "Drop a file here or click to choose", (chosen) => act(api.upload(role, chosen), `${chosen.length} file(s) added`), {
+      multiple,
+    }),
+    mine.map(fileRow),
+  );
+}
+
+function fileRow(file) {
+  const s = file.summary ?? {};
+  const details = s.ok === false
+    ? h("span", { class: "small", style: { color: "var(--unmapped)" } }, s.error)
+    : h(
+        "span",
+        { class: "small muted" },
+        [s.title && `${s.title} ${s.version ?? ""}`.trim(), s.kind, s.endpoints != null && plural(s.endpoints, "endpoint"), s.errors != null && plural(s.errors, "code"),
+          s.expectations != null && plural(s.expectations, "expectation")].filter(Boolean).join(" · "),
+      );
+  return h(
+    "div",
+    { class: `file-row ${s.ok === false ? "bad" : ""}` },
+    h("div", {}, h("div", { class: "name" }, file.name), details, (s.warnings ?? []).map((w) => h("div", { class: "small warn" }, w))),
+    h("span", { class: "spacer" }),
+    h("button", { class: "btn small", "aria-label": `Remove ${file.name}`, onclick: () => act(api.removeFile(file.id), "Removed") }, "Remove"),
+  );
+}
+
+function sampleCard() {
+  const name = h("input", { type: "text", placeholder: "routing-service", "aria-label": "API name" });
+  const method = h("select", { "aria-label": "HTTP method" }, ["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => h("option", {}, m)));
+  const path = h("input", { type: "text", placeholder: "/payments/routing/{acctNum}", "aria-label": "Endpoint path" });
+  const files = h("input", { type: "file", multiple: true, accept: ".json", "aria-label": "Sample payloads" });
+  const add = () => {
+    if (!name.value.trim() || !path.value.trim() || !files.files.length) return toast("Name, path and at least one sample are needed");
+    act(api.addSampleEndpoint(name.value.trim(), method.value, path.value.trim(), [...files.files]), "Sample endpoint added");
+  };
+  return h(
+    "div",
+    { class: "card" },
+    h("h2", {}, "API with no spec? Add sample responses"),
+    h("p", { class: "muted small" }, "Upload captured JSON responses for one endpoint. The schema is inferred: a key is required only if every sample has it, and distinct values are used like an enum."),
+    h(
+      "div",
+      { class: "grid", style: { gridTemplateColumns: "1fr 90px 1.4fr" } },
+      h("label", { class: "field" }, "API name", name),
+      h("label", { class: "field" }, "Method", method),
+      h("label", { class: "field" }, "Path", path),
+    ),
+    h("div", { class: "row", style: { marginTop: "10px" } }, files, h("span", { class: "spacer" }), h("button", { class: "btn", onclick: add }, "Add endpoint")),
+  );
+}
+
+function settingsCard() {
+  const settings = store.workspace?.settings ?? { auto: 0.72, review: 0.5 };
+  const auto = h("input", { type: "number", min: 0, max: 1, step: 0.01, value: settings.auto, "aria-label": "Automatic threshold" });
+  const review = h("input", { type: "number", min: 0, max: 1, step: 0.01, value: settings.review, "aria-label": "Review threshold" });
+  const model = h("input", { type: "text", value: settings.nlp?.model_path ?? "", placeholder: "/path/to/local/model", "aria-label": "Local NLP model folder" });
+  const save = () => act(api.saveSettings({ auto: Number(auto.value), review: Number(review.value), nlp: { ...settings.nlp, model_path: model.value.trim() } }), "Settings saved; run again to apply");
+  return h(
+    "div",
+    { class: "card" },
+    h("h2", {}, "Decision thresholds"),
+    h("p", { class: "muted small" }, "At or above the automatic threshold a mapping is accepted without review, unless a close alternative exists. Between the two it needs review. Below review it stays unmapped."),
+    h("div", { class: "row" }, h("label", { class: "field" }, "Automatic", auto), h("label", { class: "field" }, "Review", review), h("span", { class: "spacer" }), h("button", { class: "btn", onclick: save }, "Save")),
+    h("label", { class: "field" }, "Local NLP model folder (optional)", model),
+    h("p", { class: "muted small" }, "Leave blank for rules only. A local Sentence Transformers model adds meaning-based suggestions without downloading models or sending API content to a service. NLP-only matches require review; existing compatibility checks still apply."),
+  );
+}
+
+async function act(promise, message) {
+  try {
+    await promise;
+    toast(message);
+    await refreshWorkspace();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+function plural(count, word) {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}

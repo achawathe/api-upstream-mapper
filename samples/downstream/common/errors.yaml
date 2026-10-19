@@ -1,0 +1,51 @@
+# Shared error definitions, referenced from other specs with an external $ref.
+components:
+  schemas:
+    CoreError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          enum: [ACCT_NOT_FOUND, ACCT_CLOSED, UNAUTHENTICATED, FORBIDDEN, CORE_UNAVAILABLE, INTERNAL]
+        message:
+          type: string
+        traceId:
+          type: string
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CoreError'
+          example: {code: UNAUTHENTICATED, message: Access token is missing or expired}
+    AccountNotFound:
+      description: No account with that id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CoreError'
+          example: {code: ACCT_NOT_FOUND, message: Account not found}
+    AccountClosed:
+      description: The account exists but is closed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CoreError'
+          example: {code: ACCT_CLOSED, message: Account is closed}
+    ServerError:
+      description: Unexpected core failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CoreError'
+          example: {code: INTERNAL, message: Unexpected error}
+    Unavailable:
+      description: Core banking system is down for maintenance
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CoreError'
+          example: {code: CORE_UNAVAILABLE, message: Core system unavailable, retry later}

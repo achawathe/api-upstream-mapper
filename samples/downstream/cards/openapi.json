@@ -1,0 +1,120 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "Card Services API", "version": "4.0.0", "description": "Credit and charge card accounts."},
+  "paths": {
+    "/cards/accounts/{id}": {
+      "get": {
+        "operationId": "getCardAccount",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
+        "responses": {
+          "200": {
+            "description": "Card account",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CardAccount"}}}
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/CardError"},
+                "example": {"error": {"type": "not_found", "reason": "card account does not exist"}}
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/CardError"},
+                "example": {"error": {"type": "rate_limited", "reason": "slow down"}}
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CardError"}}}
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CardAccount": {
+        "type": "object",
+        "required": ["id", "status", "creditLimit", "balances"],
+        "properties": {
+          "id": {"type": "string", "example": "ACC-000456"},
+          "lastFour": {"type": "string", "example": "4321"},
+          "type": {"type": ["string", "null"], "enum": ["CREDIT_CARD", "CHARGE_CARD", null]},
+          "status": {"type": "string", "enum": ["OPEN", "CLOSED", "SUSPENDED", "CHARGED_OFF"]},
+          "product": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string", "example": "Rewards Card"},
+              "code": {"type": "string"}
+            }
+          },
+          "creditLimit": {"type": "number", "example": 10000.0},
+          "availableCredit": {"type": "number", "example": 8302.73},
+          "pastDue": {"type": "number", "description": "Amount past due."},
+          "balances": {
+            "type": "object",
+            "properties": {
+              "current": {"type": "number", "description": "Balance owed right now, including unbilled purchases."},
+              "statement": {"type": "number", "description": "Balance on the most recent statement."},
+              "cashAdvance": {"type": "number"},
+              "balanceTransfer": {"type": "number"}
+            }
+          },
+          "statement": {
+            "type": "object",
+            "properties": {
+              "closingDate": {"type": "string", "format": "date", "description": "Date the last statement closed."},
+              "minimumDue": {"type": "number", "description": "Minimum payment due for the last statement."}
+            }
+          },
+          "nextPayment": {
+            "type": "object",
+            "properties": {
+              "amount": {"type": "number"},
+              "dueDate": {"type": "string", "format": "date"}
+            }
+          },
+          "lastPayment": {
+            "type": "object",
+            "properties": {
+              "amount": {"type": "number"},
+              "postedOn": {"type": "string", "format": "date"}
+            }
+          },
+          "rates": {
+            "type": "object",
+            "properties": {
+              "purchaseApr": {"type": "number"},
+              "cashAdvanceApr": {"type": "number"},
+              "balanceTransferApr": {"type": "number"}
+            }
+          },
+          "rewards": {
+            "type": "object",
+            "properties": {
+              "pointsBalance": {"type": "integer"}
+            }
+          }
+        }
+      },
+      "CardError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string", "enum": ["not_found", "rate_limited", "internal"]},
+              "reason": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

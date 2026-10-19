@@ -1,0 +1,34 @@
+"""Local similarity supplements rules; it never weakens existing rule evidence.
+
+A strong descriptive match can be surfaced for review despite a missing lexical
+anchor. Structural, role, enum, reachability and type safeguards still apply.
+"""
+
+from api_mapper.models import Evidence, EvidenceEffect, FieldProfile
+from api_mapper.transforms.inference import TypeFit
+
+
+def add_semantic_evidence(
+    evidence: list[Evidence], target: FieldProfile, source: FieldProfile, fit: TypeFit,
+    similarity: float, weight: float, rules_score: float,
+    semantic_match: bool, lexical_match: bool,
+) -> None:
+    evidence.append(Evidence("rules_score", round(rules_score, 4), 0.0, "confidence before local NLP"))
+    evidence.append(Evidence("local_nlp", similarity, weight,
+                             "local cosine similarity; zero weight when it would dilute rule evidence"))
+    if semantic_match and not lexical_match:
+        evidence.append(Evidence("nlp_only", 1.0, 0.0, "candidate discovered by local NLP; requires human review"))
+    if semantic_match and _can_review(target, source, fit, evidence):
+        evidence.append(Evidence("semantic_review", similarity, 0.0,
+                                 "strong descriptive similarity supports review despite weak lexical evidence"))
+
+
+def _can_review(target: FieldProfile, source: FieldProfile, fit: TypeFit, evidence: list[Evidence]) -> bool:
+    if not target.node.description.strip() or not source.node.description.strip():
+        return False
+    if fit.veto or fit.score < 0.85 or target.node.array_depth != source.node.array_depth:
+        return False
+    return not any(
+        e.effect is EvidenceEffect.MULTIPLIER and e.signal not in {"anchor", "spelling"}
+        for e in evidence
+    )

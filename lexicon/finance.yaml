@@ -1,0 +1,367 @@
+# Finance domain lexicon. Everything "semantic" the matcher knows comes from this file.
+# Tokens are lower-case words produced by splitting identifiers (camelCase, snake_case, dots).
+#
+# Processing order for a field name:
+#   split -> singularize -> abbreviations -> phrases -> synonyms -> drop stopwords
+
+abbreviations:
+  acct: account
+  acc: account
+  acnt: account
+  amt: amount
+  amnt: amount
+  bal: balance
+  avail: available
+  avl: available
+  avbl: available
+  curr: current
+  cur: current
+  ccy: currency
+  crncy: currency
+  desc: description
+  descr: description
+  dt: date
+  ts: timestamp
+  tstamp: timestamp
+  datetime: timestamp
+  num: number
+  nbr: number
+  no: number
+  nr: number
+  id: identifier
+  uid: identifier
+  guid: identifier
+  ref: reference
+  txn: transaction
+  trx: transaction
+  tran: transaction
+  xfer: transfer
+  xfr: transfer
+  pmt: payment
+  pymt: payment
+  pmnt: payment
+  min: minimum
+  max: maximum
+  stmt: statement
+  stmnt: statement
+  int: interest
+  pct: percent
+  perc: percent
+  orig: original
+  prin: principal
+  prev: previous
+  ytd: year to date
+  dr: debit
+  cr: credit
+  ind: indicator
+  flg: flag
+  addr: address
+  tel: telephone
+  ph: phone
+  nm: name
+  fname: first name
+  lname: last name
+  dob: birth date
+  prod: product
+  cd: code
+  qty: quantity
+  mat: maturity
+  lmt: limit
+  lim: limit
+  nxt: next
+  lst: last
+  cust: customer
+  intl: international
+  cnt: count
+  tot: total
+  aba: routing
+  rtn: routing
+  cc: credit card
+  heloc: home equity line of credit
+
+# Plain words used to split run-together enum values (CREDITCARD -> credit card).
+vocabulary:
+  [home, equity, money, market, credit, card, line, of, loan, savings, saving, checking, personal,
+   student, auto, mortgage, military, installment, deposit, certificate, escrow, brokerage, product,
+   retirement, digital, wallet, annuity, insurance, commercial, business, consumer, investment,
+   charge, high, interest, first, other, pending, open, close, closed, power, attorney, joint,
+   primary, secondary, payment, payoff, lump, sum, skip, double, up, withdrawal, purchase, fee,
+   adjustment, check, transfer, account, sole, owner, trust, trustee, minor, uniform, borrower,
+   tenant, authorized, signer, user, benefit, restricted, negative, current, balance, paid,
+   delinquent, cash, value, fixed, variable, indexed, daily, weekly, monthly, annually]
+
+# Multi-word expressions rewritten to canonical tokens. Longest match wins.
+phrases:
+  - [line of credit, loc]
+  - [home line of credit, loc]
+  - [credit card, creditcard]
+  - [home equity line of credit, loc]
+  - [annual percentage rate, apr]
+  - [annual percent rate, apr]
+  - [year to date, ytd]
+  - [postal code, postalcode]
+  - [post code, postalcode]
+  - [zip code, postalcode]
+  - [credit line, credit limit]
+  - [ledger balance, current balance]
+  - [book balance, current balance]
+  - [nick name, nickname]
+  - [first name, first]
+  - [given name, first]
+  - [middle name, middle]
+  - [last name, last]
+  - [family name, last]
+  - [sur name, last]
+  - [money market, moneymarket]
+  - [debit credit, debit credit]
+  - [routing number, routing]
+  - [routing transit number, routing]
+  - [account holder, holder]
+  - [e mail, email]
+  - [phone number, phone]
+  - [telephone number, phone]
+  - [interest rate, rate]
+  - [last four, display]
+  - [masked number, number display]
+  - [check number, checknumber]
+  - [as of, date]
+  - [cheque number, checknumber]
+  - [value date time, settlement timestamp]
+  - [value date, settlement date]
+
+# Concept -> words that mean exactly the same thing in field names.
+synonyms:
+  account: [account]
+  identifier: [identifier]
+  number: [number]
+  amount: [amount, amounts]
+  balance: [balance]
+  current: [current, present, outstanding]
+  available: [available, spendable]
+  currency: [currency]
+  description: [description, narrative, narration, remark, remarks]
+  timestamp: [timestamp, time]
+  date: [date, day, on]
+  transaction: [transaction, posting]
+  payment: [payment, repayment]
+  minimum: [minimum]
+  statement: [statement]
+  interest: [interest]
+  percent: [percent, percentage]
+  limit: [limit, ceiling]
+  first: [first, given, forename]
+  last: [last, family, surname]
+  middle: [middle]
+  suffix: [suffix]
+  prefix: [prefix, salutation]
+  city: [city, town, locality]
+  region: [region, province, county, state]
+  postalcode: [postalcode, zip, zipcode, postcode]
+  country: [country, ctry, cntry, nation]
+  line: [line, street]
+  phone: [phone, telephone, tel]
+  email: [email]
+  customer: [customer, party, client]
+  relationship: [relationship, role, relation]
+  type: [type, kind, usage, subtype]
+  status: [status, stat, sts]
+  product: [product]
+  nickname: [nickname, alias]
+  principal: [principal]
+  original: [original, originating, origination]
+  maturity: [maturity]
+  escrow: [escrow]
+  routing: [routing]
+  transfer: [transfer]
+  inbound: [inbound, in, incoming, receive]
+  outbound: [outbound, out, outgoing, send]
+  previous: [previous, prior]
+  next: [next, upcoming]
+  posted: [posted, booked, booking, settled]
+  pending: [pending, unsettled]
+  payee: [payee]
+  checking: [checking, dda, chk, chq, demand]
+  savings: [savings, saving, sav]
+  debit: [debit]
+  credit: [credit]
+  apr: [apr]
+  code: [code]
+  name: [name]
+  rate: [rate]
+  category: [category, class, classification]
+  network: [network, rail, scheme]
+  institution: [institution, bank, fi]
+  holder: [holder, owner]
+  display: [display, masked, mask]
+  open: [open, active]
+  closed: [closed, close]
+  restricted: [restricted, frozen, locked, blocked, suspended]
+  business: [business, organization, organisation, corporate, company, work]
+  consumer: [consumer, individual, person, retail]
+  cell: [cell, mobile, cellular]
+  primary: [primary, preferred, default, main]
+  overdrafted: [overdrafted, overdrawn]
+  provider: [provider, servicer, lender]
+
+# Concepts that are close but not identical. Score is how much partial credit a pairing earns.
+related:
+  - [identifier, reference, 0.6]
+  - [identifier, number, 0.4]
+  - [identifier, code, 0.5]
+  - [current, posted, 0.5]
+  - [transaction, entry, 0.9]
+  - [transaction, transfer, 0.3]
+  - [timestamp, date, 0.75]
+  - [previous, last, 0.9]
+  - [customer, holder, 0.7]
+  - [payee, merchant, 0.8]
+  - [payee, counterparty, 0.7]
+  - [description, name, 0.4]
+  - [rate, apr, 0.6]
+  - [type, category, 0.5]
+  - [balance, amount, 0.5]
+  - [limit, line, 0.4]
+  - [institution, routing, 0.5]
+  - [bank, routing, 0.5]
+  - [due, next, 0.5]
+  - [network, type, 0.4]
+  - [display, number, 0.5]
+  - [rate, apy, 0.8]
+  - [closing, last, 0.6]
+  - [due, payment, 0.6]
+  - [type, code, 0.5]
+  - [rate, interest, 0.7]
+  - [sub, detailed, 0.6]
+  - [from, start, 0.8]
+  - [to, end, 0.8]
+
+# Leaf names too vague to identify a field alone; the parent name is weighed fully with them.
+generic:
+  [identifier, number, amount, value, code, name, type, status, date, timestamp,
+   description, indicator, flag, text, label, address, display]
+
+# Concepts that carry little meaning when unmatched (their weight is reduced).
+weak: [amount, value, indicator, flag, total, percent]
+
+# Words dropped entirely.
+stopwords:
+  [the, of, a, an, and, for, by, with, data, info, information, detail, details, obj,
+   object, dto, response, resp, result, results, item, items, record, records, payload,
+   body, v, api, list, is, has, collection, wrapper, root, entity, entities, model, resource]
+
+# Account-kind qualifiers. Fields in opposing families must not map to each other
+# (a debit account id is never a credit account id).
+qualifier_families:
+  deposit: [deposit, debit, checking, savings, moneymarket]
+  credit: [credit, card, loc, revolving, heloc]
+  loan: [loan, lending, mortgage, installment, lend, borrowing]
+  investment: [investment, brokerage, securities, portfolio, wealth, holding]
+  insurance: [insurance, policy]
+  annuity: [annuity]
+  commercial: [commercial]
+  wallet: [wallet]
+
+# Words that turn a field into "some other" thing: fromAccountId is not accountId.
+role_markers:
+  [from, to, source, destination, sender, receiver, beneficiary, counterparty, payer,
+   parent, child, external, linked, related, other, target, origin, reference, funding,
+   contra, sweep, error]
+
+# Modifiers that pick out different values of the same quantity: lastPayment is not
+# minimumPayment, availableBalance is not currentBalance.
+exclusive_modifiers:
+  [current, available, last, next, previous, original, minimum, maximum, past, pending, posted, total, foreign, settlement, switch]
+
+# Of those, the ones whose absence also means a different value: a plain `amount` is not
+# the `foreignAmount`, while a plain statement balance usually is the last statement's.
+defining_modifiers: [foreign, original, available, minimum, maximum, total, pending, settlement, switch]
+
+# Description/name hints that an integer amount is in minor units (cents).
+minor_unit_markers: [cents, cent, minor units, minor unit, minorunits, pennies, smallest currency unit]
+
+# Description/name hints that an integer is a Unix epoch.
+epoch_markers: [epoch, unix, millis, milliseconds since, seconds since]
+
+
+# Name roles take precedence over later prose mentioning other events.
+meaning_rules:
+  - group: transaction_event
+    role: posted
+    concepts: [date, timestamp]
+    name_phrases: [posted, booking, booked]
+    definition_phrases: [transaction was posted, entry is posted, transaction posted, posted to the account]
+  - group: transaction_event
+    role: authorized
+    concepts: [date, timestamp]
+    name_phrases: [authorized, authorised, authorization]
+    definition_phrases: [transaction was authorized, transaction was authorised]
+  - group: transaction_event
+    role: settlement
+    concepts: [date, timestamp]
+    name_phrases: [value date, settlement]
+    definition_phrases: [assets become available, funds become available]
+  - group: transaction_event
+    role: recorded
+    concepts: [date, timestamp]
+    name_phrases: [ingested, ingestion, recorded]
+    definition_phrases: [added to the server, backend systems, server ingestion]
+  - group: currency_standard
+    role: unofficial
+    concepts: [currency]
+    name_phrases: [unofficial currency]
+    definition_phrases: [unofficial currency]
+  - group: currency_standard
+    role: iso
+    concepts: [currency]
+    name_phrases: [iso currency]
+    definition_phrases: [iso 4217, per iso]
+  - group: value_kind
+    role: identifier
+    concepts: [identifier, name, payee, timestamp, date]
+    name_phrases: [id, identifier]
+    definition_phrases: [unique identifier, unique id]
+  - group: value_kind
+    role: name
+    concepts: [identifier, name, payee, timestamp, date]
+    name_phrases: [name]
+    definition_phrases: [payee name, merchant name]
+  - group: value_kind
+    role: date
+    concepts: [identifier, name, payee, timestamp, date]
+    name_phrases: [timestamp, date, datetime]
+    definition_phrases: [date and time, date the]
+  - group: product_kind
+    role: bank_product
+    concepts: [product]
+    name_phrases: []
+    definition_phrases: [marketed product]
+  - group: product_kind
+    role: api_product
+    concepts: [product]
+    name_phrases: []
+    definition_phrases: [products available for the item, products enabled for the item]
+  - group: classification_system
+    role: merchant_code
+    concepts: [category, code, mcc]
+    name_phrases: [merchant category code, mcc]
+    definition_phrases: [mcc, sic, merchant category code]
+  - group: classification_system
+    role: proprietary_category
+    concepts: [category, identifier, code]
+    name_phrases: [category id, personal finance category, business finance category]
+    definition_phrases: [id of the category]
+  - group: classification_system
+    role: system_name
+    concepts: [category]
+    name_phrases: []
+    definition_phrases: [specifying the standard]
+  - group: currency_role
+    role: foreign
+    concepts: [currency]
+    name_phrases: [foreign]
+    definition_phrases: [foreign currency]
+  - group: currency_role
+    role: account
+    concepts: [currency]
+    name_phrases: [account currency, base currency]
+    definition_phrases: [currency code of the transaction, currency code of the balance, currency in which the account]

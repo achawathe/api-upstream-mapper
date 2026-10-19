@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Party Management API
+  version: 3.1.0
+  description: People and organizations, and how they relate to accounts.
+paths:
+  /accounts/{accountId}/holders:
+    get:
+      operationId: listAccountHolders
+      parameters:
+        - {name: accountId, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: Parties holding the account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  holders:
+                    type: array
+                    items:
+                      type: object
+                      required: [partyId, role]
+                      properties:
+                        partyId:
+                          type: string
+                        role:
+                          type: string
+                          enum: [PRIMARY, JOINT, AUTHORIZED_USER, TRUSTEE, POA]
+                        since:
+                          type: string
+                          format: date
+        '404':
+          description: Unknown account
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example: {status: 404, title: Not Found, detail: Account not found}
+  /parties/{partyId}:
+    get:
+      operationId: getParty
+      parameters:
+        - {name: partyId, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: One party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+        '404':
+          description: Unknown party
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example: {status: 404, title: Not Found, detail: Party not found}
+components:
+  schemas:
+    Party:
+      type: object
+      required: [partyId, partyType]
+      properties:
+        partyId:
+          type: string
+          example: PTY-55120
+        partyType:
+          type: string
+          enum: [INDIVIDUAL, ORGANIZATION]
+        namePrefix:
+          type: string
+          example: Dr
+        givenName:
+          type: string
+        middleName:
+          type: string
+        familyName:
+          type: string
+        nameSuffix:
+          type: string
+        organizationName:
+          type: string
+        dob:
+          type: string
+          format: date
+        emails:
+          type: array
+          items:
+            type: object
+            properties:
+              address:
+                type: string
+                format: email
+              primary:
+                type: boolean
+        postalAddresses:
+          type: array
+          items:
+            type: object
+            required: [street1, town, countryCode]
+            properties:
+              street1: {type: string}
+              street2: {type: string}
+              street3: {type: string}
+              town: {type: string}
+              state: {type: string, example: IL}
+              zip: {type: string, example: '60614'}
+              countryCode:
+                type: string
+                enum: [US, CA, GB]
+              usage:
+                type: string
+                enum: [HOME, MAILING, WORK]
+              preferred:
+                type: boolean
+        phones:
+          type: array
+          items:
+            type: object
+            properties:
+              usage:
+                type: string
+                enum: [MOBILE, HOME, WORK, FAX]
+              countryCode:
+                type: string
+                example: '1'
+              num:
+                type: string
+                example: '3125550142'
+              preferred:
+                type: boolean
+    Problem:
+      type: object
+      properties:
+        status: {type: integer}
+        title: {type: string}
+        detail: {type: string}

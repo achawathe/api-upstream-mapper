@@ -1,0 +1,3 @@
+Amount:
+  type: number
+  description: Shared amount from another file.

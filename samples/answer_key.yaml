@@ -1,0 +1,256 @@
+# Ground truth for FDX (Core Exchange 6.4) <- Northwind downstream APIs.
+# Written before the matcher existed, from the downstream designs, so accuracy cannot be tuned to it unknowingly.
+#
+# Each group names an upstream endpoint, the variants it applies to, and per upstream path the
+# acceptable downstream sources ("alias:path"). Any listed source counts as correct.
+#   derived   -> value is fixed by the variant (discriminator), no downstream field needed
+#   optional  -> leaving it unmapped is also correct; mapping it to a listed source is correct
+# Every upstream field not listed here should stay unmapped.
+
+sources:
+  coreL: "core-accounts|GET /v2/accounts|data[].account."
+  coreD: "core-accounts|GET /v2/accounts/{accountId}|account."
+  dep: "deposits|GET /deposits/{debitAccountId}/balances|debitAccount."
+  card: "cards|GET /cards/accounts/{id}|"
+  loan: "loans|GET /lending/v1/loans/{loan_id}|"
+  holder: "parties|GET /accounts/{accountId}/holders|holders[]."
+  party: "parties|GET /parties/{partyId}|"
+  ledger: "ledger|GET /ledger/accounts/{acctId}/entries|entries[]."
+  routing: "routing|GET /payments/routing/{acctNum}|"
+
+groups:
+  - endpoint: GET /accounts
+    variants: [DepositAccountDescriptor, LoanAccountDescriptor, LineOfCreditAccountDescriptor, InvestmentAccountDescriptor]
+    expect:
+      accounts[].accountCategory: derived
+      accounts[].accountId: [coreL:id]
+      accounts[].accountNumberDisplay: [coreL:maskedNumber]
+      accounts[].productName: [coreL:productName]
+      accounts[].nickname: [coreL:nickName]
+      accounts[].status: [coreL:status]
+      accounts[].currency.currencyCode: [coreL:currency]
+      accounts[].accountType: [coreL:type]
+    optional:
+      accounts[].productId: [coreL:productCode]
+
+  # Core has no annuity, insurance, commercial or wallet products; mapping them is allowed, not required.
+  - endpoint: GET /accounts
+    variants: [AnnuityAccountDescriptor, CommercialAccountDescriptor, DigitalWalletDescriptor, InsuranceAccountDescriptor]
+    expect:
+      accounts[].accountCategory: derived
+    optional:
+      accounts[].accountId: [coreL:id]
+      accounts[].accountNumberDisplay: [coreL:maskedNumber]
+      accounts[].productName: [coreL:productName]
+      accounts[].productId: [coreL:productCode]
+      accounts[].nickname: [coreL:nickName]
+      accounts[].status: [coreL:status]
+      accounts[].currency.currencyCode: [coreL:currency]
+
+  - endpoint: GET /accounts
+    optional:
+      page.nextOffset: ["core-accounts|GET /v2/accounts|paging.next"]
+      page.nextPageKey: ["core-accounts|GET /v2/accounts|paging.next"]
+      page.totalElements: ["core-accounts|GET /v2/accounts|paging.total"]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [DepositAccount]
+    expect:
+      accountCategory: derived
+      accountId: [coreD:id, dep:id]
+      accountNumberDisplay: [coreD:maskedNumber]
+      productName: [coreD:productName]
+      nickname: [coreD:nickName]
+      status: [coreD:status]
+      currency.currencyCode: [coreD:currency, dep:ledgerBal.ccy, dep:availBal.ccy]
+      accountType: [coreD:type]
+      currentBalance: [dep:ledgerBal.amt]
+      availableBalance: [dep:availBal.amt]
+      earnedInterest.rate: [dep:interest.apy]
+      earnedInterest.rateAsOf: [dep:interest.asOf]
+      earnedInterest.type: [dep:interest.rateType]
+      overdraftOptIn: [dep:overdraft.optIn]
+      overdrafted: [dep:overdraft.isOverdrawn]
+      overdraftProtectionFunded: [dep:overdraft.protectionFunded]
+      underArbitration: [dep:arbitrationFlag]
+    optional:
+      productId: [coreD:productCode]
+      overdraftFundingSources[].accountId: ["coreD:relatedAccounts[].id"]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [LoanAccount]
+    expect:
+      accountCategory: derived
+      accountId: [coreD:id, loan:loan_id]
+      accountNumberDisplay: [coreD:maskedNumber]
+      productName: [coreD:productName, loan:product_nm]
+      nickname: [coreD:nickName]
+      status: [coreD:status]
+      currency.currencyCode: [coreD:currency]
+      accountType: [loan:loan_type, coreD:type]
+      accountNumber: [loan:acct_no, coreD:number]
+      principalBalance: [loan:principal_bal]
+      escrowBalance: [loan:escrow_bal]
+      originalPrincipal: [loan:orig_principal]
+      originatingDate: [loan:orig_dt]
+      loanTerm: [loan:term_months]
+      nextPaymentAmount: [loan:next_pmt.amt]
+      nextPaymentDate: [loan:next_pmt.due_dt]
+      lastPaymentAmount: [loan:last_pmt.amt]
+      lastPaymentDate: [loan:last_pmt.dt]
+      maturityDate: [loan:maturity_dt]
+      interestPaidYearToDate: [loan:ytd_int_paid]
+      interestRate: [loan:int_rate_pct]
+      interestRateType: [loan:int_rate_type]
+      annualPercentageRate: [loan:apr]
+      currentSchool: [loan:school_name]
+      loanProviderName: [loan:servicer.name]
+    optional:
+      productId: [coreD:productCode]
+      chargedInterest.rate: [loan:int_rate_pct]
+      chargedInterest.type: [loan:int_rate_type]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [LineOfCreditAccount]
+    expect:
+      accountCategory: derived
+      accountId: [coreD:id, card:id]
+      accountNumberDisplay: [coreD:maskedNumber, card:lastFour]
+      productName: [coreD:productName, card:product.name]
+      nickname: [coreD:nickName]
+      status: [coreD:status, card:status]
+      currency.currencyCode: [coreD:currency]
+      accountType: [card:type, coreD:type]
+      creditLine: [card:creditLimit]
+      availableCredit: [card:availableCredit]
+      nextPaymentAmount: [card:nextPayment.amount]
+      nextPaymentDate: [card:nextPayment.dueDate]
+      currentBalance: [card:balances.current]
+      minimumPaymentAmount: [card:statement.minimumDue]
+      lastPaymentAmount: [card:lastPayment.amount]
+      lastPaymentDate: [card:lastPayment.postedOn]
+      pastDueAmount: [card:pastDue]
+      lastStmtBalance: [card:balances.statement]
+      lastStmtDate: [card:statement.closingDate]
+      purchasesApr: [card:rates.purchaseApr]
+      advancesApr: [card:rates.cashAdvanceApr]
+      balanceTransfersApr: [card:rates.balanceTransferApr]
+      cashAdvanceBalance: [card:balances.cashAdvance]
+      transferBalance: [card:balances.balanceTransfer]
+    optional:
+      productId: [coreD:productCode, card:product.code]
+      transfersApr: [card:rates.balanceTransferApr]
+      bills[].minimumPaymentDue: [card:statement.minimumDue]
+      bills[].dueDate: [card:nextPayment.dueDate]
+      bills[].statementBalance: [card:balances.statement]
+      bills[].statementDate: [card:statement.closingDate]
+      bills[].lastPaymentAmount: [card:lastPayment.amount]
+      bills[].lastPaymentDate: [card:lastPayment.postedOn]
+      bills[].pastDueAmount: [card:pastDue]
+      bills[].totalPaymentDue: [card:nextPayment.amount]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [InvestmentAccount]
+    expect:
+      accountCategory: derived
+      accountId: [coreD:id]
+      accountNumberDisplay: [coreD:maskedNumber]
+      productName: [coreD:productName]
+      nickname: [coreD:nickName]
+      status: [coreD:status]
+      currency.currencyCode: [coreD:currency]
+      accountType: [coreD:type]
+    optional:
+      productId: [coreD:productCode]
+
+  - endpoint: GET /accounts/{accountId}/contact
+    expect:
+      holders[].type: [party:partyType]
+      holders[].name.first: [party:givenName]
+      holders[].name.middle: [party:middleName]
+      holders[].name.last: [party:familyName]
+      holders[].name.suffix: [party:nameSuffix]
+      holders[].name.prefix: [party:namePrefix]
+      holders[].businessCustomer.name: [party:organizationName]
+      holders[].relationship: [holder:role]
+      emails[]: ["party:emails[].address"]
+      addresses[].line1: ["party:postalAddresses[].street1"]
+      addresses[].line2: ["party:postalAddresses[].street2"]
+      addresses[].line3: ["party:postalAddresses[].street3"]
+      addresses[].city: ["party:postalAddresses[].town"]
+      addresses[].region: ["party:postalAddresses[].state"]
+      addresses[].postalCode: ["party:postalAddresses[].zip"]
+      addresses[].country: ["party:postalAddresses[].countryCode"]
+      addresses[].type: ["party:postalAddresses[].usage"]
+      addresses[].primary: ["party:postalAddresses[].preferred"]
+      telephones[].type: ["party:phones[].usage"]
+      telephones[].country: ["party:phones[].countryCode"]
+      telephones[].number: ["party:phones[].num"]
+      telephones[].primary: ["party:phones[].preferred"]
+
+  - endpoint: GET /accounts/{accountId}/payment-networks
+    expect:
+      paymentNetworks[].bankId: [routing:routing.aba]
+      paymentNetworks[].identifier: [routing:acctNum]
+      paymentNetworks[].type: ["routing:networks[].rail"]
+      paymentNetworks[].transferIn: ["routing:networks[].inbound"]
+      paymentNetworks[].transferOut: ["routing:networks[].outbound"]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [DepositTransaction, LoanTransaction, LineOfCreditTransaction]
+    expect:
+      transactions[].accountCategory: derived
+      transactions[].transactionId: [ledger:txnId]
+      transactions[].referenceTransactionId: [ledger:refTxnId]
+      transactions[].postedTimestamp: [ledger:postedTs]
+      transactions[].transactionTimestamp: [ledger:txnTs]
+      transactions[].description: [ledger:narrative]
+      transactions[].debitCreditMemo: [ledger:drCrInd]
+      transactions[].status: [ledger:status]
+      transactions[].amount: [ledger:amt]
+      transactions[].foreignAmount: [ledger:foreign.amt]
+      transactions[].foreignCurrency: [ledger:foreign.ccy]
+      transactions[].category: [ledger:category.primary]
+    optional:
+      transactions[].subCategory: [ledger:category.detailed]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [DepositTransaction]
+    expect:
+      transactions[].payee: [ledger:merchant.name]
+      transactions[].checkNumber: [ledger:chequeNo]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [LineOfCreditTransaction]
+    expect:
+      transactions[].checkNumber: [ledger:chequeNo]
+      transactions[].transactionType: [ledger:txnCode]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [LoanTransaction]
+    expect:
+      transactions[].transactionType: [ledger:txnCode]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [InvestmentTransaction]
+    expect:
+      transactions[].accountCategory: derived
+    optional:
+      transactions[].transactionId: [ledger:txnId]
+      transactions[].referenceTransactionId: [ledger:refTxnId]
+      transactions[].postedTimestamp: [ledger:postedTs]
+      transactions[].transactionTimestamp: [ledger:txnTs]
+      transactions[].description: [ledger:narrative]
+      transactions[].debitCreditMemo: [ledger:drCrInd]
+      transactions[].status: [ledger:status]
+      transactions[].amount: [ledger:amt]
+      transactions[].foreignAmount: [ledger:foreign.amt]
+      transactions[].foreignCurrency: [ledger:foreign.ccy]
+      transactions[].category: [ledger:category.primary]
+      transactions[].subCategory: [ledger:category.detailed]
+      transactions[].checkNumber: [ledger:chequeNo]
+      transactions[].transactionType: [ledger:txnCode]
+
+  - endpoint: GET /customers/current
+    expect:
+      customerId: [party:partyId]

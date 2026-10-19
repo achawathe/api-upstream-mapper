@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Mapper</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Sections">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">⇄</span>
+        <div>
+          <div class="brand-name">API Mapper</div>
+          <div class="brand-sub">deterministic field mapping</div>
+        </div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="sidebar-foot">No AI. Every decision is explained by named rules.</div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div>
+          <h1 id="view-title"></h1>
+          <p id="view-subtitle" class="muted"></p>
+        </div>
+        <div id="topbar-actions" class="row"></div>
+      </header>
+      <section id="view" tabindex="-1"></section>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+openapi: 3.0.1
+info:
+  title: Lending Platform API
+  version: 1.12.0
+  description: Installment loans and mortgages serviced by the bank.
+paths:
+  /lending/v1/loans/{loan_id}:
+    get:
+      operationId: get_loan
+      parameters:
+        - name: loan_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Loan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+              example:
+                loan_id: ACC-000789
+                acct_no: '7700012345'
+                product_nm: 30 Year Fixed Mortgage
+                loan_type: MORTGAGE
+                principal_bal: 580303.95
+                orig_principal: 650400.00
+                escrow_bal: 3400.61
+                orig_dt: '2021-07-15'
+                term_months: 360
+                int_rate_pct: '6.990'
+                int_rate_type: FIXED
+                apr: 7.12
+                next_pmt: {amt: 2483.12, due_dt: '20261115'}
+                last_pmt: {amt: 2483.12, dt: '2026-10-15'}
+                maturity_dt: '20510801'
+                ytd_int_paid: 30403.04
+                servicer: {name: Northwind Home Loans}
+        '404':
+          description: Loan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fault'
+              example: {fault: {faultCode: LN-404, faultString: Loan not found}}
+        '422':
+          description: Malformed loan id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fault'
+              example: {fault: {faultCode: LN-422, faultString: Invalid loan identifier}}
+        '500':
+          description: Servicing platform error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fault'
+components:
+  schemas:
+    Loan:
+      type: object
+      required: [loan_id, principal_bal, int_rate_pct]
+      properties:
+        loan_id:
+          type: string
+        acct_no:
+          type: string
+          description: Full loan account number used for payments.
+        product_nm:
+          type: string
+        loan_type:
+          type: string
+          enum: [MORTGAGE, AUTO, PERSONAL, STUDENT, HELOAN]
+        principal_bal:
+          type: number
+        orig_principal:
+          type: number
+        escrow_bal:
+          type: number
+        orig_dt:
+          type: string
+          format: date
+        term_months:
+          type: integer
+        int_rate_pct:
+          type: string
+          description: Interest rate as a percentage string, e.g. "6.990".
+        int_rate_type:
+          type: string
+          enum: [FIXED, VARIABLE, INDEXED]
+        apr:
+          type: number
+          description: Annual percentage rate.
+        next_pmt:
+          $ref: '#/components/schemas/ScheduledPayment'
+        last_pmt:
+          type: object
+          properties:
+            amt:
+              type: number
+            dt:
+              type: string
+              format: date
+        maturity_dt:
+          type: string
+          pattern: '^\d{8}$'
+          description: Maturity date, yyyyMMdd.
+        ytd_int_paid:
+          type: number
+        school_name:
+          type: string
+          description: Current school, student loans only.
+        servicer:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Company servicing the loan.
+    ScheduledPayment:
+      type: object
+      properties:
+        amt:
+          type: number
+        due_dt:
+          type: string
+          pattern: '^\d{8}$'
+          description: Due date, yyyyMMdd.
+    Fault:
+      type: object
+      properties:
+        fault:
+          type: object
+          properties:
+            faultCode:
+              type: string
+            faultString:
+              type: string

@@ -1,0 +1,114 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Deposit Account Service",
+    "version": "1.8.2",
+    "description": "Balances and features of checking, savings and money market accounts."
+  },
+  "basePath": "/",
+  "produces": ["application/json"],
+  "paths": {
+    "/deposits/{debitAccountId}/balances": {
+      "parameters": [
+        {"name": "debitAccountId", "in": "path", "required": true, "type": "string"}
+      ],
+      "get": {
+        "operationId": "getDepositBalances",
+        "responses": {
+          "200": {
+            "description": "Current balances",
+            "schema": {"$ref": "#/definitions/DepositBalances"},
+            "examples": {
+              "application/json": {
+                "debitAccount": {
+                  "id": "ACC-000123",
+                  "ledgerBal": {"amt": 139902, "ccy": "USD"},
+                  "availBal": {"amt": 128450, "ccy": "USD"},
+                  "interest": {"apy": 4.15, "rateType": "VARIABLE", "asOf": "2026-09-30"},
+                  "overdraft": {"optIn": true, "protectionFunded": false, "isOverdrawn": false},
+                  "arbitrationFlag": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account locked",
+            "schema": {"$ref": "#/definitions/ErrorList"},
+            "examples": {"application/json": {"errors": [{"errorCode": 1007, "detail": "Account is locked"}]}}
+          },
+          "404": {
+            "description": "Unknown deposit account",
+            "schema": {"$ref": "#/definitions/ErrorList"},
+            "examples": {"application/json": {"errors": [{"errorCode": 1001, "detail": "Deposit account not found"}]}}
+          },
+          "409": {
+            "description": "Account closed",
+            "schema": {"$ref": "#/definitions/ErrorList"},
+            "examples": {"application/json": {"errors": [{"errorCode": 1004, "detail": "Account is closed"}]}}
+          },
+          "503": {
+            "description": "Ledger unavailable",
+            "schema": {"$ref": "#/definitions/ErrorList"}
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Money": {
+      "type": "object",
+      "required": ["amt", "ccy"],
+      "properties": {
+        "amt": {"type": "integer", "format": "int64", "description": "Amount in minor units (cents)."},
+        "ccy": {"type": "string", "description": "ISO 4217 currency code.", "example": "USD"}
+      }
+    },
+    "DepositBalances": {
+      "type": "object",
+      "required": ["debitAccount"],
+      "properties": {
+        "debitAccount": {
+          "type": "object",
+          "required": ["id", "ledgerBal", "availBal"],
+          "properties": {
+            "id": {"type": "string", "description": "Deposit account identifier."},
+            "ledgerBal": {"$ref": "#/definitions/Money"},
+            "availBal": {"$ref": "#/definitions/Money"},
+            "interest": {
+              "type": "object",
+              "properties": {
+                "apy": {"type": "number", "description": "Annual percentage yield earned, as a percent."},
+                "rateType": {"type": "string", "enum": ["FIXED", "VARIABLE"]},
+                "asOf": {"type": "string", "format": "date"}
+              }
+            },
+            "overdraft": {
+              "type": "object",
+              "properties": {
+                "optIn": {"type": "boolean", "description": "Customer opted in to overdraft coverage."},
+                "protectionFunded": {"type": "boolean"},
+                "isOverdrawn": {"type": "boolean", "description": "Balance is currently negative."}
+              }
+            },
+            "arbitrationFlag": {"type": "boolean", "description": "Account is under arbitration."}
+          }
+        }
+      }
+    },
+    "ErrorList": {
+      "type": "object",
+      "properties": {
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "errorCode": {"type": "integer"},
+              "detail": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  }
+}
