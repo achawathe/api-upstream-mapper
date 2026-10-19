@@ -9,6 +9,7 @@ from typing import Any
 
 from api_mapper.loaders.ref_resolver import CYCLE_KEY, SCHEMA_NAME_KEY, UNRESOLVED_KEY
 from api_mapper.models import ApiSpec, Endpoint, FieldNode
+from api_mapper.normalize.sample_context import describe_samples
 
 MAX_DEPTH = 24
 MAP_KEY_SEGMENT = "{key}"
@@ -55,7 +56,7 @@ def flatten_endpoint(api: str, endpoint: Endpoint) -> list[FieldNode]:
         return []
     fields: list[FieldNode] = []
     _walk(endpoint.response_schema, _Context(), api, endpoint.key, fields)
-    return [_with_example(node, endpoint.response_examples) for node in fields]
+    return [_with_example(node, endpoint.response_examples, endpoint.response_sample_sources) for node in fields]
 
 
 def merge_all_of(schema: dict[str, Any]) -> dict[str, Any]:
@@ -195,14 +196,23 @@ def _leaf(api: str, endpoint: str, ctx: _Context, schema: dict, kind: str, nulla
     )
 
 
-def _with_example(node: FieldNode, payloads: tuple[Any, ...]) -> FieldNode:
+def _with_example(node: FieldNode, payloads: tuple[Any, ...], sources: tuple[str, ...] = ()) -> FieldNode:
     if not payloads:
         return node
     conditions = _parse_conditions(node.condition)
-    values = [v for payload in payloads for v in _values_at(payload, node.path.split("."), conditions)]
+    values, documentation, used_sources = [], [], []
+    for index, payload in enumerate(payloads):
+        source = sources[index] if index < len(sources) else "inline example"
+        documented = source != "inline example"
+        found = _values_at(payload, node.path.split("."), conditions, strict=documented)
+        values.extend(found)
+        if documented and found:
+            documentation.extend(found)
+            used_sources.append(source)
     observed = tuple(dict.fromkeys(v for v in values if isinstance(v, str)))[:MAX_OBSERVED_VALUES]
     example = node.example if node.example is not None else next(iter(values), None)
-    return replace(node, example=example, observed=observed)
+    return replace(node, example=example, observed=observed, sample_sources=tuple(dict.fromkeys(used_sources)),
+                   sample_context=describe_samples(documentation))
 
 
 def _parse_conditions(condition: str | None) -> dict[str, str]:
@@ -211,9 +221,13 @@ def _parse_conditions(condition: str | None) -> dict[str, str]:
     return dict(part.split(" = ", 1) for part in condition.split(" and "))
 
 
-def _values_at(value: Any, segments: list[str], conditions: dict[str, str]) -> list[Any]:
+def _values_at(value: Any, segments: list[str], conditions: dict[str, str], strict: bool = False) -> list[Any]:
+    if isinstance(value, dict):
+        if any(str(value[k]) != expected for k, expected in conditions.items() if k in value):
+            return []
+        conditions = {k: expected for k, expected in conditions.items() if k not in value}
     if not segments:
-        return [] if value is None or isinstance(value, (dict, list)) else [value]
+        return [] if value is None or isinstance(value, (dict, list)) or (strict and conditions) else [value]
     head, rest = segments[0], segments[1:]
     is_array = head.endswith("[]")
     name = head.removesuffix("[]")
@@ -222,12 +236,12 @@ def _values_at(value: Any, segments: list[str], conditions: dict[str, str]) -> l
             return []
         value = value[name]
     if not is_array:
-        return _values_at(value, rest, conditions)
+        return _values_at(value, rest, conditions, strict)
     if not isinstance(value, list):
         return []
     found = []
     for item in value:
         if isinstance(item, dict) and any(str(item.get(k)) != v for k, v in conditions.items() if k in item):
             continue
-        found.extend(_values_at(item, rest, conditions))
+        found.extend(_values_at(item, rest, conditions, strict))
     return found

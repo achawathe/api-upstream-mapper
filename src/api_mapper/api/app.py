@@ -3,10 +3,11 @@
 import asyncio
 import json
 import os
+from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -14,6 +15,7 @@ from pydantic import BaseModel, Field
 from api_mapper.api.workspace import FileRole, Workspace, parse_override
 from api_mapper.errors.catalog import load_error_catalog
 from api_mapper.errors.error_mapper import ErrorMapper
+from api_mapper.loaders import SpecLoadError
 from api_mapper.matching.assigner import Thresholds
 from api_mapper.matching.semantic import NlpSettings
 from api_mapper.reporting.excel_report import write_excel_report
@@ -44,6 +46,21 @@ async def revalidate_static_files(request: Request, call_next):
     response = await call_next(request)
     if request.url.path == "/" or request.url.path.startswith("/static/"):
         response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.middleware("http")
+async def log_request_outcomes(request: Request, call_next):
+    """Record rejected requests and report/validation actions without bodies or query values."""
+    try:
+        response = await call_next(request)
+    except Exception as error:
+        workspace.activity.record("Request failed", "failed", method=request.method, error_type=type(error).__name__)
+        raise
+    route = request.scope.get("route")
+    if request.url.path.startswith("/api/") and (response.status_code >= 400 or getattr(route, "name", "") in {"validate", "excel", "json_report"}):
+        workspace.activity.record("API request", "failed" if response.status_code >= 400 else "success",
+                                  method=request.method, route=getattr(route, "path", "unknown"), status=response.status_code)
     return response
 
 
@@ -78,11 +95,46 @@ def state() -> dict[str, Any]:
     return workspace.state()
 
 
+@app.get("/api/activity")
+def activity(limit: int = Query(default=200, ge=1, le=1000), download: bool = False) -> JSONResponse:
+    headers = {"Content-Disposition": "attachment; filename=activity-log.json"} if download else {}
+    return JSONResponse({"events": workspace.activity.recent(limit)}, headers=headers)
+
+
 @app.post("/api/files")
 async def upload(role: Annotated[FileRole, Form()], files: Annotated[list[UploadFile], File()]) -> dict[str, Any]:
     uploads = [(f.filename or "upload", await f.read()) for f in files]
-    stored = workspace.add_files(role, uploads)
+    try:
+        stored = workspace.add_files(role, uploads)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
     return {"files": [s.__dict__ for s in stored]}
+
+
+@app.get("/api/files/{file_id}/endpoints")
+def sample_endpoints(file_id: str) -> dict[str, Any]:
+    try:
+        return {"endpoints": workspace.spec_endpoints(file_id)}
+    except (ValueError, KeyError, SpecLoadError) as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.post("/api/files/{file_id}/response-samples")
+async def attach_response_samples(
+    file_id: str, endpoint: Annotated[str, Form()], files: Annotated[list[UploadFile], File()],
+) -> dict[str, Any]:
+    uploads = [(f.filename or "response.json", await f.read()) for f in files]
+    try:
+        attachment = workspace.add_response_samples(file_id, endpoint, uploads)
+    except (ValueError, KeyError, SpecLoadError) as error:
+        raise HTTPException(400, str(error)) from error
+    return {"samples": asdict(attachment)}
+
+
+@app.delete("/api/response-samples/{sample_id}")
+def remove_response_samples(sample_id: str) -> dict[str, Any]:
+    workspace.remove_response_samples(sample_id)
+    return workspace.state()
 
 
 @app.post("/api/sample-endpoints")

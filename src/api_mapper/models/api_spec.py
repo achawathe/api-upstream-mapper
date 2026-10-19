@@ -42,6 +42,7 @@ class Endpoint:
     error_responses: tuple[ErrorResponse, ...] = field(default=(), compare=False)
     request_schema: dict[str, Any] | None = field(default=None, compare=False)
     request_required: bool = False
+    response_sample_sources: tuple[str, ...] = ()
 
     @property
     def key(self) -> str:

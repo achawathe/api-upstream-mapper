@@ -11,10 +11,31 @@ const STAGES = [
   ["plan", "Plan", "Order downstream calls and bind their inputs"],
 ];
 
+let detailsOpen = false;
+
+function logDetails(events) {
+  return h("details", { class: "card", open: detailsOpen, ontoggle: (event) => { detailsOpen = event.target.open; } },
+    h("summary", {}, "Run details and activity log"),
+    h("p", { class: "small muted" }, "Actions and run stages are saved locally. Payload bodies and sample values are excluded from the activity log."),
+    h("a", { class: "btn small", href: "/api/activity?download=true&limit=1000" }, "Download recent activity"),
+    events.length > 0 && h("div", { class: "log", style: { marginTop: "10px" } }, events.map(formatEvent).join("\n")));
+}
+
+function currentStatus(events, done, error) {
+  if (done) return error ? "Mapping stopped. See the error below." : "Mapping complete. Results are ready to review.";
+  const latest = events.at(-1);
+  if (!latest) return "Starting the mapping…";
+  if (latest.stage === "score" && latest.state === "info") return "Preparing local NLP and comparing candidate meanings…";
+  const messages = { load: "Reading API definitions and resolving model files…", flatten: "Reading fields and response examples…",
+    profile: "Understanding field names and context…", score: "Comparing mapping candidates…",
+    assign: "Choosing candidates and flagging uncertain matches…", errors: "Comparing API error codes…", plan: "Preparing the mapping results…" };
+  return messages[latest.stage] ?? "Processing the mapping…";
+}
+
 export function renderRun(container) {
   const { events, done, error, id } = store.run;
-  if (!id && !events.length) {
-    mount(container, h("div", { class: "empty card" }, h("p", {}, "No run in this session yet. Press Run mapping to start.")));
+  if (!id && !events.length && !store.run.starting && !error) {
+    mount(container, h("div", { class: "empty card" }, h("p", {}, "No run in this session yet. Press Run mapping to start.")), logDetails(events));
     return;
   }
   const byStage = groupByStage(events);
@@ -22,19 +43,21 @@ export function renderRun(container) {
   mount(
     container,
     h("div", { class: "grid grid-2" },
-      h("div", { class: "card" }, h("h2", {}, done ? (error ? "Run failed" : "Run finished") : "Running…"), h("ol", { class: "stages" }, STAGES.map((stage) => stageRow(stage, byStage[stage[0]], done)))),
+      h("div", { class: "card" }, h("h2", {}, done ? (error ? "Run failed" : "Run finished") : "Running…"),
+        h("p", { role: "status", "aria-live": "polite" }, currentStatus(events, done, error)),
+        h("ol", { class: "stages" }, STAGES.map((stage) => stageRow(stage, byStage[stage[0]], done)))),
       h("div", { class: "stack" },
         error && h("div", { class: "error-box" }, error),
         summary && resultCard(summary),
-        h("div", { class: "card" }, h("h2", {}, "Event log"), h("div", { class: "log", "aria-live": "polite" }, events.map(formatEvent).join("\n"))),
+        logDetails(events),
       ),
     ),
   );
 }
 
 function stageRow([key, title, description], stageEvents = [], runDone) {
-  const last = stageEvents.at(-1);
-  const state = !last ? (runDone ? "skipped" : "pending") : last.state === "info" ? "finished" : last.state === "started" ? "running" : last.state;
+  const last = stageEvents.filter((event) => event.state !== "info").at(-1);
+  const state = !last ? (runDone ? "skipped" : "pending") : last.state === "started" ? (runDone ? "failed" : "running") : last.state;
   const icon = { pending: "·", skipped: "–", running: "…", finished: "✓", failed: "!" }[state];
   const finished = stageEvents.find((e) => e.state === "finished" || e.state === "failed");
   return h(

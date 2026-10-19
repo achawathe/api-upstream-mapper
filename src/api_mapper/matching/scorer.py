@@ -99,6 +99,10 @@ class PairScorer:
         self._add(evidence, "endpoint", signals.endpoint_signal(target, source, self.ctx), self.weights.endpoint)
         self._add(evidence, "context", signals.context_signal(target, source, self.ctx), self.weights.context)
         evidence.extend(self._penalties(target, source, fit))
+        if target.node.sample_sources or source.node.sample_sources:
+            evidence.append(Evidence("documentation_samples", 1.0, 0.0,
+                                     "documentation response examples supplement declared schemas; "
+                                     "examples do not prove field meaning or complete value coverage"))
         if self.ctx.reachability and self.ctx.reachability.requires_body_review(
             (source.node.api, source.node.endpoint), target.endpoint_inputs
         ):

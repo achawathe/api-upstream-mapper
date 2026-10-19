@@ -55,6 +55,8 @@ def node_to_dict(node: FieldNode) -> dict[str, Any]:
         "nullable": node.nullable,
         "enum": list(node.enum),
         "description": node.description,
+        "sample_sources": list(node.sample_sources),
+        "sample_context": node.sample_context,
         "example": node.example if isinstance(node.example, (str, int, float, bool)) else None,
     }
 

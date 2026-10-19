@@ -1,10 +1,11 @@
+import { responseSamplesCard } from "./response-samples.js";
 import { api } from "../api.js";
 import { dropzone, h, mount, toast } from "../dom.js";
 import { canRun, refreshWorkspace, startRun, store } from "../state.js";
 
 const ROLES = [
-  { role: "upstream", title: "Upstream spec", hint: "The requirement: an OpenAPI 3 / Swagger 2 spec (YAML or JSON) or a schema-only fragment.", multiple: false },
-  { role: "downstream", title: "Downstream APIs", hint: "Specs of the APIs you call. Drop a spec together with files it $refs.", multiple: true },
+  { role: "upstream", title: "Upstream spec", hint: "Upload the upstream spec together with its referenced model YAML/JSON files. Use Choose folder for nested references.", multiple: true },
+  { role: "downstream", title: "Downstream APIs", hint: "Upload downstream specs with their referenced model files. Use Choose folder to preserve nested paths.", multiple: true },
   { role: "catalog", title: "Upstream error catalog", hint: "Optional. Upstream error codes with HTTP status and keywords.", multiple: false },
   { role: "lexicon", title: "Extra lexicon", hint: "Optional. Your own abbreviations and synonyms, merged over the built-in finance lexicon.", multiple: true },
   { role: "answer_key", title: "Answer key", hint: "Optional. Expected mappings; enables the accuracy report.", multiple: false },
@@ -23,7 +24,7 @@ export function renderInputs(container) {
       h("button", { class: "btn danger", onclick: () => act(api.reset(), "Workspace cleared") }, "Clear workspace"),
     ),
     h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, ROLES.map((role) => roleCard(role, files))),
-    h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, sampleCard(), settingsCard()),
+    h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, responseSamplesCard(), settingsCard(), sampleCard()),
     h(
       "div",
       { class: "row", style: { marginTop: "18px" } },
@@ -44,8 +45,18 @@ function roleCard({ role, title, hint, multiple }, files) {
     dropzone(multiple ? "Drop files here or click to choose" : "Drop a file here or click to choose", (chosen) => act(api.upload(role, chosen), `${chosen.length} file(s) added`), {
       multiple,
     }),
+    ["upstream", "downstream"].includes(role) && folderPicker(role),
     mine.map(fileRow),
   );
+}
+
+function folderPicker(role) {
+  const input = h("input", { type: "file", webkitdirectory: true, multiple: true, hidden: true, onchange: () => {
+    const files = [...input.files].filter((file) => /\.(json|ya?ml)$/i.test(file.name));
+    if (files.length) act(api.upload(role, files), "Spec folder added");
+    else toast("The folder contains no YAML or JSON files");
+  } });
+  return h("div", {}, input, h("button", { class: "btn small", style: { marginTop: "8px" }, onclick: () => input.click() }, "Choose folder"));
 }
 
 function fileRow(file) {
@@ -79,8 +90,8 @@ function sampleCard() {
   return h(
     "div",
     { class: "card" },
-    h("h2", {}, "API with no spec? Add sample responses"),
-    h("p", { class: "muted small" }, "Upload captured JSON responses for one endpoint. The schema is inferred: a key is required only if every sample has it, and distinct values are used like an enum."),
+    h("h2", {}, "API without a spec"),
+    h("p", { class: "muted small" }, "Upload JSON examples for an API that has no schema. To supplement an existing spec, use Documentation response examples above. The schema is inferred: a key is required only if every sample has it, and distinct values are used like an enum."),
     h(
       "div",
       { class: "grid", style: { gridTemplateColumns: "1fr 90px 1.4fr" } },

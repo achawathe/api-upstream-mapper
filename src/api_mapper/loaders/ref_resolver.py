@@ -69,7 +69,7 @@ class RefResolver:
     def _document_key_for(self, file_part: str, current_key: str) -> str:
         if not file_part:
             return current_key
-        path = (Path(current_key).parent / file_part).resolve()
+        path = (Path(current_key).parent / unquote(file_part)).resolve()
         key = str(path)
         if key not in self._documents:
             self._documents[key] = load_document(path)

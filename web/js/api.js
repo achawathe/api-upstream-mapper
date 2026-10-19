@@ -16,9 +16,17 @@ export const api = {
   upload: (role, files) => {
     const form = new FormData();
     form.append("role", role);
-    files.forEach((file) => form.append("files", file));
+    files.forEach((file) => form.append("files", file, file.webkitRelativePath || file.name));
     return request("POST", "/api/files", form);
   },
+  fileEndpoints: (id) => request("GET", `/api/files/${id}/endpoints`),
+  attachResponseSamples: (id, endpoint, files) => {
+    const form = new FormData();
+    form.append("endpoint", endpoint);
+    files.forEach((file) => form.append("files", file));
+    return request("POST", `/api/files/${id}/response-samples`, form);
+  },
+  removeResponseSamples: (id) => request("DELETE", `/api/response-samples/${id}`),
   addSampleEndpoint: (apiName, method, path, files) => {
     const form = new FormData();
     form.append("api_name", apiName);

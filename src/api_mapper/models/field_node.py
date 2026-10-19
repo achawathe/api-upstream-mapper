@@ -30,6 +30,8 @@ class FieldNode:
     condition: str | None = None
     schema_names: tuple[str, ...] = ()
     array_depth: int = 0
+    sample_sources: tuple[str, ...] = ()
+    sample_context: str = ""
 
     @property
     def key(self) -> str:

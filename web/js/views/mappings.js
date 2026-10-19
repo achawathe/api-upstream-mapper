@@ -142,6 +142,7 @@ function detail(mapping) {
       metaRow("Type", [target.type, target.format && `(${target.format})`, target.required && "· required", target.nullable && "· nullable"].filter(Boolean).join(" ")),
       target.enum.length > 0 && metaRow("Allowed", h("div", {}, target.enum.slice(0, 14).map((v) => h("span", { class: "chip" }, v)), target.enum.length > 14 && h("span", { class: "small muted" }, ` +${target.enum.length - 14} more`))),
       target.description && metaRow("Description", h("span", { class: "small" }, target.description)),
+      target.sample_sources?.length > 0 && metaRow("Documentation examples", h("span", { class: "small" }, target.sample_sources.join(", "))),
     ),
     h("div", { class: "row", style: { marginTop: "10px" } }, statusPill(mapping.status), override && h("span", { class: "pill manual" }, `override: ${override.action}`)),
     mapping.notes.length > 0 && h("ul", { class: "notes small" }, mapping.notes.map((n) => h("li", {}, n))),
@@ -170,6 +171,8 @@ function candidateBlock(candidate, title) {
     h("div", { style: { margin: "8px 0" } }, scoreBar(candidate.score)),
     candidate.vetoed_by && h("div", { class: "error-box" }, `Vetoed: ${candidate.vetoed_by}`),
     candidate.transforms.length > 0 && h("div", {}, h("h3", {}, "Transforms"), candidate.transforms.map(transformView)),
+    candidate.source.sample_sources?.length > 0 && h("p", { class: "small muted" }, "Documentation examples: ", candidate.source.sample_sources.join(", ")),
+    candidate.source.sample_context && h("p", { class: "small" }, candidate.source.sample_context),
     h("h3", {}, "Evidence"),
     h(
       "table",

@@ -59,6 +59,10 @@ def test_demo_run_override_validate_and_download(client):
 
     excel = client.get("/api/report.xlsx")
     assert excel.status_code == 200 and excel.content[:2] == b"PK"
+    history = client.get("/api/activity?limit=1000").json()["events"]
+    assert any(e["action"] == "Mapping run" and e["outcome"] == "success" for e in history)
+    assert any(e["action"] == "Change mapping decision" and e["details"]["decision"] == "reject" for e in history)
+    assert any(e["details"].get("route") == "/api/validate" and e["outcome"] == "success" for e in history)
 
 
 def test_sample_endpoint_upload_infers_an_api(client):

@@ -26,7 +26,7 @@ export function navigate(viewId) {
 
 export function canRun() {
   const files = store.workspace?.files ?? [];
-  const running = store.run.id && !store.run.done;
+  const running = store.run.starting || (store.run.id && !store.run.done);
   return files.some((f) => f.role === "upstream") && files.some((f) => f.role === "downstream") && !running;
 }
 
@@ -47,9 +47,17 @@ export async function refreshResult() {
 
 export async function startRun() {
   navigate("run");
-  store.run = { id: null, events: [], done: false, error: null };
+  store.run = { id: null, events: [], done: false, error: null, starting: true };
   changed();
-  const { run_id } = await api.startRun();
+  let run_id;
+  try {
+    ({ run_id } = await api.startRun());
+  } catch (error) {
+    store.run = { ...store.run, starting: false, done: true, error: error.message };
+    changed();
+    return;
+  }
+  store.run.starting = false;
   store.run.id = run_id;
   const source = api.events(run_id);
   source.onmessage = (message) => {

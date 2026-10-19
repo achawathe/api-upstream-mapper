@@ -78,7 +78,8 @@ class SemanticIndex:
 def _field_text(profile: FieldProfile) -> str:
     name = " ".join(split_identifier(" ".join(profile.node.segments)))
     description = " ".join(profile.node.description.split()[:80])
-    return f"{name}. {description}".strip()
+    text = f"{name}. {description}".strip()
+    return f"{text} {profile.node.sample_context}" if profile.node.sample_context else text
 
 
 def _normalise(vector: Sequence[float]) -> tuple[float, ...]:

@@ -9,7 +9,8 @@ mock downstreams to check the assembled response. Schema validity alone does not
 that the chosen fields have the right meaning.
 
 Rules-only matching remains the default. Optional local NLP adds sentence embeddings
-of field names and descriptions to discover and score meaning-based candidates.
+of field names, descriptions and optional documentation-example context to discover and
+score meaning-based candidates.
 The rules-only mode gives the same output for the same inputs.
 
 ## Local NLP
@@ -20,9 +21,10 @@ Install the optional dependency in this checkout's environment:
 .venv/bin/python -m pip install -e ".[nlp]"
 ```
 
-Provision a trusted Sentence Transformers sentence-similarity model in a local folder
-before enabling NLP. Model acquisition is a separate setup step; mapping never downloads
-a model. Supply the complete saved model, including its tokenizer and pooling modules.
+The repository includes `models/all-MiniLM-L6-v2`, so a normal clone or pull supplies
+the model files. Install the optional dependencies above, then use that folder's absolute
+path. You can also supply another trusted, complete Sentence Transformers model,
+including its tokenizer and pooling modules. Mapping never downloads a model.
 
 - **GUI:** Inputs → Decision thresholds → Local NLP model folder. Enter the folder's
   absolute path, Save, then Run mapping. Clear the path to return to rules only.
@@ -36,8 +38,11 @@ API content is encoded locally. These options follow the
 A missing dependency, missing model folder or encoding failure fails the requested run
 with a clear error, rather than silently changing matching modes.
 
-Embeddings use split field paths and at most 80 description words, without sample payload
-values. Distinct texts are encoded once per run. Retrieval adds at most ten semantic
+Embeddings use split field paths and at most 80 description words. Attached documentation
+responses add up to three bounded hints per field: short text labels or value patterns
+such as numeric values, UUIDs and ISO dates. Complete payloads, actual numeric values,
+email addresses and long free-form text are not embedded. This adds inference context; it
+does not train or fine-tune the model. Distinct texts are encoded once per run. Retrieval adds at most ten semantic
 candidates per target with cosine similarity of at least 0.80; these are configurable
 through `NlpSettings` or the settings API's nested `nlp` object (`top_k`, `min_similarity`).
 Cosine similarity appears as `local_nlp` evidence in the GUI, JSON and Excel. Its
@@ -89,10 +94,50 @@ Tests (unit, golden accuracy, mutation stress, 50-API scale):
 |---|---|
 | Upstream spec | OpenAPI 3.0/3.1 or Swagger 2.0, YAML or JSON, or a schema-only fragment (`components/schemas` or `definitions`) |
 | Downstream specs | Same formats. Local `$ref`s to other files work when the files sit together (upload them together in the GUI) |
+| Documentation examples | JSON success-response bodies attached to an existing **upstream or downstream** endpoint in the GUI or HTTP API |
 | Spec-less downstreams | Captured JSON responses plus a small manifest (see `samples/downstream/routing/manifest.yaml`), or uploaded per endpoint in the GUI |
 | Error catalog | Upstream error codes with HTTP status and keywords (`samples/upstream/fdx/error-catalog.yaml`) |
 | Extra lexicon | Your own abbreviations and synonyms, merged over `lexicon/finance.yaml` |
 | Answer key | Optional expected mappings; turns on the accuracy report |
+
+### Schemas and documentation responses
+
+1. Upload the upstream Swagger/OpenAPI file with its referenced model YAML/JSON files.
+   Do the same for each downstream API. For nested references, use **Choose folder**;
+   folder paths are preserved. The API entrypoint is selected independently of upload order.
+2. Models referenced by the API define the fields to map. Mapping works with these
+   models alone; JSON examples are optional. Declared types, required fields and enums
+   remain authoritative, and undeclared sample fields do not create new mapping fields.
+3. Under **Documentation response examples**, choose either the upstream or downstream
+   API, select its endpoint, and attach one or more JSON success-response bodies copied
+   from documentation. Preserve the response's nesting and array structure.
+4. Configure the optional local model, save, and run mapping. Samples contribute
+   observed-value evidence and bounded local NLP context. Sample filenames appear in
+   mapping details and the JSON report. Examples persist with the workspace.
+
+The **API without a spec** card is a separate workflow that infers a downstream schema
+from JSON. Use documentation attachments when a Swagger/OpenAPI model already exists.
+Examples do not establish complete enum coverage or prove that two fields have the same
+meaning. Candidate compatibility checks and NLP review safeguards still apply.
+
+The HTTP endpoints are `GET /api/files/{file_id}/endpoints`,
+`POST /api/files/{file_id}/response-samples` (multipart `endpoint` and `files`), and
+`DELETE /api/response-samples/{sample_id}`. Python callers can use
+`loaders.response_samples.attach_responses`. The CLI does not yet expose attachment flags.
+
+### Progress and activity logging
+
+The Run screen shows a short live status and stage progress. **Run details and activity
+log** stays collapsed until opened, with a download of the most recent 1,000 events.
+Actions, rejected HTTP requests, mapping run outcomes and stage counts are saved as JSON
+lines in the workspace's `activity.jsonl`. One previous file is retained; each file
+rotates at approximately 2 MiB. Logs survive application restarts and clearing inputs.
+The HTTP endpoint `GET /api/activity` returns the latest 200 events (up to 1,000 with
+`limit`), newest first. Logs contain action metadata, identifiers, timestamps, outcomes
+and durations, not payload bodies, sample values, request parameters or review notes.
+Detailed errors remain visible in the run screen; persistent failures record the error
+class or HTTP status without copying exception text that might contain input data.
+This history covers the GUI/HTTP workspace, not standalone CLI runs.
 
 ## What you get
 
@@ -253,3 +298,9 @@ tests/           unit/, golden/, stress/
   data cannot rule a variant out, its calls are made too and reported.
 # api-upstream-mapper
 # api-upstream-mapper
+
+Documentation-example validation (2026-10-19): published Plaid response examples were
+attached through the new enrichment path and evaluated with the checked-in local model,
+with networking blocked. Combined UK/Plaid origin coverage remained 31/48, with 21 wrong
+review suggestions and zero wrong automatic origins. This verifies sample ingestion
+without an accuracy regression on that benchmark; it does not establish an accuracy gain.

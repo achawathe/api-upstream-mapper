@@ -228,3 +228,19 @@ trade-off, not a claim of parity. Nine origins are automatic, one conditional. T
 finance golden key still finds 164/164 expected origins, with 138 required automatic
 choices and zero wrong automatic choices. This benchmark informed development; an
 independently reviewed unseen provider remains necessary to measure generalization.
+
+
+## Documentation examples and activity logging (2026-10-19)
+
+Upstream and downstream Swagger/OpenAPI models remain authoritative. Upload bundles
+preserve relative reference paths and identify the API entrypoint independently of file
+order. JSON success responses from documentation attach to explicit endpoints on either
+side, supplement observed-value matching and bounded local NLP context, and retain file
+provenance without changing declared fields, types, enums or requiredness.
+
+Local NLP remains optional and review-safe. The public-contract comparison remains
+31/48 correct origins and zero wrong automatic origins with the attached examples;
+no new accuracy gain is claimed. Small modules handle bundle selection, attachments,
+sample context and persistent activity history. The Run screen shows a concise live
+status, with detailed logs collapsed by default. Workspace actions and run stages are
+recorded locally with bounded retention, excluding payloads and free-form review notes.
