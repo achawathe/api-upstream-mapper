@@ -282,8 +282,11 @@ README's measured-accuracy table.
   precision and 34% recall, for the base rules as much as for later additions. Two general
   defects caused most of it: tags set an API-wide account family ("Direct Debits" made the
   whole banking API a deposit API), and single-record fields could come from endpoints
-  about another record (a payee's nickname). Both are fixed; CDR now scores 98.8% / 98.5%
-  and is no longer untouched.
+  about another record (a payee's nickname). Both are fixed. The one remaining wrong
+  automatic mapping (FDX `category`, defined as an MCC, from CDR's `type` enum) is fixed by
+  a lexicon purpose rule for merchant category codes, with MCC accepted as a `category`
+  source in the CDR and Northwind keys. CDR now scores 100% / 98.5% and is no longer
+  untouched.
 - Enum review now looks across sibling variants: a deposit variant's map leaving out `CC`
   is not a gap when the credit variant accepts it. Free-text sources into a closed list keep
   their automatic source decision with a runtime-validity note. Northwind automatic

@@ -6,6 +6,10 @@
 #   derived   -> value is fixed by the variant (discriminator), no downstream field needed
 #   optional  -> leaving it unmapped is also correct; mapping it to a listed source is correct
 # Every upstream field not listed here should stay unmapped.
+#
+# Corrections (labels only, never to fit a result):
+# - 2026-10-20: FDX defines transaction `category` as "preferably MCC or SIC", so the ledger's
+#   `merchant.mcc` was added beside `category.primary`, matching samples/real-contracts.
 
 sources:
   coreL: "core-accounts|GET /v2/accounts|data[].account."
@@ -210,7 +214,7 @@ groups:
       transactions[].amount: [ledger:amt]
       transactions[].foreignAmount: [ledger:foreign.amt]
       transactions[].foreignCurrency: [ledger:foreign.ccy]
-      transactions[].category: [ledger:category.primary]
+      transactions[].category: [ledger:merchant.mcc, ledger:category.primary]
     optional:
       transactions[].subCategory: [ledger:category.detailed]
 
@@ -246,7 +250,7 @@ groups:
       transactions[].amount: [ledger:amt]
       transactions[].foreignAmount: [ledger:foreign.amt]
       transactions[].foreignCurrency: [ledger:foreign.ccy]
-      transactions[].category: [ledger:category.primary]
+      transactions[].category: [ledger:merchant.mcc, ledger:category.primary]
       transactions[].subCategory: [ledger:category.detailed]
       transactions[].checkNumber: [ledger:chequeNo]
       transactions[].transactionType: [ledger:txnCode]

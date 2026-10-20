@@ -125,3 +125,30 @@ def test_product_identifier_cannot_be_supplied_by_a_product_label(lexicon):
         },
     )[0]
     assert mapping.chosen is None
+
+
+def test_category_defined_as_mcc_prefers_a_merchant_category_code_over_a_transaction_type(lexicon):
+    mapping = match(
+        lexicon,
+        {
+            "transactions": records(
+                {"category": {"type": "string", "description": "Transaction category, preferably MCC or SIC."}}
+            )
+        },
+        {
+            "transactions": records(
+                {
+                    "type": {
+                        "type": "string",
+                        "description": "The type of the transaction.",
+                        "enum": ["FEE", "PAYMENT", "TRANSFER_OUTGOING"],
+                    },
+                    "merchantCategoryCode": {
+                        "type": "string",
+                        "description": "The merchant category code (or MCC) for an outgoing payment to a merchant.",
+                    },
+                }
+            )
+        },
+    )[0]
+    assert mapping.chosen.source.path == "transactions[].merchantCategoryCode"

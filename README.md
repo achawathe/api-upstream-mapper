@@ -303,7 +303,7 @@ the API's name, never from the API's tag list.
 | Same, every downstream renamed with lexicon abbreviations, synonyms and casing (8 seeds) | 100% | 100% |
 | Same, renamed with spellings no lexicon lists: dropped vowels, truncation, reversed word order, filler words (16 seeds) | 100% | 73–96% |
 | Same, plus 42 generated noise APIs sharing generic field names (50 APIs) | 100% | 100% |
-| **Held-out:** Australian Consumer Data Right banking and common APIs | 98.8% (1 wrong of 86) | 98.5% (70% automatically) |
+| **Held-out:** Australian Consumer Data Right banking and common APIs | 100% (0 wrong of 85) | 98.5% (70% automatically) |
 | UK Open Banking and Plaid excerpts (99 labelled cases) | 100% (9 automatic) | 40 of 48 origins; 51 of 51 no-source cases left unmapped |
 
 The Northwind APIs were written for this project and the UK Open Banking and Plaid excerpts
@@ -312,8 +312,12 @@ than how it performs on an unfamiliar API. The CDR row is the closest to that: i
 key was written from the specs before the first run. That run scored 66.7% precision and
 34% recall and exposed two general defects: an API's tag list set its account family for
 every endpoint, and single-record fields could come from endpoints about a different record.
-Both are fixed, and one label was widened, so CDR is no longer untouched. The next real
-downstream you add, with its answer key written first, is the honest test.
+Both are fixed. A later run's one wrong automatic mapping, FDX transaction `category`
+(defined as "preferably MCC or SIC") filled from CDR's transaction `type` enum, led to a
+lexicon purpose rule for merchant category codes. Labels were widened for CDR address
+formats and, in CDR and Northwind, for MCC as a `category` source. CDR is no longer
+untouched. The next real downstream you add, with its answer key written first, is the
+honest test.
 
 On UK Open Banking and Plaid, most correct mappings still wait for review: Plaid selects
 records through a JSON body (`access_token`, `account_ids`), so identifier compatibility needs

@@ -14,6 +14,9 @@
 # - 2026-10-20: CDR addresses come in two shapes chosen by addressUType, `simple` and `paf`
 #   (Australia Post's structured format). Both carry a genuine postcode and state, so the
 #   `paf` paths were added as acceptable sources for postalCode and region.
+# - 2026-10-20: FDX defines transaction `category` as "preferably MCC or SIC", and CDR has
+#   `merchantCategoryCode`. The key had no source for it; MCC was added as optional, matching
+#   how samples/real-contracts labels the same FDX field. CDR `type` remains incorrect for it.
 
 sources:
   L: "cds-banking|GET /banking/accounts|data.accounts[]."
@@ -119,6 +122,8 @@ groups:
       transactions[].description: [T:description]
       transactions[].status: [T:status]
       transactions[].amount: [T:amount]
+    optional:
+      transactions[].category: [T:merchantCategoryCode]
 
   - endpoint: GET /accounts/{accountId}/transactions
     variants: [DepositTransaction]

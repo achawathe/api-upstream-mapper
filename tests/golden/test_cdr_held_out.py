@@ -1,9 +1,9 @@
 """Accuracy on the Australian Consumer Data Right banking APIs, which no rule was written for.
 
-The answer key was written from the specs before the first run. Two general defects it
+The answer key was written from the specs before the first run. The general defects it
 exposed were fixed (tags no longer set an API-wide account family; single-record fields must
-come from an endpoint about the same record), so this set is no longer untouched; see
-samples/held-out/cdr/README.md.
+come from an endpoint about the same record; a category defined as an MCC prefers a merchant
+category code), so this set is no longer untouched; see samples/held-out/cdr/README.md.
 """
 
 import pytest
@@ -25,7 +25,7 @@ def report(lexicon):
 
 
 def test_no_wrong_automatic_mapping(report):
-    assert report.counts[Outcome.WRONG_AUTO] == 0, report.failures()
+    assert report.counts[Outcome.WRONG_AUTO] + report.counts[Outcome.SPURIOUS_AUTO] == 0, report.failures()
 
 
 def test_precision_and_recall(report):
