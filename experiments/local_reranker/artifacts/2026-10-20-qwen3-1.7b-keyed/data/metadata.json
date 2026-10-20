@@ -1,0 +1,21 @@
+{
+  "train": {
+    "variants": [
+      "None",
+      "(0, False)",
+      "(1, False)",
+      "(0, True)",
+      "(1, True)"
+    ],
+    "rows": 1536
+  },
+  "valid": {
+    "variant": "(9, True)",
+    "rows": 303
+  },
+  "cdr-test": {
+    "rows": 179,
+    "none_sampled": 40
+  },
+  "test.jsonl": "copied unchanged from data/ so the data audit can run"
+}

@@ -1,0 +1,20 @@
+{
+  "train": {
+    "rows": 1054,
+    "max_tokens": 858,
+    "min_answer_tokens": 7,
+    "sha256": "9dcd18c3614b747b49d24a7d79a4bb554b941a0fd6d65a974798b5e40ce02f4c"
+  },
+  "valid": {
+    "rows": 176,
+    "max_tokens": 873,
+    "min_answer_tokens": 7,
+    "sha256": "eead06bec8a27c1d0ef89b89c66662f880d82fc489fc1188913e18c4c81c20c8"
+  },
+  "test": {
+    "rows": 68,
+    "max_tokens": 363,
+    "min_answer_tokens": 7,
+    "sha256": "4436d767b7bfde92cf17550dcb666fc13a218e949949bf9810563775c8131f49"
+  }
+}

@@ -1,0 +1,1146 @@
+[
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>accountId",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].account_id",
+      "plaid|POST /transactions/get|accounts[].account_id",
+      "plaid|POST /auth/get|accounts[].account_id",
+      "plaid|POST /identity/get|accounts[].account_id"
+    ],
+    "note": "Operational Plaid account identifier; strict FDX lifetime persistence needs an adapter policy because Plaid documents rare ID changes.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 0,
+    "baseline": "plaid|POST /auth/get|accounts[].account_id"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>accountNumberDisplay",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].mask",
+      "plaid|POST /transactions/get|accounts[].mask",
+      "plaid|POST /auth/get|accounts[].mask",
+      "plaid|POST /identity/get|accounts[].mask"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 1,
+    "baseline": "plaid|POST /auth/get|accounts[].mask"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>productName",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].official_name",
+      "plaid|POST /transactions/get|accounts[].official_name",
+      "plaid|POST /auth/get|accounts[].official_name",
+      "plaid|POST /identity/get|accounts[].official_name"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 2,
+    "baseline": "plaid|POST /identity/get|accounts[].official_name"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>productId",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 3,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>nickname",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].name",
+      "plaid|POST /transactions/get|accounts[].name",
+      "plaid|POST /auth/get|accounts[].name",
+      "plaid|POST /identity/get|accounts[].name"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 4,
+    "baseline": "plaid|POST /accounts/get|accounts[].name"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>status",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": true,
+    "retrieved": false,
+    "case": 5,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>currency.currencyCode",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].balances.iso_currency_code",
+      "plaid|POST /transactions/get|accounts[].balances.iso_currency_code",
+      "plaid|POST /auth/get|accounts[].balances.iso_currency_code",
+      "plaid|POST /identity/get|accounts[].balances.iso_currency_code"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 6,
+    "baseline": "plaid|POST /auth/get|accounts[].balances.iso_currency_code"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>accountType",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].subtype",
+      "plaid|POST /transactions/get|accounts[].subtype",
+      "plaid|POST /auth/get|accounts[].subtype",
+      "plaid|POST /identity/get|accounts[].subtype"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 7,
+    "baseline": "plaid|POST /auth/get|accounts[].subtype"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>currentBalance",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].balances.current",
+      "plaid|POST /transactions/get|accounts[].balances.current",
+      "plaid|POST /auth/get|accounts[].balances.current",
+      "plaid|POST /identity/get|accounts[].balances.current"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 8,
+    "baseline": "plaid|POST /transactions/get|accounts[].balances.current"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>availableBalance",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].balances.available",
+      "plaid|POST /transactions/get|accounts[].balances.available",
+      "plaid|POST /auth/get|accounts[].balances.available",
+      "plaid|POST /identity/get|accounts[].balances.available"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 9,
+    "baseline": "plaid|POST /transactions/get|accounts[].balances.available"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.rate",
+    "expected": [],
+    "note": "APY is effective annual yield, not the nominal current interest rate; no equivalent field.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 10,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.rateAsOf",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 11,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.compoundingPeriod",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 12,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.priorRate",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 13,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.type",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 14,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.index",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 15,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>underArbitration",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 16,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftOptIn",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 17,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdrafted",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 18,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftProtectionFunded",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 19,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].accountId",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 20,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].accountNumberDisplay",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 21,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].accountType",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 22,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].institutionName",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 23,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].transactionId",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].transaction_id"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 24,
+    "baseline": "plaid|POST /transactions/get|transactions[].transaction_id"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].referenceTransactionId",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].pending_transaction_id"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 25,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].postedTimestamp",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].datetime",
+      "plaid|POST /transactions/get|transactions[].date"
+    ],
+    "note": "Use only posted/booked transactions; date-only input loses time precision.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 26,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].transactionTimestamp",
+    "expected": [],
+    "note": "Server ingestion timestamp is absent; authorization, value, and booking dates are not equivalent.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 27,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].cardNumberDisplay",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 28,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].description",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].name",
+      "plaid|POST /transactions/get|transactions[].original_description",
+      "plaid|POST /transactions/get|transactions[].merchant_name"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 29,
+    "baseline": "plaid|POST /transactions/get|transactions[].merchant_name"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].debitCreditMemo",
+    "expected": [],
+    "note": "No direct field: requires derivation from sign of amount, outside this direct-field answer key.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 30,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].category",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].merchant_category_code"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 31,
+    "baseline": "plaid|POST /transactions/get|transactions[].merchant_category_code"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].subCategory",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 32,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].status",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].pending"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": false,
+    "case": 33,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].amount",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].amount"
+    ],
+    "note": "Correct origin only: Plaid amount is signed; FDX requires absolute amount plus debitCreditMemo.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 34,
+    "baseline": "plaid|POST /transactions/get|transactions[].amount"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].foreignAmount",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 35,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].foreignCurrency",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 36,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].payee",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].merchant_name",
+      "plaid|POST /transactions/get|transactions[].payment_meta.payee"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 37,
+    "baseline": "plaid|POST /transactions/get|transactions[].merchant_name"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].checkNumber",
+    "expected": [
+      "plaid|POST /transactions/get|transactions[].check_number"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 38,
+    "baseline": "plaid|POST /transactions/get|transactions[].check_number"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/payment-networks|paymentNetworks[].bankId",
+    "expected": [
+      "plaid|POST /auth/get|numbers.ach[].routing"
+    ],
+    "note": "ACH routing/account identifiers; join account_id and choose network.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 39,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts/{accountId}/payment-networks|paymentNetworks[].identifier",
+    "expected": [
+      "plaid|POST /auth/get|numbers.ach[].account"
+    ],
+    "note": "ACH routing/account identifiers; join account_id and choose network.",
+    "conditional": true,
+    "retrieved": false,
+    "case": 40,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].accountId",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].account_id",
+      "plaid|POST /transactions/get|accounts[].account_id",
+      "plaid|POST /auth/get|accounts[].account_id",
+      "plaid|POST /identity/get|accounts[].account_id"
+    ],
+    "note": "Operational Plaid account identifier; strict FDX lifetime persistence needs an adapter policy because Plaid documents rare ID changes.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 41,
+    "baseline": "plaid|POST /auth/get|accounts[].account_id"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].accountNumberDisplay",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].mask",
+      "plaid|POST /transactions/get|accounts[].mask",
+      "plaid|POST /auth/get|accounts[].mask",
+      "plaid|POST /identity/get|accounts[].mask"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 42,
+    "baseline": "plaid|POST /auth/get|accounts[].mask"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].productName",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].official_name",
+      "plaid|POST /transactions/get|accounts[].official_name",
+      "plaid|POST /auth/get|accounts[].official_name",
+      "plaid|POST /identity/get|accounts[].official_name"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 43,
+    "baseline": "plaid|POST /auth/get|accounts[].official_name"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].productId",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 44,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].nickname",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].name",
+      "plaid|POST /transactions/get|accounts[].name",
+      "plaid|POST /auth/get|accounts[].name",
+      "plaid|POST /identity/get|accounts[].name"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 45,
+    "baseline": "plaid|POST /identity/get|accounts[].name"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].status",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": true,
+    "retrieved": false,
+    "case": 46,
+    "baseline": null
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].currency.currencyCode",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].balances.iso_currency_code",
+      "plaid|POST /transactions/get|accounts[].balances.iso_currency_code",
+      "plaid|POST /auth/get|accounts[].balances.iso_currency_code",
+      "plaid|POST /identity/get|accounts[].balances.iso_currency_code"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 47,
+    "baseline": "plaid|POST /auth/get|accounts[].balances.iso_currency_code"
+  },
+  {
+    "provider": "plaid",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].accountType",
+    "expected": [
+      "plaid|POST /accounts/get|accounts[].subtype",
+      "plaid|POST /transactions/get|accounts[].subtype",
+      "plaid|POST /auth/get|accounts[].subtype",
+      "plaid|POST /identity/get|accounts[].subtype"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 48,
+    "baseline": "plaid|POST /auth/get|accounts[].subtype"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>accountId",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].AccountId",
+      "uk|GET /accounts|Data.Account[].AccountId"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 49,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].AccountId"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>accountNumberDisplay",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 50,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>productName",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 51,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>productId",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 52,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>nickname",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].Nickname",
+      "uk|GET /accounts|Data.Account[].Nickname"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 53,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].Nickname"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>status",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].Status",
+      "uk|GET /accounts|Data.Account[].Status"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 54,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].Status"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>currency.currencyCode",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].Currency",
+      "uk|GET /accounts|Data.Account[].Currency"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 55,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].Currency"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>accountType",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].AccountTypeCode",
+      "uk|GET /accounts|Data.Account[].AccountTypeCode"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 56,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].AccountTypeCode"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>currentBalance",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/balances|Data.Balance[].Amount.Amount"
+    ],
+    "note": "Lineage only: select the correct Balance.Type and apply CreditDebitIndicator; raw list has multiple balance kinds.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 57,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>availableBalance",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/balances|Data.Balance[].Amount.Amount"
+    ],
+    "note": "Lineage only: select the correct Balance.Type and apply CreditDebitIndicator; raw list has multiple balance kinds.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 58,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.rate",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 59,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.rateAsOf",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 60,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.compoundingPeriod",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 61,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.priorRate",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 62,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.type",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 63,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>earnedInterest.index",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 64,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>underArbitration",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 65,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftOptIn",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 66,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdrafted",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 67,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftProtectionFunded",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 68,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].accountId",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 69,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].accountNumberDisplay",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 70,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].accountType",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 71,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}|<DepositAccount>overdraftFundingSources[].institutionName",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 72,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].transactionId",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].TransactionId"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 73,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].TransactionId"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].referenceTransactionId",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": true,
+    "retrieved": false,
+    "case": 74,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].postedTimestamp",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].BookingDateTime"
+    ],
+    "note": "Use only posted/booked transactions; date-only input loses time precision.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 75,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].BookingDateTime"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].transactionTimestamp",
+    "expected": [],
+    "note": "Server ingestion timestamp is absent; authorization, value, and booking dates are not equivalent.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 76,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].cardNumberDisplay",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 77,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].description",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].TransactionInformation",
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].MerchantDetails.MerchantName"
+    ],
+    "note": "FDX expressly allows a merchant name as a user-friendly transaction description; narrative and merchant name both qualify.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 78,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].MerchantDetails.MerchantName"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].debitCreditMemo",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].CreditDebitIndicator"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 79,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].CreditDebitIndicator"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].category",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].MerchantDetails.MerchantCategoryCode"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 80,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].MerchantDetails.MerchantCategoryCode"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].subCategory",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 81,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].status",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].Status"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 82,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].Status"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].amount",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].Amount.Amount"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 83,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].Amount.Amount"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].foreignAmount",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 84,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].foreignCurrency",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 85,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].payee",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].MerchantDetails.MerchantName",
+      "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].CreditorAccount.Name"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 86,
+    "baseline": "uk|GET /accounts/{AccountId}/transactions|Data.Transaction[].MerchantDetails.MerchantName"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/transactions|<DepositTransaction>transactions[].checkNumber",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 87,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/statements|statements[].accountId",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/statements|Data.Statement[].AccountId"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 88,
+    "baseline": "uk|GET /accounts/{AccountId}/statements|Data.Statement[].AccountId"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/statements|statements[].statementId",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/statements|Data.Statement[].StatementId"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 89,
+    "baseline": "uk|GET /accounts/{AccountId}/statements|Data.Statement[].StatementId"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts/{accountId}/statements|statements[].description",
+    "expected": [
+      "uk|GET /accounts/{AccountId}/statements|Data.Statement[].StatementDescription[]"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 90,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].accountId",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].AccountId",
+      "uk|GET /accounts|Data.Account[].AccountId"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 91,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].AccountId"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].accountNumberDisplay",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 92,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].productName",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 93,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].productId",
+    "expected": [],
+    "note": "No source in selected contracts; do not confuse neighboring fields.",
+    "conditional": false,
+    "retrieved": false,
+    "case": 94,
+    "baseline": null
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].nickname",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].Nickname",
+      "uk|GET /accounts|Data.Account[].Nickname"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 95,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].Nickname"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].status",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].Status",
+      "uk|GET /accounts|Data.Account[].Status"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 96,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].Status"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].currency.currencyCode",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].Currency",
+      "uk|GET /accounts|Data.Account[].Currency"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": false,
+    "retrieved": true,
+    "case": 97,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].Currency"
+  },
+  {
+    "provider": "uk",
+    "target": "GET /accounts|<DepositAccountDescriptor>accounts[].accountType",
+    "expected": [
+      "uk|GET /accounts/{AccountId}|Data.Account[].AccountTypeCode",
+      "uk|GET /accounts|Data.Account[].AccountTypeCode"
+    ],
+    "note": "Equivalent field meaning in the two published contracts.",
+    "conditional": true,
+    "retrieved": true,
+    "case": 98,
+    "baseline": "uk|GET /accounts/{AccountId}|Data.Account[].AccountTypeCode"
+  }
+]

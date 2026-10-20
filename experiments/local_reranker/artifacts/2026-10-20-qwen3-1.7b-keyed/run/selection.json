@@ -1,0 +1,6 @@
+{
+  "iteration": 768,
+  "val_loss": 0.16708552837371826,
+  "final": true,
+  "adapter": "/Users/akhilchawathe/AI-projects/api-mapper/experiments/local_reranker/artifacts/2026-10-20-qwen3-1.7b-keyed/run/selected"
+}

@@ -17,6 +17,7 @@ def main():
     parser.add_argument("--validation-batches", type=int, default=-1)
     parser.add_argument("--eval-every", type=int, default=64)
     parser.add_argument("--layers", type=int, default=8)
+    parser.add_argument("--max-length", type=int, default=512)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     offline()
@@ -38,7 +39,7 @@ def main():
     np.random.seed(12)
     mx.set_cache_limit(256 * 1024**2)
     model, tokenizer = load(str(args.model.resolve()), tokenizer_config={"trust_remote_code": False})
-    write_json(args.output / "data-audit.json", audit(args.data, tokenizer, 512))
+    write_json(args.output / "data-audit.json", audit(args.data, tokenizer, args.max_length))
     config = {
         "model": str(args.model.resolve()),
         "data": str(args.data.resolve()),
@@ -56,7 +57,7 @@ def main():
         "seed": 12,
         "iterations": args.iterations,
         "learning_rate": 5e-5,
-        "max_seq_length": 512,
+        "max_seq_length": args.max_length,
         "validation_batches": args.validation_batches,
         "completion_format": "inference prefix + literal JSON + EOS; no template-inserted reasoning",
         "eval_every": args.eval_every,
@@ -78,7 +79,7 @@ def main():
         steps_per_eval=args.eval_every,
         steps_per_save=args.eval_every,
         adapter_file=args.output / "adapters.safetensors",
-        max_seq_length=512,
+        max_seq_length=args.max_length,
         grad_checkpoint=True,
         clear_cache_threshold=256 * 1024**2,
     )
@@ -91,7 +92,7 @@ def main():
         loss=answer_loss,
         training_callback=recorder,
     )
-    final_loss = evaluate(model, CacheDataset(valid_set), 1, args.validation_batches, 512, loss=answer_loss)
+    final_loss = evaluate(model, CacheDataset(valid_set), 1, args.validation_batches, args.max_length, loss=answer_loss)
     recorder.on_val_loss_report({"iteration": args.iterations, "val_loss": final_loss, "final": True})
     delta = sum(
         float(mx.sum(mx.abs(value - initial[name]))) for name, value in tree_flatten(model.trainable_parameters())

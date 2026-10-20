@@ -1,0 +1,11 @@
+{
+  "model": "/Users/akhilchawathe/models/Qwen3-1.7B-8bit",
+  "adapter": "/Users/akhilchawathe/AI-projects/api-mapper/experiments/local_reranker/artifacts/2026-10-20-qwen3-1.7b-keyed/run/selected",
+  "data_sha256": "4436d767b7bfde92cf17550dcb666fc13a218e949949bf9810563775c8131f49",
+  "limit": null,
+  "max_tokens": 32,
+  "temperature": 0,
+  "seed": 0,
+  "network": "blocked",
+  "selection": "No labels in prompts; all choices require review"
+}

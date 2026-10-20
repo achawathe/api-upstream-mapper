@@ -1,0 +1,20 @@
+{
+  "max_wrong": 0.1,
+  "passes": false,
+  "reasons": [
+    "heldout/original: 12 of 68 wrong (17.6%)",
+    "heldout/reversed: 9 of 68 wrong (13.2%)",
+    "public/original: 2 correct origins, the app already finds 4",
+    "public/reversed: 1 invalid answers",
+    "public/reversed: 0 correct origins, the app already finds 4",
+    "public: an existing correct origin was lost"
+  ],
+  "wrong_rates": {
+    "heldout/original": 0.1765,
+    "heldout/reversed": 0.1324,
+    "docs/original": 0.0,
+    "docs/reversed": 0.0,
+    "public/original": 0.0625,
+    "public/reversed": 0.0625
+  }
+}

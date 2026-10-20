@@ -9,6 +9,10 @@ origin recovery but introduced wrong suggestions compared with the current app.
 Its saved adapter failed the promotion gate and is not active in the application.
 A [repeat with Qwen3-1.7B-8bit](artifacts/2026-10-20-qwen3-1.7b/RESULTS.md), small enough for
 GitHub LFS, failed the same gate by a wider margin (2 and 5 wrong public suggestions).
+Two more 1.7B runs, one on [shuffled longer packets](artifacts/2026-10-20-qwen3-1.7b-shuffled/RESULTS.md)
+and one on [packets built by the app from Northwind](artifacts/2026-10-20-qwen3-1.7b-keyed/RESULTS.md),
+also failed a relaxed 10% wrong-suggestion bar; on fresh CDR packets the trained model was wrong
+on 39–54% of cases against the app's 9.5%. This line of work is stopped.
 Prompts pass `enable_thinking=False`, which Qwen3 hybrid models need and the 4B template ignores.
 
 The base is `mlx-community/Qwen3-4B-Instruct-2507-4bit`, revision

@@ -5,6 +5,7 @@ import json
 from experiments.local_reranker.compare import decision
 from experiments.local_reranker.dataset import completion_tokens
 from experiments.local_reranker.evaluate import parse_choice, summary
+from experiments.local_reranker.tolerance import check
 
 
 def test_reranker_rejects_non_contract_answers():
@@ -79,3 +80,27 @@ def test_more_correct_choices_cannot_hide_a_lost_working_origin(tmp_path):
     result = decision(tmp_path)
     assert not result["passes_focused_gate"]
     assert "public: an existing correct origin was lost" in result["reasons"]
+
+
+def test_tolerance_allows_bounded_wrong_suggestions_but_not_invalid_or_lost_origins(tmp_path):
+    def write(dataset, wrong, invalid=0, correct=6, cases=20):
+        folder = tmp_path / f"trained-{dataset}"
+        folder.mkdir(exist_ok=True)
+        counts = {"correct": correct, "wrong": wrong, "invalid": invalid, "cases": cases}
+        (folder / "summary.json").write_text(json.dumps({"original": counts, "reversed": counts}))
+
+    (tmp_path / "public-inputs").mkdir()
+    (tmp_path / "public-inputs/focused-manifest.json").write_text(
+        json.dumps({"cases": [{"baseline": "source", "expected": ["source"]}]})
+    )
+    for dataset in ("heldout", "docs", "public"):
+        write(dataset, wrong=2)
+    (tmp_path / "trained-public/results.json").write_text(json.dumps([{"case": 0, "outcome": "correct"}]))
+    assert check(tmp_path, 0.10)["passes"]
+    write("docs", wrong=3)
+    assert not check(tmp_path, 0.10)["passes"]
+    write("docs", wrong=0, invalid=1)
+    assert not check(tmp_path, 0.10)["passes"]
+    write("docs", wrong=0)
+    (tmp_path / "trained-public/results.json").write_text(json.dumps([{"case": 0, "outcome": "wrong"}]))
+    assert "public: an existing correct origin was lost" in check(tmp_path, 0.10)["reasons"]

@@ -1,0 +1,7 @@
+{
+  "iterations": 768,
+  "parameter_change_l1": 877.7425241470337,
+  "adapter_bytes": 1838449,
+  "adapter_sha256": "965f6d7a3306637f1577392ac80f76ea0fbebd0f55c35e14a574462a7fc56f49",
+  "peak_memory_gb": 3.871849236
+}
