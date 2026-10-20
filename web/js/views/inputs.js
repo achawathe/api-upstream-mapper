@@ -3,12 +3,14 @@ import { api } from "../api.js";
 import { dropzone, h, mount, toast } from "../dom.js";
 import { canRun, refreshWorkspace, startRun, store } from "../state.js";
 import { jsonResponseInput } from "./json-response-input.js";
+import { upstreamModels } from "./upstream-models.js";
+import { documentationCard } from "./documentation.js";
 
 const ROLES = [
   { role: "upstream", title: "Upstream spec", hint: "Upload the upstream spec together with its referenced model YAML/JSON files. Use Choose folder for nested references.", multiple: true },
   { role: "downstream", title: "Downstream APIs", hint: "Upload downstream specs with their referenced model files. Use Choose folder to preserve nested paths.", multiple: true },
   { role: "catalog", title: "Upstream error catalog", hint: "Optional. Upstream error codes with HTTP status and keywords.", multiple: false },
-  { role: "lexicon", title: "Extra lexicon", hint: "Optional. Your own abbreviations and synonyms, merged over the built-in finance lexicon.", multiple: true },
+  { role: "lexicon", title: "Extra lexicon", hint: "Optional. Your own abbreviations and synonyms, merged over the selected vocabulary.", multiple: true },
   { role: "answer_key", title: "Answer key", hint: "Optional. Expected mappings; enables the accuracy report.", multiple: false },
 ];
 
@@ -25,7 +27,7 @@ export function renderInputs(container) {
       h("button", { class: "btn danger", onclick: () => act(api.reset(), "Workspace cleared") }, "Clear workspace"),
     ),
     h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, ROLES.map((role) => roleCard(role, files))),
-    h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, responseSamplesCard(), settingsCard(), sampleCard()),
+    h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, documentationCard(), responseSamplesCard(), settingsCard(), sampleCard()),
     h(
       "div",
       { class: "row", style: { marginTop: "18px" } },
@@ -48,6 +50,7 @@ function roleCard({ role, title, hint, multiple }, files) {
     }),
     ["upstream", "downstream"].includes(role) && folderPicker(role),
     mine.map(fileRow),
+    role === "upstream" && mine.length === 1 && upstreamModels(mine[0]),
   );
 }
 
@@ -73,10 +76,17 @@ function fileRow(file) {
   return h(
     "div",
     { class: `file-row ${s.ok === false ? "bad" : ""}` },
-    h("div", {}, h("div", { class: "name" }, file.name), details, (s.warnings ?? []).map((w) => h("div", { class: "small warn" }, w))),
+    h("div", {}, h("div", { class: "name" }, file.name), details, fileWarnings(s.warnings ?? [])),
     h("span", { class: "spacer" }),
     h("button", { class: "btn small", "aria-label": `Remove ${file.name}`, onclick: () => act(api.removeFile(file.id), "Removed") }, "Remove"),
   );
+}
+
+function fileWarnings(warnings) {
+  const unique = [...new Set(warnings)];
+  if (!unique.length) return null;
+  return h("details", { class: "small warn" }, h("summary", {}, plural(unique.length, "warning")),
+    unique.map((warning) => h("div", {}, warning)));
 }
 
 function sampleCard() {
@@ -113,11 +123,13 @@ function settingsCard() {
   const auto = h("input", { type: "number", min: 0, max: 1, step: 0.01, value: settings.auto, "aria-label": "Automatic threshold" });
   const review = h("input", { type: "number", min: 0, max: 1, step: 0.01, value: settings.review, "aria-label": "Review threshold" });
   const model = h("input", { type: "text", value: settings.nlp?.model_path ?? "", placeholder: "/path/to/local/model", "aria-label": "Local NLP model folder" });
-  const save = () => act(api.saveSettings({ auto: Number(auto.value), review: Number(review.value), nlp: { ...settings.nlp, model_path: model.value.trim() } }), "Settings saved; run again to apply");
+  const domain = h("select", { "aria-label": "Mapping vocabulary" }, ["general", "finance"].map((value) => h("option", { value, selected: value === (settings.domain ?? "finance") }, value === "general" ? "General applications" : "Finance")));
+  const save = () => act(api.saveSettings({ auto: Number(auto.value), review: Number(review.value), domain: domain.value, nlp: { ...settings.nlp, model_path: model.value.trim() } }), "Settings saved; run again to apply");
   return h(
     "div",
     { class: "card" },
     h("h2", {}, "Decision thresholds"),
+    h("label", { class: "field" }, "Mapping vocabulary", domain),
     h("p", { class: "muted small" }, "At or above the automatic threshold a mapping is accepted without review, unless a close alternative exists. Between the two it needs review. Below review it stays unmapped."),
     h("div", { class: "row" }, h("label", { class: "field" }, "Automatic", auto), h("label", { class: "field" }, "Review", review), h("span", { class: "spacer" }), h("button", { class: "btn", onclick: save }, "Save")),
     h("label", { class: "field" }, "Local NLP model folder (optional)", model),

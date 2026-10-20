@@ -5,13 +5,16 @@ from dataclasses import dataclass
 
 from api_mapper.models import FieldNode, TransformKind, TransformStep
 from api_mapper.normalize.lexicon import Lexicon
+from api_mapper.transforms.enum_inference import enum_transform
 from api_mapper.transforms.enum_mapping import EnumMapper, EnumMapping
+from api_mapper.transforms.numeric_evidence import has_numeric_text
+from api_mapper.transforms.temporal_evidence import observed_date_format
 
 _COMPACT_DATE = re.compile(r"^\d{8}$")
-_NUMERIC_TEXT = re.compile(r"^-?\d+(\.\d+)?$")
 _EPOCH_MILLIS_FLOOR = 100_000_000_000
 _TEMPORAL_FORMATS = frozenset({"date", "date-time"})
 _NUMERIC_TYPES = frozenset({"number", "integer"})
+_NON_QUANTITY_FORMATS = frozenset({"uri", "uri-reference", "url", "uuid", "email", "hostname", "ipv4", "ipv6"})
 
 
 @dataclass(frozen=True)
@@ -30,19 +33,10 @@ class TypeFitter:
 
     def fit(self, target: FieldNode, source: FieldNode, source_is_temporal: bool) -> TypeFit:
         fit = _type_fit(target, source, self.lexicon, source_is_temporal)
-        source_values = source.enum or source.observed
-        if fit.veto or not (target.enum and source_values):
+        if fit.veto:
             return fit
-        enum_mapping = self.enum_mapper.map(source_values, target.enum)
-        if source.enum and set(source.enum) <= set(target.enum):
-            return TypeFit(fit.score, fit.steps, None, fit.detail, enum_mapping)
-        inferred = "" if source.enum else " (values seen in samples; others will fail)"
-        step = TransformStep(
-            kind=TransformKind.ENUM_MAP,
-            description=_describe_enum(enum_mapping) + inferred,
-            params={"mapping": enum_mapping.mapping, "unmapped": list(enum_mapping.unmapped), "from_samples": not source.enum},
-        )
-        return TypeFit(fit.score, (*fit.steps, step), None, fit.detail, enum_mapping)
+        step, mapping = enum_transform(target, source, self.enum_mapper)
+        return TypeFit(fit.score, (*fit.steps, step) if step else fit.steps, None, fit.detail, mapping)
 
 
 def _type_fit(target: FieldNode, source: FieldNode, lexicon: Lexicon, source_is_temporal: bool) -> TypeFit:
@@ -66,7 +60,9 @@ def _type_fit(target: FieldNode, source: FieldNode, lexicon: Lexicon, source_is_
     if t == "integer" and s == "number":
         return TypeFit(0.6, (_cast("integer"),), detail="number narrows to integer")
     if t in _NUMERIC_TYPES and s == "string":
-        numeric_example = isinstance(source.example, str) and bool(_NUMERIC_TEXT.match(source.example))
+        if source.format in _NON_QUANTITY_FORMATS:
+            return TypeFit(0.0, veto=f"{source.format} text cannot supply a numeric value")
+        numeric_example = has_numeric_text(source, integer=t == 'integer')
         return TypeFit(0.85 if numeric_example else 0.55, (_cast(t),), detail="numeric text parsed to number")
     if t == "string" and s in _NUMERIC_TYPES:
         return TypeFit(0.7, (_cast("string"),), detail=f"{s} rendered as text")
@@ -81,6 +77,8 @@ def _type_fit(target: FieldNode, source: FieldNode, lexicon: Lexicon, source_is_
 
 
 def _temporal_fit(target: FieldNode, source: FieldNode, lexicon: Lexicon, source_is_temporal: bool) -> TypeFit:
+    if source.format in _NON_QUANTITY_FORMATS:
+        return TypeFit(0.0, veto=f"{source.format} text cannot supply a date")
     if source.type in ("boolean", "number"):
         return TypeFit(0.0, veto=f"{source.type} cannot be a date")
     if source.type == "integer":
@@ -102,9 +100,16 @@ def _temporal_fit(target: FieldNode, source: FieldNode, lexicon: Lexicon, source
     if _looks_compact_date(source):
         steps = [_step(TransformKind.COMPACT_DATE_TO_ISO, "yyyyMMdd to yyyy-MM-dd")]
         return TypeFit(0.95, tuple(steps), detail="compact date to ISO date")
+    if not source.format and (observed_format := observed_date_format(source)):
+        steps = ()
+        if observed_format == "date-time" and target.format == "date":
+            steps = (_step(TransformKind.DATETIME_TO_DATE, "keep the date part"),)
+        elif observed_format == "date" and target.format == "date-time":
+            steps = (_cast("date-time"),)
+        return TypeFit(0.6, steps, detail="documented values parse as ISO dates; schema format and event meaning need confirmation")
     if source_is_temporal:
         return TypeFit(0.6, detail="text date with undeclared format")
-    return TypeFit(0.35, detail="plain text into a date field")
+    return TypeFit(0.0, veto="source has no date format or temporal meaning")
 
 
 def _looks_compact_date(source: FieldNode) -> bool:
@@ -123,9 +128,3 @@ def _cast(to_type: str) -> TransformStep:
 
 def _step(kind: TransformKind, description: str, **params) -> TransformStep:
     return TransformStep(kind=kind, description=description, params=params)
-
-
-def _describe_enum(mapping: EnumMapping) -> str:
-    pairs = ", ".join(f"{s}->{t}" for s, t in mapping.mapping.items() if s != t)
-    unmapped = f"; no match for {', '.join(mapping.unmapped)}" if mapping.unmapped else ""
-    return f"map values {pairs or '(identical)'}{unmapped}"

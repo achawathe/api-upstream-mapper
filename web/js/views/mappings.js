@@ -1,6 +1,8 @@
 import { api } from "../api.js";
 import { h, mount, scoreBar, statusPill, STATUS_LABELS, toast } from "../dom.js";
 import { applyOverrideResponse, changed, store } from "../state.js";
+import { comparisonView } from "./candidate-comparison.js";
+import { mappingBlocks } from "./mapping-blocks.js";
 
 const MAX_ROWS = 600;
 
@@ -11,7 +13,7 @@ export function renderMappings(container) {
   const endpoints = [...new Set(mappings.map((m) => m.target.endpoint))];
   const variants = [...new Set(mappings.filter((m) => !filters.endpoint || m.target.endpoint === filters.endpoint).map((m) => m.target.variant).filter(Boolean))];
 
-  const refreshTable = () => mount(tableRegion, table(filtered(mappings, filters)));
+  const refreshTable = () => mount(tableRegion, store.mappings.mode === "blocks" ? mappingBlocks(filtered(mappings, filters)) : table(filtered(mappings, filters)));
   const search = h("input", {
     type: "search",
     placeholder: "Search field, source, note…",
@@ -37,6 +39,7 @@ export function renderMappings(container) {
   const toolbar = h(
     "div",
     { class: "toolbar" },
+    ["blocks", "table"].map((mode) => h("button", { class: `btn small ${store.mappings.mode === mode ? "primary" : ""}`, "aria-pressed": String(store.mappings.mode === mode), onclick: () => { store.mappings.mode = mode; changed(); } }, mode === "blocks" ? "Blocks" : "Table")),
     statusChips,
     h("span", { class: "spacer" }),
     search,
@@ -49,6 +52,7 @@ export function renderMappings(container) {
       filters.variant = value;
       changed();
     }),
+    select("Category", [...new Set(mappings.map((m) => m.category).filter(Boolean))], filters.category, (value) => { filters.category = value; changed(); }),
     h("label", { class: "row small" }, h("input", { type: "checkbox", checked: filters.requiredOnly, onchange: (e) => { filters.requiredOnly = e.target.checked; changed(); } }), "required only"),
   );
 
@@ -57,7 +61,7 @@ export function renderMappings(container) {
   mount(
     container,
     toolbar,
-    h("div", { class: `workbench ${selected ? "" : "closed"}` }, tableRegion, selected && h("div", { class: "card detail" }, detail(selected))),
+    store.mappings.mode === "blocks" ? tableRegion : h("div", { class: `workbench ${selected ? "" : "closed"}` }, tableRegion, selected && h("div", { class: "card detail" }, detail(selected))),
   );
 }
 
@@ -67,9 +71,10 @@ function filtered(mappings, filters) {
     if (filters.statuses.size && !filters.statuses.has(m.status)) return false;
     if (filters.endpoint && m.target.endpoint !== filters.endpoint) return false;
     if (filters.variant && m.target.variant !== filters.variant) return false;
+    if (filters.category && m.category !== filters.category) return false;
     if (filters.requiredOnly && !m.target.required) return false;
     if (!words.length) return true;
-    const haystack = [m.target.key, m.chosen?.source.key ?? "", ...m.notes].join(" ").toLowerCase();
+    const haystack = [m.target.key, m.chosen?.source.key ?? "", m.category, ...m.notes].join(" ").toLowerCase();
     return words.every((w) => haystack.includes(w));
   });
 }
@@ -146,6 +151,7 @@ function detail(mapping) {
     ),
     h("div", { class: "row", style: { marginTop: "10px" } }, statusPill(mapping.status), override && h("span", { class: "pill manual" }, `override: ${override.action}`)),
     mapping.notes.length > 0 && h("ul", { class: "notes small" }, mapping.notes.map((n) => h("li", {}, n))),
+    comparisonView(mapping.comparison),
     chosen ? candidateBlock(chosen, "Chosen source") : h("p", { class: "muted" }, "No source chosen."),
     h("h3", {}, "Decide"),
     note,
@@ -235,10 +241,11 @@ function metaRow(label, value) {
 }
 
 function select(label, options, value, onChange) {
+  const plural = { Endpoint: "endpoints", Variant: "variants", Category: "categories" }[label];
   return h(
     "select",
     { "aria-label": label, onchange: (event) => onChange(event.target.value) },
-    h("option", { value: "" }, `All ${label.toLowerCase()}s`),
+    h("option", { value: "" }, `All ${plural}`),
     options.map((option) => h("option", { value: option, selected: option === value }, option)),
   );
 }

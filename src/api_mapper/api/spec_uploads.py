@@ -28,10 +28,10 @@ def spec_entrypoints(paths: list[Path], single: bool) -> list[Path]:
             documents[path] = load_document(path)
         except SpecLoadError:
             broken.append(path)
-    referenced = {target for path, document in documents.items() for target in _references(document, path.parent)}
+    referenced = {target for path, document in documents.items() for target in local_references(document, path.parent)}
     roots = [p for p in paths if p.resolve() not in referenced]
     specs = [p for p in roots if _is_api(documents.get(p))]
-    fragments = [p for p in roots if _is_fragment(documents.get(p))]
+    fragments = [p for p in roots if p not in specs and _is_fragment(documents.get(p))]
     candidates = (specs or fragments or broken) if single else [*specs, *fragments, *broken]
     if single and len(candidates) != 1:
         raise ValueError("upload one upstream entrypoint together with its referenced model files")
@@ -49,10 +49,10 @@ def _is_fragment(document) -> bool:
                                           or any(k in document for k in ("components", "definitions", "properties")))
 
 
-def _references(node, directory: Path):
+def local_references(node, directory: Path):
     if isinstance(node, list):
         for item in node:
-            yield from _references(item, directory)
+            yield from local_references(item, directory)
     elif isinstance(node, dict):
         ref = node.get("$ref")
         if isinstance(ref, str):
@@ -60,4 +60,4 @@ def _references(node, directory: Path):
             if file and ":" not in file:
                 yield (directory / file).resolve()
         for value in node.values():
-            yield from _references(value, directory)
+            yield from local_references(value, directory)

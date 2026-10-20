@@ -6,6 +6,7 @@ from api_mapper.models import ApiSpec, Endpoint, FieldNode
 from api_mapper.models.profile import FieldProfile
 from api_mapper.normalize.inputs import bindable_body, input_name
 from api_mapper.normalize.lexicon import ENTITY_CONCEPT, Lexicon
+from api_mapper.normalize.purpose import field_purposes
 from api_mapper.normalize.resolver import TokenResolver
 from api_mapper.normalize.tokenizer import singularize, split_identifier
 
@@ -99,9 +100,10 @@ class Profiler:
             scope=scope,
             roles=self.lexicon.roles_of([*leaf, *path_concepts]),
             endpoint_concepts=endpoint_concepts,
-            description_concepts=self._description_concepts(node.description),
+            description_concepts=self._description_concepts(' '.join((node.description, *(c.text for c in node.documentation)))),
             temporal=bool(_TEMPORAL_CONCEPTS & set(leaf)) or (node.format in _TEMPORAL_FORMATS),
             guesses=tuple(dict.fromkeys(g for segment in node.segments for g in self._guesses(segment))),
+            purposes=field_purposes(node, self.lexicon.purpose_rules),
         )
 
     def _bag(

@@ -20,6 +20,11 @@ export const api = {
     return request("POST", "/api/files", form);
   },
   fileEndpoints: (id) => request("GET", `/api/files/${id}/endpoints`),
+  attachModelFiles: (id, files) => {
+    const form = new FormData();
+    files.forEach((file) => form.append("files", file, file.webkitRelativePath || file.name));
+    return request("POST", `/api/files/${id}/model-files`, form);
+  },
   attachResponseSamples: (id, endpoint, files) => {
     const form = new FormData();
     form.append("endpoint", endpoint);
@@ -27,6 +32,13 @@ export const api = {
     return request("POST", `/api/files/${id}/response-samples`, form);
   },
   removeResponseSamples: (id) => request("DELETE", `/api/response-samples/${id}`),
+  attachDocumentation: (id, endpoint, files) => {
+    const form = new FormData();
+    form.append("endpoint", endpoint);
+    files.forEach((file) => form.append("files", file));
+    return request("POST", `/api/files/${id}/documentation`, form);
+  },
+  removeDocumentation: (id) => request("DELETE", `/api/documentation/${id}`),
   addSampleEndpoint: (apiName, method, path, files) => {
     const form = new FormData();
     form.append("api_name", apiName);
@@ -44,6 +56,8 @@ export const api = {
   candidates: (targetKey, query) => request("GET", `/api/candidates?target_key=${encodeURIComponent(targetKey)}&q=${encodeURIComponent(query)}`),
   setOverride: (override) => request("POST", "/api/overrides", override),
   clearOverride: (targetKey) => request("DELETE", `/api/overrides?target_key=${encodeURIComponent(targetKey)}`),
+  setCategory: (targetKey, category) => request("PUT", "/api/mapping-category", { target_key: targetKey, category }),
+  previewConversion: (body) => request("POST", "/api/conversion-preview", body),
   validateOptions: () => request("GET", "/api/validate/options"),
   validate: (body) => request("POST", "/api/validate", body),
   events: (runId) => new EventSource(`/api/runs/${runId}/events`),

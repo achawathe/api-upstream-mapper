@@ -5,7 +5,7 @@ export const store = {
   workspace: null,
   result: null,
   run: { id: null, events: [], done: false, error: null },
-  mappings: { filters: { statuses: new Set(), endpoint: "", variant: "", text: "", requiredOnly: false }, selected: null },
+  mappings: { filters: { statuses: new Set(), endpoint: "", variant: "", text: "", requiredOnly: false, category: "" }, selected: null, mode: "blocks", grouping: "endpoint", drafts: {} },
   plan: { endpoint: null },
   validate: { form: null, result: null, options: null, busy: false },
 };
@@ -32,7 +32,7 @@ export function canRun() {
 
 export async function refreshWorkspace() {
   store.workspace = await api.state();
-  if (!store.workspace.has_result) store.result = null;
+  if (!store.workspace.has_result) { store.result = null; store.mappings.drafts = {}; }
   else if (!store.result) await refreshResult();
   changed();
 }
@@ -72,6 +72,7 @@ export async function startRun() {
       await refreshResult();
       store.validate = { form: null, result: null, options: null, busy: false };
       store.mappings.selected = null;
+      store.mappings.drafts = {};
       toast("Mapping finished");
     }
     changed();

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
+from api_mapper.models.transform import TransformStep
+
 
 class OverrideAction(StrEnum):
     ACCEPT = "accept"
@@ -17,3 +19,4 @@ class Override:
     source_key: str | None = None
     note: str = ""
     author: str = ""
+    transforms: tuple[TransformStep, ...] | None = None

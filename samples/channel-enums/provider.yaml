@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: Fulfillment Provider
+  version: '1'
+paths:
+  /orders:
+    get:
+      responses:
+        '200':
+          description: Provider order status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: Order fulfillment status from the provider.
+                    example: in progress
+  /shipments:
+    get:
+      responses:
+        '200':
+          description: Provider shipment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliveryState:
+                    type: string
+                    description: Current delivery status from the provider.
+                    example: out for delivery

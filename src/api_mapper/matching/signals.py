@@ -11,8 +11,13 @@ from typing import Any
 from rapidfuzz import fuzz
 
 from api_mapper.matching.reachability import Reachability
-from api_mapper.matching.similarity import ConceptWeights, align_qualifier_words, bag_similarity
+from api_mapper.matching.similarity import (
+    ConceptWeights,
+    align_qualifier_words,
+    bag_similarity,
+)
 from api_mapper.models import FieldProfile, TransformKind
+from api_mapper.normalize.enum_contract import enum_contract
 from api_mapper.normalize.lexicon import Lexicon
 from api_mapper.transforms.enum_mapping import EnumMapper
 from api_mapper.transforms.inference import TypeFit
@@ -107,10 +112,14 @@ def collection_agrees(target: FieldProfile, source: FieldProfile, ctx: SignalCon
     `assetTransferNetworks[]` ~ `transfers[]`). A source outside any array is read once
     per item, so its endpoint only needs to be about the same thing (`holders[]` ~ `/parties/{id}`).
     """
-    if not target.collection:
+    target_collection = target.collection
+    if (not target_collection and source.collection and target.node.array_depth == 0
+            and target.endpoint_concepts and target.endpoint_concepts[-1] in ctx.lexicon.known_words):
+        target_collection = target.endpoint_concepts[-1:]
+    if not target_collection:
         return True
     if source.collection:
-        target_head, source_head = target.collection[-1], source.collection[-1]
+        target_head, source_head = target_collection[-1], source.collection[-1]
         return ctx.lexicon.relatedness(target_head, source_head) >= SAME_KIND
     return any(
         ctx.lexicon.relatedness(t, s) >= SAME_KIND for t in target.collection for s in source.endpoint_concepts
@@ -125,7 +134,7 @@ def enum_signal(fit: TypeFit, target: FieldProfile) -> SignalResult:
     if fit.enum_mapping is None:
         return None
     mapping = fit.enum_mapping
-    score = max(mapping.source_coverage, mapping.target_coverage(len(target.node.enum)))
+    score = max(mapping.source_coverage, mapping.target_coverage(len(enum_contract(target.node).values)))
     unmapped = f"; unmatched {', '.join(mapping.unmapped)}" if mapping.unmapped else ""
     return score, f"{len(mapping.mapping)}/{len(mapping.mapping) + len(mapping.unmapped)} values match{unmapped}"
 

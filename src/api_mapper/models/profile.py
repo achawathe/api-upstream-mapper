@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from api_mapper.models.field_node import FieldNode
+from api_mapper.models.purpose import PurposeFact
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,7 @@ class FieldProfile:
     guesses: tuple[tuple[str, str], ...] = ()
     identity: frozenset[str] = frozenset()
     endpoint_inputs: frozenset[frozenset[str]] = frozenset()
+    purposes: tuple[PurposeFact, ...] = ()
 
     @property
     def families(self) -> frozenset[str]:

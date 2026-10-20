@@ -1,0 +1,32 @@
+openapi: 3.0.3
+info:
+  title: Customer Channel API
+  version: '1'
+paths:
+  /orders:
+    get:
+      responses:
+        '200':
+          description: Channel order status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: Customer-visible order fulfillment status.
+                    enum: [PROCESSING, COMPLETED, FAILED, UNKNOWN]
+  /shipments:
+    get:
+      responses:
+        '200':
+          description: Channel delivery status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliveryState:
+                    type: string
+                    description: Delivery status; allowed outputs are defined in the attached channel guide.

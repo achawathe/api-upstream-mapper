@@ -1,0 +1,30 @@
+# Common structural vocabulary without finance-specific meanings or origin requirements.
+abbreviations:
+  id: identifier
+  num: number
+  qty: quantity
+  dt: date
+  ts: timestamp
+synonyms:
+  identifier: [identifier]
+  name: [name]
+  number: [number]
+  quantity: [quantity, count]
+  amount: [amount]
+  value: [value]
+  description: [description, narrative]
+  date: [date]
+  timestamp: [timestamp, datetime]
+  status: [status, state]
+  type: [type, kind]
+  code: [code]
+  total: [total]
+related:
+  - [date, timestamp, 0.75]
+generic: [identifier, name, number, value, amount, code, type, status, date, timestamp, description]
+weak: [value, amount]
+stopwords: [the, of, a, an, and, for, by, with, data, info, information, response, result, results, items, payload, body, api]
+role_markers: [from, to, source, destination, parent, child, reference, related, external]
+exclusive_modifiers: [current, previous, next, original, minimum, maximum, total]
+defining_modifiers: [minimum, maximum, total]
+epoch_markers: [epoch, unix, milliseconds since, seconds since]

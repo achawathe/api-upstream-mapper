@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from api_mapper.models.documentation import DocumentationPassage
+
 
 class SpecKind(StrEnum):
     SWAGGER_2 = "swagger-2.0"
@@ -64,6 +66,7 @@ class ApiSpec:
     tags: tuple[str, ...] = ()
     endpoints: tuple[Endpoint, ...] = ()
     warnings: tuple[str, ...] = ()
+    documentation: tuple[DocumentationPassage, ...] = ()
 
     def endpoint(self, key: str) -> Endpoint:
         for endpoint in self.endpoints:

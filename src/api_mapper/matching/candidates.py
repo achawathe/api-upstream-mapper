@@ -6,6 +6,7 @@ target, or when the names are spelled almost alike (catches unknown abbreviation
 
 from rapidfuzz import fuzz, process
 
+from api_mapper.matching.purpose import has_labels, roles
 from api_mapper.matching.semantic import SemanticIndex
 from api_mapper.models import FieldProfile
 from api_mapper.normalize.lexicon import Lexicon
@@ -25,9 +26,22 @@ class CandidateIndex:
                 if share >= MIN_INDEXED_SHARE:
                     self._by_concept.setdefault(concept, set()).add(index)
         self._compact_names = [source.compact_leaf for source in sources]
+        self._by_purpose: dict[tuple[str, str], set[int]] = {}
+        self._labels = set()
+        for index, source in enumerate(sources):
+            for group, values in roles(source).items():
+                if len(values) == 1:
+                    self._by_purpose.setdefault((group, next(iter(values))), set()).add(index)
+            if has_labels(source):
+                self._labels.add(index)
 
     def candidates_for(self, target: FieldProfile) -> list[FieldProfile]:
         indexes: set[int] = set()
+        for group, values in roles(target).items():
+            if group != "origin" and len(values) == 1:
+                indexes |= self._by_purpose.get((group, next(iter(values))), set())
+        if roles(target).get("presentation") == {"product_label"}:
+            indexes |= self._labels
         for concept, share in target.bag.items():
             if share < MIN_INDEXED_SHARE:
                 continue

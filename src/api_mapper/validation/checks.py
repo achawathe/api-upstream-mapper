@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from api_mapper.models import FieldNode
+from api_mapper.normalize.enum_contract import enum_contract
 
 _FORMATS = {
     "date": re.compile(r"^\d{4}-\d{2}-\d{2}$"),
@@ -65,7 +66,8 @@ def _check_value(field: FieldNode, location: str, value: Any) -> list[Issue]:
     expected = _JSON_TYPES.get(field.type)
     if expected and (not isinstance(value, expected) or (field.type != "boolean" and isinstance(value, bool))):
         return [Issue(location, f"expected {field.type}, got {type(value).__name__} {value!r}")]
-    if field.enum and str(value) not in field.enum:
+    allowed = enum_contract(field).values
+    if allowed and str(value) not in allowed:
         return [Issue(location, f"{value!r} is not one of the allowed values")]
     pattern = _FORMATS.get(field.format or "")
     if pattern and isinstance(value, str) and not pattern.match(value):

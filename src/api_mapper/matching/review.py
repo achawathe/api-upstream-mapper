@@ -3,15 +3,27 @@
 from api_mapper.models import Candidate, FieldNode
 
 
+def definition_preferred(candidate: Candidate) -> bool:
+    return any(e.signal == "definition_preferred" for e in candidate.evidence)
+
+
 def semantic_fallback(candidates: list[Candidate], review_threshold: float) -> Candidate | None:
     supported = [(e.score, c) for c in candidates for e in c.evidence
-                 if e.signal == "semantic_review" and e.score >= review_threshold]
+                 if e.signal in {"semantic_review", "context_review"} and e.score >= review_threshold]
     return min(supported, key=lambda pair: (-pair[0], -pair[1].score, pair[1].source.key))[1] if supported else None
 
 
 def review_reasons(target: FieldNode, candidate: Candidate, auto_threshold: float) -> list[str]:
     reasons = []
     evidence = candidate.evidence
+    if any(step.params.get('target_origin') == 'documentation' or step.params.get('citations') or step.params.get('open_source') for step in candidate.transforms):
+        reasons.append('confirm documented value translations and handling of unknown downstream strings')
+    if any(e.signal == 'documentation_context' for e in evidence):
+        reasons.append('attached documentation supports interpretation; confirm field meaning and any conversion')
+    if any(e.signal == "purpose_uncertain" for e in evidence):
+        reasons.append("field-purpose evidence is uncertain or conflicting; confirm before accepting")
+    if any(e.signal == "context_review" for e in evidence):
+        reasons.append("context supports this candidate despite its naming; confirm purpose and record identity")
     if any(e.signal == "body_context" for e in evidence):
         reasons.append("confirm JSON body bindings, source identifier compatibility and record selection")
     if any(e.signal == "identity_review" for e in evidence):

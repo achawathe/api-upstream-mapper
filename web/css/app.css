@@ -174,3 +174,59 @@ td .mono { word-break: break-all; }
   .topbar { position: static; padding: 14px 16px; }
   #view { padding: 16px; }
 }
+
+/* The editor keeps one connection in focus while endpoint/category groups stay browsable. */
+.block-workbench { display: grid; grid-template-columns: minmax(190px, .75fr) minmax(320px, 1.7fr) minmax(240px, 1fr); grid-template-areas: "fields mapping sources"; gap: 16px; align-items: start; }
+.field-organizer { grid-area: fields; }
+.mapping-stage { grid-area: mapping; }
+.palette { grid-area: sources; }
+.block-workbench .card { min-width: 0; }
+.field-organizer, .palette { max-height: calc(100vh - 220px); overflow: auto; position: sticky; top: 110px; }
+.field-organizer > select { width: 100%; margin-bottom: 14px; }
+.field-organizer details { margin-bottom: 12px; }
+.field-organizer summary { overflow-wrap: anywhere; cursor: pointer; padding: 8px 0; font-weight: 600; }
+.field-choice { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 4px 0; padding: 10px; text-align: left; border: 1px solid var(--line); border-radius: 7px; background: white; cursor: pointer; }
+.field-choice .mono { overflow-wrap: anywhere; }
+.field-choice.selected { border-color: var(--accent); background: var(--primary-soft); box-shadow: inset 3px 0 var(--accent); }
+.field-choice:focus-visible, .source-slot:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mapping-stage { background-image: radial-gradient(#dce3ed .7px, transparent .7px); background-size: 14px 14px; }
+.mapping-block { position: relative; border-radius: 10px; border: 1px solid; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.mapping-block .mono { overflow-wrap: anywhere; font-size: 14px; }
+.mapping-block.source { border-color: #8ab7e6; background: #eaf3ff; }
+.mapping-block.output { border-color: #a898d1; background: #f0eafa; }
+.mapping-block.conversion { border-color: #d4b275; background: #fff5df; margin: 10px 0; border-radius: 5px 14px 14px 14px; cursor: grab; }
+.mapping-block.conversion::before { content: ""; display: block; width: 32px; height: 6px; position: absolute; left: 18px; top: -5px; background: #fff5df; border: 1px solid #d4b275; border-bottom: 0; border-radius: 4px 4px 0 0; }
+.mapping-block.conversion.drag-over { outline: 2px dashed var(--accent); outline-offset: 3px; }
+.mapping-block .chip { align-self: flex-start; }
+.block-caption { font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.block-connector { text-align: center; color: #697b95; font-size: 28px; line-height: 36px; }
+.source-slot { border: 2px dashed transparent; padding: 4px; border-radius: 12px; transition: background .15s; }
+.source-slot.drag-over { border-color: var(--accent); background: #dceaff; }
+.empty-slot { padding: 28px 14px; border: 2px dashed var(--line-strong); background: white; border-radius: 8px; text-align: center; }
+.drag-handle { color: #62738a; font-size: 20px; cursor: grab; }
+.source-tile { border: 1px solid #b9cfe8; border-left: 4px solid #5891ce; border-radius: 8px; padding: 12px; margin: 12px 0; background: #f6faff; cursor: grab; overflow-wrap: anywhere; }
+.source-tile .btn { margin-top: 8px; }
+.palette-search { margin-top: 12px; }
+.palette-search input { width: 100%; }
+.category-editor { margin: 14px 0; align-items: flex-end; }
+.category-editor input { width: 100%; }
+.category-editor label { flex: 1; }
+.conversion-add { margin: 10px 0; }
+.conversion-add select { max-width: 100%; }
+.enum-pair { display: grid; grid-template-columns: minmax(60px, 1fr) auto minmax(60px, 1fr) auto; gap: 6px; margin: 8px 0; align-items: center; }
+.enum-pair input { width: 100%; min-width: 0; }
+.enum-pair select { width: 100%; min-width: 0; }
+.enum-editor > .field { margin-top: 12px; }
+.enum-editor select { max-width: 100%; }
+.block-preview, .block-evidence { margin: 16px 0; padding: 10px; background: white; border: 1px solid var(--line); border-radius: 7px; }
+.block-preview summary, .block-evidence summary { cursor: pointer; font-weight: 600; }
+.block-preview input { flex: 1; min-width: 100px; }
+.editor-actions { padding-top: 12px; }
+@media (max-width: 1200px) {
+  .block-workbench { grid-template-columns: 190px minmax(280px, 1fr); grid-template-areas: "fields sources" "fields mapping"; }
+  .palette { position: static; max-height: 320px; }
+}
+@media (max-width: 760px) {
+  .block-workbench { grid-template-columns: 1fr; grid-template-areas: "fields" "sources" "mapping"; }
+  .field-organizer, .palette { position: static; max-height: 320px; }
+}

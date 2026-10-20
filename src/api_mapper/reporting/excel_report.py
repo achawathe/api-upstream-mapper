@@ -18,6 +18,7 @@ from api_mapper.models import (
     MappingStatus,
     TransformKind,
 )
+from api_mapper.reporting.comparison import explain_comparison
 
 HEADER_FILL = PatternFill("solid", fgColor="1F3A5F")
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -37,6 +38,7 @@ def write_excel_report(run: MappingRun, path: Path) -> Path:
     workbook = Workbook()
     _summary(workbook.active, run)
     _field_mapping(workbook.create_sheet("Field Mapping"), run.mappings)
+    _comparisons(workbook.create_sheet("Candidate Comparison"), run.mappings)
     _needs_review(workbook.create_sheet("Needs Review"), run.mappings)
     _gaps(workbook.create_sheet("Gaps"), run.mappings)
     _transforms(workbook.create_sheet("Transforms"), run.mappings)
@@ -46,6 +48,17 @@ def write_excel_report(run: MappingRun, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(path)
     return path
+
+
+def _comparisons(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
+    rows = [("Upstream field", "Chosen source", "Decision", "Supporting evidence", "Alternative", "Why not selected")]
+    for mapping in mappings:
+        comparison = explain_comparison(mapping)
+        alternatives = comparison["alternatives"] or [{"source": "", "reason": ""}]
+        for other in alternatives:
+            rows.append((mapping.target.key, _source_text(mapping.chosen), comparison["summary"],
+                         "; ".join(comparison["support"]), other["source"], other["reason"]))
+    _table(sheet, rows)
 
 
 def _summary(sheet: Worksheet, run: MappingRun) -> None:
@@ -78,7 +91,7 @@ def _field_mapping(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
     rows: list[Sequence[Any]] = [
         (
             "Upstream endpoint", "Variant", "Condition", "Upstream field", "Type", "Required", "Status", "Confidence",
-            "Downstream API", "Downstream endpoint", "Downstream field", "Downstream type", "Transforms", "Why", "Notes",
+            "Downstream API", "Downstream endpoint", "Downstream field", "Downstream type", "Transforms", "Why", "Notes", "Category",
         )
     ]
     for m in mappings:
@@ -88,7 +101,7 @@ def _field_mapping(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
                 m.target.endpoint, m.target.variant or "", m.target.condition or "", m.target.path, _type(m.target),
                 "yes" if m.target.required else "", m.status.value, m.chosen.score if m.chosen else None,
                 source.api if source else "", source.endpoint if source else "", source.path if source else "",
-                _type(source) if source else "", _transforms_text(m.chosen), _why(m.chosen), "; ".join(m.notes),
+                _type(source) if source else "", _transforms_text(m.chosen), _why(m.chosen), "; ".join(m.notes), m.category,
             )
         )
     _table(sheet, rows)

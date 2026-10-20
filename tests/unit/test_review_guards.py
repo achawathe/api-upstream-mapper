@@ -77,8 +77,8 @@ def test_related_record_id_is_not_a_generic_reference(lexicon):
     target, source = pair(lexicon, FieldNode("up", "GET /x", "referenceTransactionId", "string"),
                           FieldNode("down", "GET /x", "TransactionReference", "string"))
     mapping = MatchingEngine(lexicon).match([target], [source])[0]
-    assert mapping.status is not MappingStatus.AUTO
-    assert any(e.signal == "identity_review" for e in mapping.chosen.evidence)
+    assert mapping.status is MappingStatus.UNMAPPED
+    assert any(e.signal == "origin_requirement" for c in mapping.alternatives for e in c.evidence)
 
 
 def test_plain_text_cannot_be_an_automatic_timestamp(lexicon):

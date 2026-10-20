@@ -9,6 +9,8 @@ from typing import Any
 
 from api_mapper.loaders.ref_resolver import CYCLE_KEY, SCHEMA_NAME_KEY, UNRESOLVED_KEY
 from api_mapper.models import ApiSpec, Endpoint, FieldNode
+from api_mapper.normalize.documentation import enrich_documentation
+from api_mapper.normalize.observations import sibling_clues, summarize_values
 from api_mapper.normalize.sample_context import describe_samples
 
 MAX_DEPTH = 24
@@ -48,7 +50,8 @@ class _Context:
 
 
 def flatten_spec(spec: ApiSpec) -> list[FieldNode]:
-    return [node for endpoint in spec.endpoints for node in flatten_endpoint(spec.name, endpoint)]
+    nodes = [node for endpoint in spec.endpoints for node in flatten_endpoint(spec.name, endpoint)]
+    return enrich_documentation(spec, nodes)
 
 
 def flatten_endpoint(api: str, endpoint: Endpoint) -> list[FieldNode]:
@@ -56,7 +59,11 @@ def flatten_endpoint(api: str, endpoint: Endpoint) -> list[FieldNode]:
         return []
     fields: list[FieldNode] = []
     _walk(endpoint.response_schema, _Context(), api, endpoint.key, fields)
-    return [_with_example(node, endpoint.response_examples, endpoint.response_sample_sources) for node in fields]
+    declared: dict[tuple[str | None, str | None], set[str]] = {}
+    for node in fields:
+        declared.setdefault((node.variant, node.condition), set()).add(node.path)
+    return [_with_example(node, endpoint.response_examples, endpoint.response_sample_sources,
+                          declared[(node.variant, node.condition)]) for node in fields]
 
 
 def merge_all_of(schema: dict[str, Any]) -> dict[str, Any]:
@@ -137,7 +144,10 @@ def _walk(schema: Any, ctx: _Context, api: str, endpoint: str, out: list[FieldNo
         if item_kind in ("object", "array") or (isinstance(items, dict) and (items.get("oneOf") or items.get("anyOf"))):
             _walk(items, ctx.array_items(), api, endpoint, out)
         else:
-            out.append(_leaf(api, endpoint, ctx.array_items(), items, item_kind, False))
+            item_schema = dict(items) if isinstance(items, dict) else {}
+            if schema.get("description"):
+                item_schema["description"] = schema["description"]
+            out.append(_leaf(api, endpoint, ctx.array_items(), item_schema, item_kind, False))
     elif ctx.path:
         out.append(_leaf(api, endpoint, ctx, schema, kind, False))
 
@@ -196,11 +206,11 @@ def _leaf(api: str, endpoint: str, ctx: _Context, schema: dict, kind: str, nulla
     )
 
 
-def _with_example(node: FieldNode, payloads: tuple[Any, ...], sources: tuple[str, ...] = ()) -> FieldNode:
+def _with_example(node: FieldNode, payloads: tuple[Any, ...], sources: tuple[str, ...] = (), declared: set[str] | None = None) -> FieldNode:
     if not payloads:
         return node
     conditions = _parse_conditions(node.condition)
-    values, documentation, used_sources = [], [], []
+    values, documentation, used_sources, clues = [], [], [], []
     for index, payload in enumerate(payloads):
         source = sources[index] if index < len(sources) else "inline example"
         documented = source != "inline example"
@@ -209,10 +219,13 @@ def _with_example(node: FieldNode, payloads: tuple[Any, ...], sources: tuple[str
         if documented and found:
             documentation.extend(found)
             used_sources.append(source)
+            records = _values_at(payload, node.path.split(".")[:-1], conditions, strict=True, containers=True)
+            clues.extend(sibling_clues(records, node.path, source, declared or set()))
     observed = tuple(dict.fromkeys(v for v in values if isinstance(v, str)))[:MAX_OBSERVED_VALUES]
     example = node.example if node.example is not None else next(iter(values), None)
     return replace(node, example=example, observed=observed, sample_sources=tuple(dict.fromkeys(used_sources)),
-                   sample_context=describe_samples(documentation))
+                   sample_context=describe_samples(documentation), context_clues=tuple(dict.fromkeys(clues)),
+                   value_profile=summarize_values(documentation))
 
 
 def _parse_conditions(condition: str | None) -> dict[str, str]:
@@ -221,12 +234,14 @@ def _parse_conditions(condition: str | None) -> dict[str, str]:
     return dict(part.split(" = ", 1) for part in condition.split(" and "))
 
 
-def _values_at(value: Any, segments: list[str], conditions: dict[str, str], strict: bool = False) -> list[Any]:
+def _values_at(value: Any, segments: list[str], conditions: dict[str, str], strict: bool = False, containers: bool = False) -> list[Any]:
     if isinstance(value, dict):
         if any(str(value[k]) != expected for k, expected in conditions.items() if k in value):
             return []
         conditions = {k: expected for k, expected in conditions.items() if k not in value}
     if not segments:
+        if containers:
+            return [value] if isinstance(value, dict) and not (strict and conditions) else []
         return [] if value is None or isinstance(value, (dict, list)) or (strict and conditions) else [value]
     head, rest = segments[0], segments[1:]
     is_array = head.endswith("[]")
@@ -236,12 +251,12 @@ def _values_at(value: Any, segments: list[str], conditions: dict[str, str], stri
             return []
         value = value[name]
     if not is_array:
-        return _values_at(value, rest, conditions, strict)
+        return _values_at(value, rest, conditions, strict, containers)
     if not isinstance(value, list):
         return []
     found = []
     for item in value:
         if isinstance(item, dict) and any(str(item.get(k)) != v for k, v in conditions.items() if k in item):
             continue
-        found.extend(_values_at(item, rest, conditions, strict))
+        found.extend(_values_at(item, rest, conditions, strict, containers))
     return found

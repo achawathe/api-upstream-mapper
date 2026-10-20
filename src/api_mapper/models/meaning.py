@@ -10,3 +10,5 @@ class MeaningRule:
     concepts: frozenset[str]
     name_phrases: tuple[str, ...] = ()
     definition_phrases: tuple[str, ...] = ()
+    require_source: bool = False
+    name_concepts: frozenset[str] = frozenset()

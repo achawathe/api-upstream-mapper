@@ -45,6 +45,7 @@ class FieldMapping:
     chosen: Candidate | None = None
     alternatives: tuple[Candidate, ...] = ()
     notes: list[str] = field(default_factory=list)
+    category: str = ''
 
     @property
     def is_mapped(self) -> bool:

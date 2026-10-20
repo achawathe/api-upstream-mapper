@@ -47,6 +47,19 @@ def _run(workspace):
     return workspace.result
 
 
+@pytest.mark.parametrize(("factory", "models_key"), [(_spec, "components"), (_swagger, "definitions")])
+def test_downstream_api_with_embedded_models_is_registered_once(tmp_path, factory, models_key):
+    workspace = Workspace(tmp_path)
+    document = factory()
+    document[models_key] = {"schemas": {"Account": SCHEMA}} if models_key == "components" else {"Account": SCHEMA}
+    stored = workspace.add_files(FileRole.DOWNSTREAM, [
+        ("api.json", json.dumps(document).encode()),
+        ("standalone.json", json.dumps(SCHEMA).encode()),
+    ])
+    assert [s.name for s in stored] == ["api.json", "standalone.json"]
+    assert len(workspace.files) == 2
+
+
 @pytest.mark.parametrize("reverse", [False, True])
 @pytest.mark.parametrize("role", [FileRole.UPSTREAM, FileRole.DOWNSTREAM])
 @pytest.mark.parametrize("document", [_spec, _swagger])

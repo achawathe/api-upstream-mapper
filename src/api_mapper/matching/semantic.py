@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Protocol
 
 from api_mapper.models import FieldProfile
+from api_mapper.normalize.definitions import leading_definition
 from api_mapper.normalize.tokenizer import split_identifier
 
 
@@ -55,7 +56,10 @@ class LocalSentenceEncoder:
 class SemanticIndex:
     def __init__(self, profiles: list[FieldProfile], encoder: TextEncoder, settings: NlpSettings):
         self.settings = settings
-        texts = list(dict.fromkeys(_field_text(profile) for profile in profiles))
+        has_documents = any(p.node.documentation for p in profiles)
+        definitions = {p.node.key: _definitions(p) if has_documents else [] for p in profiles}
+        texts = list(dict.fromkeys([*(_field_text(p) for p in profiles),
+                                   *(text for values in definitions.values() for text, _ in values)]))
         vectors = list(encoder.encode(texts)) if texts else []
         if len(vectors) != len(texts):
             raise LocalNlpError("local NLP encoder returned the wrong number of vectors")
@@ -64,10 +68,15 @@ class SemanticIndex:
             raise LocalNlpError("local NLP encoder returned inconsistent vector dimensions")
         by_text = dict(zip(texts, normalised, strict=True))
         self._vectors = {profile.node.key: by_text[_field_text(profile)] for profile in profiles}
+        self._definitions = {key: [(by_text[text], documented) for text, documented in values]
+                             for key, values in definitions.items()}
 
     def similarity(self, target: FieldProfile, source: FieldProfile) -> float:
         left, right = self._vectors[target.node.key], self._vectors[source.node.key]
-        return max(0.0, min(1.0, sum(a * b for a, b in zip(left, right, strict=True))))
+        scores = [_cosine(left, right)]
+        scores.extend(_cosine(a, b) for a, a_doc in self._definitions[target.node.key]
+                      for b, b_doc in self._definitions[source.node.key] if a_doc or b_doc)
+        return max(scores)
 
     def candidates_for(self, target: FieldProfile, sources: list[FieldProfile]) -> list[FieldProfile]:
         scored = [(self.similarity(target, source), source) for source in sources]
@@ -79,7 +88,23 @@ def _field_text(profile: FieldProfile) -> str:
     name = " ".join(split_identifier(" ".join(profile.node.segments)))
     description = " ".join(profile.node.description.split()[:80])
     text = f"{name}. {description}".strip()
-    return f"{text} {profile.node.sample_context}" if profile.node.sample_context else text
+    if profile.node.documentation:
+        excerpts = ' '.join(c.text for c in profile.node.documentation)
+        text = f'{excerpts} {text}'
+    text = f"{text} {profile.node.sample_context}" if profile.node.sample_context else text
+    clues = " ".join(f"Associated definition: {clue.text}." for clue in profile.node.context_clues[:3])
+    return f"{text} {clues}" if clues else text
+
+
+def _definitions(profile: FieldProfile) -> list[tuple[str, bool]]:
+    found = [(clue.text, True) for clue in profile.node.documentation]
+    if profile.node.description.strip():
+        found.append((leading_definition(profile.node.description), False))
+    return [(text, documented) for text, documented in found if text.strip()]
+
+
+def _cosine(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    return max(0.0, min(1.0, sum(a * b for a, b in zip(left, right, strict=True))))
 
 
 def _normalise(vector: Sequence[float]) -> tuple[float, ...]:

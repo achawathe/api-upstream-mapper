@@ -1,5 +1,6 @@
 """Plain-dict view of a run, shared by the JSON export, the web API and tests."""
 
+from dataclasses import asdict
 from typing import Any
 
 from api_mapper.evaluation.grader import GradeReport
@@ -12,6 +13,8 @@ from api_mapper.models import (
     MappingRun,
     ProgressEvent,
 )
+from api_mapper.normalize.enum_contract import enum_contract
+from api_mapper.reporting.comparison import explain_comparison
 from api_mapper.validation.executor import ExecutionResult
 
 
@@ -38,6 +41,8 @@ def mapping_to_dict(mapping: FieldMapping) -> dict[str, Any]:
         "chosen": candidate_to_dict(mapping.chosen) if mapping.chosen else None,
         "alternatives": [candidate_to_dict(c) for c in mapping.alternatives],
         "notes": list(mapping.notes),
+        "category": mapping.category,
+        "comparison": explain_comparison(mapping),
     }
 
 
@@ -54,9 +59,14 @@ def node_to_dict(node: FieldNode) -> dict[str, Any]:
         "required": node.required,
         "nullable": node.nullable,
         "enum": list(node.enum),
+        "enum_contract": asdict(enum_contract(node)),
+        "observed": list(node.observed),
         "description": node.description,
         "sample_sources": list(node.sample_sources),
         "sample_context": node.sample_context,
+        "context_clues": [asdict(clue) for clue in node.context_clues],
+        "documentation": [asdict(clue) for clue in node.documentation],
+        "value_profile": asdict(node.value_profile),
         "example": node.example if isinstance(node.example, (str, int, float, bool)) else None,
     }
 

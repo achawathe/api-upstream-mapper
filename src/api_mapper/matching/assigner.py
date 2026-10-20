@@ -8,7 +8,11 @@ derived  the field is the discriminator of its own variant, so its value is fixe
 
 from dataclasses import dataclass
 
-from api_mapper.matching.review import review_reasons, semantic_fallback
+from api_mapper.matching.review import (
+    definition_preferred,
+    review_reasons,
+    semantic_fallback,
+)
 from api_mapper.models import (
     Candidate,
     FieldMapping,
@@ -40,7 +44,7 @@ def assign(
 
 
 def rank(candidates: list[Candidate]) -> list[Candidate]:
-    return sorted(candidates, key=lambda c: (c.vetoed_by is not None, -c.score, c.source.key))
+    return sorted(candidates, key=lambda c: (c.vetoed_by is not None, not definition_preferred(c), -c.score, c.source.key))
 
 
 def _decide(target: FieldProfile, candidates: list[Candidate], thresholds: Thresholds) -> FieldMapping:
@@ -56,7 +60,7 @@ def _decide(target: FieldProfile, candidates: list[Candidate], thresholds: Thres
         )
 
     viable = [c for c in ranked if c.vetoed_by is None]
-    best = viable[0] if viable and viable[0].score >= thresholds.review else semantic_fallback(viable, thresholds.review)
+    best = viable[0] if viable and (definition_preferred(viable[0]) or viable[0].score >= thresholds.review) else semantic_fallback(viable, thresholds.review)
     if best is None:
         return FieldMapping(target=target.node, status=MappingStatus.UNMAPPED, alternatives=alternatives)
 

@@ -8,7 +8,9 @@ report can say why an obvious-looking name match was refused.
 from dataclasses import dataclass
 
 from api_mapper.matching import signals
+from api_mapper.matching.context_review import can_review
 from api_mapper.matching.meaning import MeaningMatcher
+from api_mapper.matching.purpose import compare_purposes, comparison_evidence
 from api_mapper.matching.semantic import SemanticIndex
 from api_mapper.matching.semantic_evidence import add_semantic_evidence
 from api_mapper.matching.signals import SignalContext
@@ -75,13 +77,14 @@ class PairScorer:
         self.meanings = MeaningMatcher(ctx.lexicon.meaning_rules)
 
     def score(self, target: FieldProfile, source: FieldProfile, gate: bool = True) -> Candidate | None:
-        """Requires lexical or local semantic support, unless a user explicitly asked for the pair."""
+        """Requires lexical, local semantic or purpose support, unless explicitly requested."""
         name_score, name_detail = signals.name_signal(target, source, self.ctx)
         string_score, string_detail = signals.string_signal(target, source)
         lexical_match = name_score >= self.penalties.min_name_score or string_score >= self.penalties.min_string_score
         semantic_score = self.semantic.similarity(target, source) if self.semantic else None
         semantic_match = semantic_score is not None and semantic_score >= self.semantic.settings.min_similarity
-        if gate and not lexical_match and not semantic_match:
+        purpose = compare_purposes(target, source)
+        if gate and not lexical_match and not semantic_match and not purpose.support:
             return None
 
         fit = self.fitter.fit(target.node, source.node, source.temporal)
@@ -99,6 +102,18 @@ class PairScorer:
         self._add(evidence, "endpoint", signals.endpoint_signal(target, source, self.ctx), self.weights.endpoint)
         self._add(evidence, "context", signals.context_signal(target, source, self.ctx), self.weights.context)
         evidence.extend(self._penalties(target, source, fit))
+        evidence.extend(comparison_evidence(purpose))
+        unmet = self.meanings.unmet_requirements(target, source)
+        evidence.extend(Evidence("origin_requirement", 0.0, 0.0, detail, EvidenceEffect.VETO) for detail in unmet)
+        for label, profile in (("Target", target), ("Source", source)):
+            evidence.extend(Evidence('documentation_context', 1.0, 0.0, f'{label}: {clue.location}: "{clue.text}"')
+                            for clue in profile.node.documentation)
+        if purpose.support and not purpose.conflicts and can_review(target, source, fit, evidence, definition_match=purpose.definition_match):
+            evidence.append(Evidence("context_review", 1.0, 0.0,
+                                     "explicit definitions or documented value patterns support a candidate for review; lexical score is unchanged"))
+            if purpose.definition_match:
+                evidence.append(Evidence("definition_preferred", 1.0, 0.0,
+                                         "matching explicit definitions take precedence over name similarity; confirm record selection"))
         if target.node.sample_sources or source.node.sample_sources:
             evidence.append(Evidence("documentation_samples", 1.0, 0.0,
                                      "documentation response examples supplement declared schemas; "
@@ -119,9 +134,11 @@ class PairScorer:
             add_semantic_evidence(evidence, target, source, fit, semantic_score,
                                   weight, rules_score, semantic_match, lexical_match)
 
-        if fit.veto:
-            evidence.append(Evidence("type", 0.0, 0.0, fit.veto, EvidenceEffect.VETO))
-            return Candidate(source=source.node, score=0.0, evidence=tuple(evidence), transforms=fit.steps, vetoed_by=fit.veto)
+        veto = fit.veto or next(iter((*purpose.conflicts, *unmet)), None)
+        if veto:
+            if fit.veto:
+                evidence.append(Evidence("type", 0.0, 0.0, fit.veto, EvidenceEffect.VETO))
+            return Candidate(source=source.node, score=0.0, evidence=tuple(evidence), transforms=fit.steps, vetoed_by=veto)
 
         return Candidate(source=source.node, score=round(_combine(evidence), 4), evidence=tuple(evidence), transforms=fit.steps)
 
@@ -155,7 +172,7 @@ class PairScorer:
             other = source.collection or source.endpoint_concepts
             found.append(self._multiplier(
                 "collection", p.collection_mismatch,
-                f"items are different things ({'/'.join(target.collection)} vs {'/'.join(other)})",
+                f"items are different things ({'/'.join(target.collection or target.endpoint_concepts[-1:])} vs {'/'.join(other)})",
             ))
 
         conflict = signals.shapes_conflict(target, source, fit)

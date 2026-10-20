@@ -92,6 +92,9 @@ class MappingPipeline:
             upstream_nodes = flatten_spec(inputs.upstream)
             downstream_nodes = {spec.name: flatten_spec(spec) for spec in inputs.downstreams}
             counts.update(upstream_fields=len(upstream_nodes), downstream_fields=sum(map(len, downstream_nodes.values())))
+            documented = sum(bool(n.documentation) for n in [*upstream_nodes, *(n for nodes in downstream_nodes.values() for n in nodes)])
+            if any(s.documentation for s in (inputs.upstream, *inputs.downstreams)):
+                self._emit(ProgressEvent('flatten', StageState.INFO, 'Documentation attached to declared fields; ambiguous or unnamed passages are not used', {'documented_fields': documented}))
 
         with self._stage("profile", "reading names, context and qualifiers") as counts:
             profiler = Profiler(self.lexicon, Profiler.vocabulary_of(upstream_nodes))
@@ -161,7 +164,7 @@ _GENERIC_STEMS = frozenset({"openapi", "swagger", "spec", "api", "manifest", "in
 
 
 def _copy(mapping: FieldMapping) -> FieldMapping:
-    return FieldMapping(mapping.target, mapping.status, mapping.chosen, mapping.alternatives, list(mapping.notes))
+    return FieldMapping(mapping.target, mapping.status, mapping.chosen, mapping.alternatives, list(mapping.notes), mapping.category)
 
 
 def _api_name(path: Path) -> str | None:

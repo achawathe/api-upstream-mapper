@@ -8,6 +8,7 @@ from pathlib import Path
 
 from api_mapper.loaders.document import load_document
 from api_mapper.models.meaning import MeaningRule
+from api_mapper.models.purpose import PurposeRule
 from api_mapper.normalize.tokenizer import singularize, split_identifier
 
 DEFAULT_LEXICON = Path(__file__).resolve().parents[3] / "lexicon" / "finance.yaml"
@@ -31,6 +32,7 @@ class Lexicon:
     minor_unit_markers: tuple[str, ...] = ()
     epoch_markers: tuple[str, ...] = ()
     meaning_rules: tuple[MeaningRule, ...] = ()
+    purpose_rules: tuple[PurposeRule, ...] = ()
 
     @classmethod
     def load(cls, *paths: Path) -> "Lexicon":
@@ -57,6 +59,7 @@ class Lexicon:
             minor_unit_markers=(*self.minor_unit_markers, *other.minor_unit_markers),
             epoch_markers=(*self.epoch_markers, *other.epoch_markers),
             meaning_rules=tuple({(r.group, r.role): r for r in (*self.meaning_rules, *other.meaning_rules)}.values()),
+            purpose_rules=tuple({(r.group, r.role): r for r in (*self.purpose_rules, *other.purpose_rules)}.values()),
         )
 
     def concepts(self, text: str) -> tuple[str, ...]:
@@ -197,8 +200,23 @@ def _parse(raw: dict) -> Lexicon:
             group=str(r["group"]), role=str(r["role"]), concepts=frozenset(r["concepts"]),
             name_phrases=tuple(r.get("name_phrases") or ()),
             definition_phrases=tuple(r.get("definition_phrases") or ()),
+            require_source=bool(r.get("require_source", False)),
+            name_concepts=frozenset(r.get("name_concepts") or ()),
         ) for r in raw.get("meaning_rules") or ()),
+        purpose_rules=tuple(_purpose_rule(r) for r in raw.get("purpose_rules") or ()),
     )
+
+
+def _purpose_rule(raw: dict) -> PurposeRule:
+    patterns = raw.get("patterns")
+    if not isinstance(patterns, list) or not patterns or not all(isinstance(p, str) and p for p in patterns):
+        raise ValueError("purpose rule patterns must be a non-empty list of regular expressions")
+    for pattern in patterns:
+        try:
+            re.compile(pattern, re.IGNORECASE)
+        except re.error as error:
+            raise ValueError(f"invalid purpose rule pattern: {error}") from error
+    return PurposeRule(str(raw["group"]), str(raw["role"]), str(raw["label"]), tuple(patterns))
 
 
 def _normal(word: str) -> str:

@@ -4,10 +4,18 @@ longer apply instead of silently dropping them."""
 
 import json
 from collections.abc import Callable, Iterable
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
-from api_mapper.models import Candidate, FieldMapping, MappingStatus, Override, OverrideAction
+from api_mapper.models import (
+    Candidate,
+    FieldMapping,
+    MappingStatus,
+    Override,
+    OverrideAction,
+)
+from api_mapper.transforms.editor import parse_steps
+from api_mapper.transforms.enum_normalization import validate_enum_outputs
 
 PairScorer = Callable[[str, str], Candidate | None]
 
@@ -27,6 +35,10 @@ def apply_overrides(mappings: list[FieldMapping], overrides: Iterable[Override],
 
 
 def _apply(mapping: FieldMapping, override: Override, score_pair: PairScorer) -> str | None:
+    try:
+        validate_enum_outputs(override.transforms, mapping.target)
+    except ValueError as error:
+        return f'override on {mapping.target.key} ignored: {error}'
     note = f"manual {override.action.value}" + (f" by {override.author}" if override.author else "") + (
         f": {override.note}" if override.note else ""
     )
@@ -50,6 +62,9 @@ def _apply(mapping: FieldMapping, override: Override, score_pair: PairScorer) ->
         mapping.status = MappingStatus.MANUAL
         if candidate.vetoed_by:
             note += f" (tool vetoed this pair: {candidate.vetoed_by})"
+    if mapping.chosen and override.transforms is not None:
+        mapping.chosen = replace(mapping.chosen, transforms=override.transforms)
+        note += ' (conversion steps edited by reviewer)'
     mapping.notes.append(note)
     return None
 
@@ -65,6 +80,7 @@ def load_overrides(path: Path) -> list[Override]:
             source_key=item.get("source_key"),
             note=item.get("note", ""),
             author=item.get("author", ""),
+            transforms=parse_steps(item.get('transforms')),
         )
         for item in raw.get("overrides", [])
     ]

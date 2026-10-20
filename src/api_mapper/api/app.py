@@ -3,9 +3,9 @@
 import asyncio
 import json
 import os
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -27,6 +27,10 @@ from api_mapper.reporting.serialize import (
     plan_to_dict,
     run_to_dict,
 )
+from api_mapper.transforms.apply import TransformError, apply_transforms
+from api_mapper.transforms.editor import parse_steps
+from api_mapper.transforms.enum_normalization import validate_enum_outputs
+from api_mapper.validation.checks import check_document
 from api_mapper.validation.executor import PlanExecutor
 from api_mapper.validation.mock_downstream import FaultPlan, MockDownstreams
 
@@ -74,6 +78,7 @@ class SettingsBody(BaseModel):
     auto: float = Field(ge=0, le=1)
     review: float = Field(ge=0, le=1)
     nlp: NlpBody | None = None
+    domain: Literal['finance', 'general'] | None = None
 
 
 class ValidateBody(BaseModel):
@@ -83,6 +88,18 @@ class ValidateBody(BaseModel):
     include_review: bool = True
     latency_ms: float = 0
     faults: dict[str, int] = {}
+
+
+class CategoryBody(BaseModel):
+    target_key: str
+    category: str = Field(max_length=80)
+
+
+class PreviewBody(BaseModel):
+    target_key: str
+    source_key: str
+    transforms: list[dict[str, Any]] = []
+    sample: Any = None
 
 
 @app.get("/")
@@ -119,6 +136,15 @@ def sample_endpoints(file_id: str) -> dict[str, Any]:
         raise HTTPException(400, str(error)) from error
 
 
+@app.post("/api/files/{file_id}/model-files")
+async def attach_model_files(file_id: str, files: Annotated[list[UploadFile], File()]) -> dict[str, Any]:
+    uploads = [(f.filename or "models.yaml", await f.read()) for f in files]
+    try:
+        return {"file": asdict(workspace.add_model_files(file_id, uploads))}
+    except (ValueError, KeyError, SpecLoadError) as error:
+        raise HTTPException(400, str(error)) from error
+
+
 @app.post("/api/files/{file_id}/response-samples")
 async def attach_response_samples(
     file_id: str, endpoint: Annotated[str, Form()], files: Annotated[list[UploadFile], File()],
@@ -134,6 +160,25 @@ async def attach_response_samples(
 @app.delete("/api/response-samples/{sample_id}")
 def remove_response_samples(sample_id: str) -> dict[str, Any]:
     workspace.remove_response_samples(sample_id)
+    return workspace.state()
+
+
+@app.post('/api/files/{file_id}/documentation')
+async def attach_documentation(file_id: str, files: Annotated[list[UploadFile], File()],
+                               endpoint: Annotated[str, Form()] = '') -> dict[str, Any]:
+    uploads = [(f.filename or 'pasted.txt', await f.read()) for f in files]
+    try:
+        return {'document': asdict(workspace.add_documentation(file_id, uploads, endpoint))}
+    except (ValueError, KeyError, SpecLoadError) as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.delete('/api/documentation/{document_id}')
+def remove_documentation(document_id: str) -> dict[str, Any]:
+    try:
+        workspace.remove_documentation(document_id)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
     return workspace.state()
 
 
@@ -170,7 +215,7 @@ def settings(body: SettingsBody) -> dict[str, Any]:
     if body.review > body.auto:
         raise HTTPException(400, "the review threshold cannot be above the automatic threshold")
     nlp = NlpSettings(**body.nlp.model_dump()) if body.nlp else workspace.nlp
-    workspace.configure(Thresholds(auto=body.auto, review=body.review), nlp)
+    workspace.configure(Thresholds(auto=body.auto, review=body.review), nlp, body.domain)
     return workspace.state()
 
 
@@ -228,10 +273,49 @@ def candidates(target_key: str, q: str = "") -> dict[str, Any]:
 def set_override(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         override = parse_override(payload)
-    except (KeyError, ValueError) as error:
+    except (KeyError, ValueError, TypeError) as error:
         raise HTTPException(400, f"invalid override: {error}") from error
+    prepared = _require_result().prepared
+    if override.target_key not in prepared.targets:
+        raise HTTPException(400, 'Choose a field from the current mapping run')
+    if override.source_key and override.source_key not in prepared.sources:
+        raise HTTPException(400, 'Choose a source from the current mapping run')
+    try:
+        validate_enum_outputs(override.transforms, prepared.targets[override.target_key].node)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
     warnings = workspace.set_override(override, override.target_key)
     return _after_override(override.target_key, warnings)
+
+
+@app.put('/api/mapping-category')
+def set_category(body: CategoryBody) -> dict[str, Any]:
+    try:
+        workspace.set_category(body.target_key, body.category)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    return _after_override(body.target_key, [])
+
+
+@app.post('/api/conversion-preview')
+def preview_conversion(body: PreviewBody) -> dict[str, Any]:
+    prepared = _require_result().prepared
+    target = prepared.targets.get(body.target_key)
+    source = prepared.sources.get(body.source_key)
+    if target is None or source is None:
+        raise HTTPException(400, 'Choose a target and source from the current run')
+    sample = body.sample if 'sample' in body.model_fields_set else source.node.example
+    if sample is None and 'sample' not in body.model_fields_set:
+        raise HTTPException(400, 'This source has no example. Enter a JSON value to preview.')
+    try:
+        steps = parse_steps(body.transforms) or ()
+        validate_enum_outputs(steps, target.node)
+        output = apply_transforms(steps, sample)
+        issues = check_document({'value': output}, [replace(target.node, path='value')])
+        return {'input': sample, 'output': output, 'issues': [issue.message for issue in issues],
+                'message': 'Example only; confirm conversions for all expected values'}
+    except (ValueError, TypeError, OverflowError, TransformError) as error:
+        raise HTTPException(400, str(error)) from error
 
 
 @app.delete("/api/overrides")

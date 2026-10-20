@@ -2,6 +2,32 @@
 
 Status: **built** (all nine steps). See README.md for usage, design and measured accuracy.
 
+Channel value mapping: enum conversion now distinguishes source-field lineage from
+value translation into the channel's allowed set. Specification enums take priority;
+explicit documented lists/aliases supplement missing definitions. Reviewed tables
+support normalization and allowed fallbacks, and are checked on save and replay.
+See docs/channel-value-mapping.md for scope and example inputs.
+
+Update (2026-10-19, documentation and editor): optional per-API documentation now
+feeds cited local matching context; General applications is a selectable vocabulary.
+A Scratch-inspired Blocks view connects a source through editable conversion steps
+to an output field, with categories, explicit saves and example previews. See
+docs/documentation-and-editor.md for scope and validation limits. The latest 99-case
+public-contract check gives 40 correct origins, zero wrong suggestions, eight missed
+origins and 51 correct abstentions in both rules and local MiniLM mode.
+
+Update (2026-10-19): candidate comparisons now quote recorded purpose evidence from
+schema descriptions and attached examples. A bounded YAML vocabulary supports discovery
+and conflict checks independently of optional embeddings. New context-based discoveries
+remain review suggestions with their original scores. The detail pane, JSON and Excel
+explain selected and competing candidates; no generated rationale is treated as proof.
+The focused six-field FDX/Plaid diagnosis improves from 2/6 to 6/6 correct decisions
+in both rules and local MiniLM mode. It identifies dropped list descriptions, skipped
+single-record ownership checks, missing definition support and duplicate API uploads.
+See docs/local-nlp-diagnosis.md; these development cases do not establish general parity.
+An optional upstream model-file attachment now resolves missing local `$ref` files after
+the initial spec upload, refreshes warnings and preserves existing response examples.
+
 Update (2026-10-16): the user's local NLP feature request supersedes the historical
 rules-only restrictions in F4 and N1 below. Rules remain the default; optional offline
 sentence embeddings supplement candidate discovery and scoring. All type vetoes and

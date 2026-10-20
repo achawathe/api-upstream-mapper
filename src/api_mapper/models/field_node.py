@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from api_mapper.models.purpose import ContextClue, ValueProfile
+
 SCALAR_TYPES = frozenset({"string", "number", "integer", "boolean", "any"})
 
 
@@ -32,6 +34,9 @@ class FieldNode:
     array_depth: int = 0
     sample_sources: tuple[str, ...] = ()
     sample_context: str = ""
+    context_clues: tuple[ContextClue, ...] = ()
+    value_profile: ValueProfile = field(default_factory=ValueProfile)
+    documentation: tuple[ContextClue, ...] = ()
 
     @property
     def key(self) -> str:

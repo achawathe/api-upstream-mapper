@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from api_mapper.models import TransformKind, TransformStep
+from api_mapper.transforms.enum_normalization import translate_value
 
 
 class TransformError(ValueError):
@@ -35,10 +36,10 @@ def _apply(step: TransformStep, value: Any) -> Any:
     if kind is TransformKind.DATETIME_TO_DATE:
         return str(value)[:10]
     if kind is TransformKind.ENUM_MAP:
-        mapping = step.params.get("mapping", {})
-        if value not in mapping:
-            raise TransformError(f"no upstream value for {value!r}")
-        return mapping[value]
+        try:
+            return translate_value(step.params, value)
+        except (ValueError, TypeError) as error:
+            raise TransformError(str(error)) from error
     if kind is TransformKind.CAST:
         return _cast(value, str(step.params.get("to", "string")))
     raise TransformError(f"unknown transform {kind}")
