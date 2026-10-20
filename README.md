@@ -180,7 +180,7 @@ Tests (unit, golden accuracy, mutation stress, 50-API scale):
 | Upstream spec | OpenAPI 3.0/3.1 or Swagger 2.0, YAML or JSON, or a schema-only fragment (`components/schemas` or `definitions`) |
 | Downstream specs | Same formats. Local `$ref`s to other files work when the files sit together (upload them together in the GUI) |
 | Documentation examples | JSON success-response bodies attached to an existing **upstream or downstream** endpoint in the GUI or HTTP API |
-| Spec-less downstreams | Captured JSON responses plus a small manifest (see `samples/downstream/routing/manifest.yaml`), or uploaded per endpoint in the GUI |
+| Spec-less downstreams | Captured JSON responses plus a small manifest (see `samples/downstream/routing/manifest.yaml`), or uploaded per endpoint in the GUI. Keys that are data (cities, currency codes, account IDs) are read as a map: `rates.{key}` for each value, `rates.@key` for the key |
 | Error catalog | Upstream error codes with HTTP status and keywords (`samples/upstream/fdx/error-catalog.yaml`) |
 | Extra lexicon | Your own abbreviations and synonyms, merged over `lexicon/finance.yaml` |
 | Answer key | Optional expected mappings; turns on the accuracy report |
@@ -310,6 +310,7 @@ the API's name, never from the API's tag list.
 | Same, renamed with spellings no lexicon lists: dropped vowels, truncation, reversed word order, filler words (16 seeds) | 100% | 73–96% |
 | Same, plus 42 generated noise APIs sharing generic field names (50 APIs) | 100% | 100% |
 | **Held-out:** Australian Consumer Data Right banking and common APIs | 100% (0 wrong of 85) | 98.5% (70% automatically) |
+| Spec-less APIs whose JSON keys are data, with decoys (`samples/benchmarks/value-keys`) | 100% (2 automatic) | 62.5% (25% before value keys); map fields always need review |
 | UK Open Banking and Plaid excerpts (99 labelled cases) | 100% (9 automatic) | 40 of 48 origins; 51 of 51 no-source cases left unmapped |
 
 The Northwind APIs were written for this project and the UK Open Banking and Plaid excerpts

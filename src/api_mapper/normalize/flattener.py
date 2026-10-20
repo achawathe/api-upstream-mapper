@@ -8,13 +8,14 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from api_mapper.loaders.ref_resolver import CYCLE_KEY, SCHEMA_NAME_KEY, UNRESOLVED_KEY
+from api_mapper.loaders.sample_inference import MAP_KEYS_KEY
 from api_mapper.models import ApiSpec, Endpoint, FieldNode
+from api_mapper.models.field_node import MAP_KEY_SEGMENT, MAP_VALUE_SEGMENT
 from api_mapper.normalize.documentation import enrich_documentation
 from api_mapper.normalize.observations import sibling_clues, summarize_values
 from api_mapper.normalize.sample_context import describe_samples
 
 MAX_DEPTH = 24
-MAP_KEY_SEGMENT = "{key}"
 MAX_OBSERVED_VALUES = 20
 
 
@@ -162,7 +163,9 @@ def _walk_object(schema: dict, ctx: _Context, api: str, endpoint: str, out: list
         _walk(prop, ctx.child(str(name), name in required), api, endpoint, out)
     extra = schema.get("additionalProperties")
     if isinstance(extra, dict) and extra and not schema.get("properties"):
-        _walk(extra, ctx.child(MAP_KEY_SEGMENT, False), api, endpoint, out)
+        keys = {"type": "string", "examples": list(schema.get(MAP_KEYS_KEY) or [])}
+        out.append(_leaf(api, endpoint, ctx.child(MAP_KEY_SEGMENT, True), keys, "string", False))
+        _walk(extra, ctx.child(MAP_VALUE_SEGMENT, False), api, endpoint, out)
 
 
 def _variants(schema: dict, branches: list) -> list[tuple[str, tuple[str, str] | None, dict]]:
@@ -258,6 +261,12 @@ def _values_at(
             return [value] if isinstance(value, dict) and not (strict and conditions) else []
         return [] if value is None or isinstance(value, (dict, list)) or (strict and conditions) else [value]
     head, rest = segments[0], segments[1:]
+    if head == MAP_KEY_SEGMENT:
+        return [str(key) for key in value] if isinstance(value, dict) and not rest and not containers else []
+    if head == MAP_VALUE_SEGMENT:
+        if not isinstance(value, dict):
+            return []
+        return [found for item in value.values() for found in _values_at(item, rest, conditions, strict, containers)]
     is_array = head.endswith("[]")
     name = head.removesuffix("[]")
     if name:

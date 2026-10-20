@@ -1,0 +1,6 @@
+name: weather-snapshot
+title: Weather Snapshot Service
+endpoints:
+  - method: GET
+    path: /weather/snapshot
+    samples: [s1.json, s2.json]

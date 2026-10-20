@@ -1,0 +1,6 @@
+name: account-balances
+title: Account Balances Service
+endpoints:
+  - method: GET
+    path: /customers/{customerId}/balances
+    samples: [b1.json]

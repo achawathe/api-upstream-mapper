@@ -1,0 +1,6 @@
+name: app-settings
+title: Plan Settings Service
+endpoints:
+  - method: GET
+    path: /settings
+    samples: [p1.json, p2.json]

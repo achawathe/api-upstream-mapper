@@ -4,6 +4,10 @@ from typing import Any
 from api_mapper.models.purpose import ContextClue, ValueProfile
 
 SCALAR_TYPES = frozenset({"string", "number", "integer", "boolean", "any"})
+# Path segments of a map whose keys are data: `rates.{key}` is each entry's value, `rates.@key` the key itself.
+MAP_VALUE_SEGMENT = "{key}"
+MAP_KEY_SEGMENT = "@key"
+_MAP_SEGMENTS = (MAP_VALUE_SEGMENT, MAP_KEY_SEGMENT)
 
 
 @dataclass(frozen=True)
@@ -49,7 +53,21 @@ class FieldNode:
 
     @property
     def segments(self) -> tuple[str, ...]:
-        return tuple(s.removesuffix("[]") for s in self.path.split(".") if s.removesuffix("[]"))
+        """Named path segments; map segments stand for data, so `rates.{key}` is named by `rates`."""
+        return tuple(
+            s.removesuffix("[]") for s in self.path.split(".") if s.removesuffix("[]") and s not in _MAP_SEGMENTS
+        )
+
+    @property
+    def map_path(self) -> str | None:
+        """The innermost map this field belongs to, as `balances` for `balances.{key}.current`."""
+        parts = self.path.split(".")
+        found = [i for i, segment in enumerate(parts) if segment in _MAP_SEGMENTS]
+        return ".".join(parts[: found[-1]]) if found else None
+
+    @property
+    def is_map_key(self) -> bool:
+        return self.path.endswith(f".{MAP_KEY_SEGMENT}")
 
     @property
     def parent_segments(self) -> tuple[str, ...]:

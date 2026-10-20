@@ -45,6 +45,12 @@ def review_reasons(target: FieldNode, candidate: Candidate, auto_threshold: floa
         reasons.append("local NLP supports this suggestion; confirm the field meaning before accepting")
     if any(e.signal is Signal.SEMANTIC_REVIEW for e in evidence) and candidate.score < auto_threshold:
         reasons.append("descriptive similarity supports review; rule confidence remains below the automatic threshold")
+    if candidate.source.map_path is not None:
+        what = "the key of each entry" if candidate.source.is_map_key else "one value per entry"
+        reasons.append(
+            f"source is {what} of {candidate.source.map_path}, whose keys are data; "
+            "confirm which entry this request selects, for example by a path parameter"
+        )
     if candidate.source.array_depth > target.array_depth:
         reasons.append("source has additional array levels; confirm which item supplies this value")
     if target.type in {"number", "integer"} and candidate.source.type == "string" and type_score < 0.85:

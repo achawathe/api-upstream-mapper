@@ -95,6 +95,19 @@ Deterministic first; each step lands with its benchmark result.
 - CDR with descriptions removed, and four renamed Northwind copies with and without descriptions.
 - The existing Northwind, CDR, UK/Plaid and stress sets must not regress.
 
+## Progress
+
+- **A, map by endpoint:** done (commit `2b4aeab`).
+- **B1, value keys:** done. Sample inference reads an object as a map when its keys change
+  between samples (most of them, so optional fields do not count) or all look like values
+  (IDs, codes, dates, numbers), over same-shaped entries. Maps flatten to `<map>.{key}` and
+  `<map>.@key`; names come from the map, records come from the keys, and map fields always go
+  to review with the entry to choose. The call plan binds the key to a request input that
+  names the same thing (`snapshot.weather.city` ← `{city}`) or lists it as unresolved.
+  Value-key benchmark: recall 25% to 62.5%, no wrong automatic mapping, decoys never chosen.
+  Northwind, CDR and UK/Plaid unchanged. Still missed: `temperature` (needs B2 and B3), and
+  `observedAt` ← `takenAt`, `asOf` ← `date`.
+
 ## Order
 
 1. Workstream A, independent of B and small.

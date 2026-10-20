@@ -1,0 +1,6 @@
+name: fx-rates
+title: FX Rates Feed
+endpoints:
+  - method: GET
+    path: /fx/latest
+    samples: [r1.json, r2.json]

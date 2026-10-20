@@ -53,6 +53,16 @@ class Reachability:
             self._cache[inputs] = self._scoped(inputs)
         return endpoint in self._cache[inputs]
 
+    def selectable(self, inputs: frozenset[Identity], endpoint: EndpointKey) -> bool:
+        """A map keyed by data returns every record, and the request's input picks the entry; it only
+        needs its own required inputs, from the request or from reachable calls."""
+        if self.reachable(inputs, endpoint):
+            return True
+        if inputs not in self._cache:
+            self._cache[inputs] = self._scoped(inputs)
+        known = set(inputs).union(*(self._outputs.get(key, set()) for key in self._cache[inputs]))
+        return all(identity in known for identity, required in self._params.get(endpoint, []) if required)
+
     def requires_body_review(self, endpoint: EndpointKey, inputs: frozenset[Identity] = frozenset()) -> bool:
         if endpoint in self._has_body:
             return True

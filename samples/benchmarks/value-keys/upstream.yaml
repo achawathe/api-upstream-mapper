@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info: {title: Value-key benchmark upstream, version: "1"}
+paths:
+  /cities/{city}/weather:
+    get:
+      operationId: getCityWeather
+      parameters: [{name: city, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200":
+          description: Current weather for one city.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  city: {type: string, description: Name of the city.}
+                  temperature: {type: number, description: Current air temperature in degrees Celsius.}
+                  observedAt: {type: string, format: date-time, description: When the reading was taken.}
+  /rates/{currency}:
+    get:
+      operationId: getExchangeRate
+      parameters: [{name: currency, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200":
+          description: Exchange rate of one currency against the US dollar.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currency: {type: string, description: ISO 4217 currency code.}
+                  rate: {type: number, description: Units of this currency per one US dollar.}
+                  asOf: {type: string, format: date, description: Date of the rate.}
+  /accounts/{accountId}/balance:
+    get:
+      operationId: getAccountBalance
+      parameters: [{name: accountId, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200":
+          description: Balances of one account.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId: {type: string, description: Identifier of the account.}
+                  currentBalance: {type: number, description: Posted balance of the account.}
+                  availableBalance: {type: number, description: Balance available to spend.}
+  /plan/limits:
+    get:
+      operationId: getPlanLimits
+      responses:
+        "200":
+          description: Spending limits of the plan.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dailyLimit: {type: number, description: Maximum spend per day.}
+                  monthlyLimit: {type: number, description: Maximum spend per month.}

@@ -1,0 +1,6 @@
+name: device-status
+title: Device Status Service
+endpoints:
+  - method: GET
+    path: /devices/{deviceId}/status
+    samples: [d1.json, d2.json]

@@ -24,10 +24,12 @@ from api_mapper.models import (
     MappingStatus,
     Parameter,
 )
+from api_mapper.models.field_node import MAP_KEY_SEGMENT
 from api_mapper.normalize.inputs import bindable_body, compatible_body_input, input_name
 from api_mapper.normalize.lexicon import ENTITY_CONCEPT, Lexicon
 
 EXACT = 0.99
+MAP_KEY_LOCATION = "map key"
 WEAK = 0.4
 QUERY_MATCH = 0.75
 MAX_SUPPLIER_DEPTH = 2
@@ -114,8 +116,11 @@ class _EndpointPlanner:
         self.variants: dict[EndpointKey, set[str]] = {}
         self.field_counts: dict[EndpointKey, int] = {}
         self.pending_counts: dict[EndpointKey, int] = {}
+        self.maps: dict[EndpointKey, set[str]] = {}
         for mapping in mappings:
             key = (mapping.chosen.source.api, mapping.chosen.source.endpoint)
+            if mapping.chosen.source.map_path is not None:
+                self.maps.setdefault(key, set()).add(mapping.chosen.source.map_path)
             self.variants.setdefault(key, set()).add(mapping.target.variant or "")
             self.field_counts[key] = self.field_counts.get(key, 0) + 1
             if mapping.status is MappingStatus.REVIEW:
@@ -156,9 +161,22 @@ class _EndpointPlanner:
         bindings.extend(
             b for b in (self._bind_body(endpoint, p) for p in endpoint.parameters if p.location == "body") if b
         )
+        bindings.extend(self._bind_map_key(key, map_path) for map_path in sorted(self.maps.get(key, ())))
         self.in_progress.discard(key)
         self.bindings[key] = tuple(bindings)
         self.ordered.append(key)
+
+    def _bind_map_key(self, key: EndpointKey, map_path: str) -> InputBinding:
+        """A map keyed by data needs the entry chosen: by a request input that names the same thing, or by a person."""
+        field = next((f for f in self.p.fields.get(key, []) if f.node.path == f"{map_path}.{MAP_KEY_SEGMENT}"), None)
+        wanted = self.p.field_concepts(field) if field else frozenset()
+        for name, (_, concepts) in self.upstream_params.items():
+            if self.p.overlap(wanted, concepts) >= EXACT:
+                return InputBinding(map_path, BindingSource.UPSTREAM_REQUEST, name, location=MAP_KEY_LOCATION)
+        self.unresolved.append(f"{key[0]} {key[1]}: entry of {map_path}")
+        return InputBinding(
+            map_path, BindingSource.UNRESOLVED, "choose which entry this request needs", location=MAP_KEY_LOCATION
+        )
 
     def _bind_path(self, key: EndpointKey, endpoint: Endpoint, parameter: Parameter, depth: int) -> InputBinding:
         supply = self._best_supply(key, self.p.param_concepts(parameter.name, endpoint.path), depth)

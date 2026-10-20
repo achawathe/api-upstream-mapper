@@ -1,0 +1,40 @@
+# Ground truth for value-key sample JSON (PLAN-data-first.md, B1). Written 2026-10-20 before
+# value-key detection existed. Format as samples/answer_key.yaml.
+#
+# A map whose keys are values (cities, currency codes, account IDs) is read as `<map>.{key}`
+# for each value and `<map>.@key` for the key itself. `limits` has the same keys in every
+# sample, so it is an ordinary object, not a map. Decoys: `cpu.temp` and `station.tempSensorId`
+# share the word "temp" with temperature but hold a device temperature and a sensor ID.
+
+sources:
+  W: "weather-snapshot|GET /weather/snapshot|"
+  F: "fx-rates|GET /fx/latest|"
+  B: "account-balances|GET /customers/{customerId}/balances|"
+  S: "app-settings|GET /settings|"
+
+groups:
+  - endpoint: GET /cities/{city}/weather
+    expect:
+      temperature: ["W:snapshot.weather.city.{key}"]
+      observedAt: ["W:snapshot.takenAt"]
+    optional:
+      city: ["W:snapshot.weather.city.@key"]
+
+  - endpoint: GET /rates/{currency}
+    expect:
+      rate: ["F:rates.{key}"]
+      asOf: ["F:date"]
+    optional:
+      currency: ["F:rates.@key"]
+
+  - endpoint: GET /accounts/{accountId}/balance
+    expect:
+      currentBalance: ["B:balances.{key}.current"]
+      availableBalance: ["B:balances.{key}.available"]
+    optional:
+      accountId: ["B:balances.@key"]
+
+  - endpoint: GET /plan/limits
+    expect:
+      dailyLimit: ["S:limits.daily"]
+      monthlyLimit: ["S:limits.monthly"]
