@@ -21,8 +21,16 @@ Install the optional dependency in this checkout's environment:
 .venv/bin/python -m pip install -e ".[nlp]"
 ```
 
-The repository includes `models/all-MiniLM-L6-v2`, so a normal clone or pull supplies
-the model files. Install the optional dependencies above, then use that folder's absolute
+The repository includes `models/all-MiniLM-L6-v2`. Model weights (`*.safetensors`, `*.bin`,
+`*.gguf`, `*.onnx`) are stored with Git LFS, so install it once before cloning or pulling;
+without it the weight files arrive as small text pointers and the model fails to load:
+
+```bash
+brew install git-lfs && git lfs install
+git lfs pull   # in a checkout made before LFS was installed
+```
+
+Install the optional dependencies above, then use the model folder's absolute
 path. You can also supply another trusted, complete Sentence Transformers model,
 including its tokenizer and pooling modules. Mapping never downloads a model.
 
