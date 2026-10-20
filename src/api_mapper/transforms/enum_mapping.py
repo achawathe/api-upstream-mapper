@@ -7,7 +7,7 @@ single target; ambiguous values stay unmapped rather than guessed.
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from functools import lru_cache, cache
+from functools import cache, lru_cache
 
 from api_mapper.normalize.lexicon import Lexicon
 from api_mapper.normalize.tokenizer import split_identifier

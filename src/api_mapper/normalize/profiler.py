@@ -51,7 +51,11 @@ class Profiler:
         for node in nodes:
             concepts, endpoint_scope = endpoint_info.get(node.endpoint, ((), frozenset()))
             profile = self.profile(node, api_scope | endpoint_scope, concepts)
-            profiles.append(replace(profile, identity=self._identity(profile), endpoint_inputs=frozenset(inputs.get(node.endpoint, ()))))
+            profiles.append(
+                replace(
+                    profile, identity=self._identity(profile), endpoint_inputs=frozenset(inputs.get(node.endpoint, ()))
+                )
+            )
         return profiles
 
     def _input_concepts(self, endpoint: Endpoint) -> set[frozenset[str]]:
@@ -72,7 +76,9 @@ class Profiler:
         return self._without_families(concepts)
 
     def _identity(self, profile: FieldProfile) -> frozenset[str]:
-        concepts = [c for c, share in profile.bag.items() if share >= 1.0] if profile.leaf_is_generic else list(profile.leaf)
+        concepts = (
+            [c for c, share in profile.bag.items() if share >= 1.0] if profile.leaf_is_generic else list(profile.leaf)
+        )
         return self._without_families(concepts)
 
     def _without_families(self, concepts) -> frozenset[str]:
@@ -100,7 +106,9 @@ class Profiler:
             scope=scope,
             roles=self.lexicon.roles_of([*leaf, *path_concepts]),
             endpoint_concepts=endpoint_concepts,
-            description_concepts=self._description_concepts(' '.join((node.description, *(c.text for c in node.documentation)))),
+            description_concepts=self._description_concepts(
+                " ".join((node.description, *(c.text for c in node.documentation)))
+            ),
             temporal=bool(_TEMPORAL_CONCEPTS & set(leaf)) or (node.format in _TEMPORAL_FORMATS),
             guesses=tuple(dict.fromkeys(g for segment in node.segments for g in self._guesses(segment))),
             purposes=field_purposes(node, self.lexicon.purpose_rules),

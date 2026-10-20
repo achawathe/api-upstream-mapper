@@ -18,7 +18,8 @@ class ConceptWeights:
         document_frequency = Counter(concept for bag in bags for concept in bag)
         total = len(bags)
         self._weights = {
-            concept: (math.log((total + 1) / (count + 1)) + 1.0) * (WEAK_CONCEPT_FACTOR if concept in lexicon.weak else 1.0)
+            concept: (math.log((total + 1) / (count + 1)) + 1.0)
+            * (WEAK_CONCEPT_FACTOR if concept in lexicon.weak else 1.0)
             for concept, count in document_frequency.items()
         }
         self._default = math.log(total + 1) + 1.0

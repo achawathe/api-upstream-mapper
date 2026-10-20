@@ -25,8 +25,7 @@ class ContractGrade:
             "automatic": sum(row["status"] == "auto" for row in self.rows),
             "wrong_automatic": sum(row["status"] == "auto" and row["outcome"] == "wrong" for row in self.rows),
             "conditional_automatic": sum(
-                row["status"] == "auto" and row["outcome"] == "correct" and row["conditional"]
-                for row in self.rows
+                row["status"] == "auto" and row["outcome"] == "correct" and row["conditional"] for row in self.rows
             ),
         }
 
@@ -49,9 +48,14 @@ def grade_contract(mappings: list[FieldMapping], labels: list[dict[str, Any]], s
             outcome = "correct" if actual in expected else "wrong"
         else:
             outcome = "missed" if expected else "abstained"
-        rows.append({
-            **label, "actual": actual, "status": mapping.status.value, "outcome": outcome,
-            "score": mapping.chosen.score if mapping.chosen else None,
-            "decision_notes": list(mapping.notes),
-        })
+        rows.append(
+            {
+                **label,
+                "actual": actual,
+                "status": mapping.status.value,
+                "outcome": outcome,
+                "score": mapping.chosen.score if mapping.chosen else None,
+                "decision_notes": list(mapping.notes),
+            }
+        )
     return ContractGrade(rows)

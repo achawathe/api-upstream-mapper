@@ -58,8 +58,11 @@ class SemanticIndex:
         self.settings = settings
         has_documents = any(p.node.documentation for p in profiles)
         definitions = {p.node.key: _definitions(p) if has_documents else [] for p in profiles}
-        texts = list(dict.fromkeys([*(_field_text(p) for p in profiles),
-                                   *(text for values in definitions.values() for text, _ in values)]))
+        texts = list(
+            dict.fromkeys(
+                [*(_field_text(p) for p in profiles), *(text for values in definitions.values() for text, _ in values)]
+            )
+        )
         vectors = list(encoder.encode(texts)) if texts else []
         if len(vectors) != len(texts):
             raise LocalNlpError("local NLP encoder returned the wrong number of vectors")
@@ -68,14 +71,19 @@ class SemanticIndex:
             raise LocalNlpError("local NLP encoder returned inconsistent vector dimensions")
         by_text = dict(zip(texts, normalised, strict=True))
         self._vectors = {profile.node.key: by_text[_field_text(profile)] for profile in profiles}
-        self._definitions = {key: [(by_text[text], documented) for text, documented in values]
-                             for key, values in definitions.items()}
+        self._definitions = {
+            key: [(by_text[text], documented) for text, documented in values] for key, values in definitions.items()
+        }
 
     def similarity(self, target: FieldProfile, source: FieldProfile) -> float:
         left, right = self._vectors[target.node.key], self._vectors[source.node.key]
         scores = [_cosine(left, right)]
-        scores.extend(_cosine(a, b) for a, a_doc in self._definitions[target.node.key]
-                      for b, b_doc in self._definitions[source.node.key] if a_doc or b_doc)
+        scores.extend(
+            _cosine(a, b)
+            for a, a_doc in self._definitions[target.node.key]
+            for b, b_doc in self._definitions[source.node.key]
+            if a_doc or b_doc
+        )
         return max(scores)
 
     def candidates_for(self, target: FieldProfile, sources: list[FieldProfile]) -> list[FieldProfile]:
@@ -89,8 +97,8 @@ def _field_text(profile: FieldProfile) -> str:
     description = " ".join(profile.node.description.split()[:80])
     text = f"{name}. {description}".strip()
     if profile.node.documentation:
-        excerpts = ' '.join(c.text for c in profile.node.documentation)
-        text = f'{excerpts} {text}'
+        excerpts = " ".join(c.text for c in profile.node.documentation)
+        text = f"{excerpts} {text}"
     text = f"{text} {profile.node.sample_context}" if profile.node.sample_context else text
     clues = " ".join(f"Associated definition: {clue.text}." for clue in profile.node.context_clues[:3])
     return f"{text} {clues}" if clues else text

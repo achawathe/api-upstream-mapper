@@ -44,7 +44,9 @@ def assign(
 
 
 def rank(candidates: list[Candidate]) -> list[Candidate]:
-    return sorted(candidates, key=lambda c: (c.vetoed_by is not None, not definition_preferred(c), -c.score, c.source.key))
+    return sorted(
+        candidates, key=lambda c: (c.vetoed_by is not None, not definition_preferred(c), -c.score, c.source.key)
+    )
 
 
 def _decide(target: FieldProfile, candidates: list[Candidate], thresholds: Thresholds) -> FieldMapping:
@@ -60,7 +62,11 @@ def _decide(target: FieldProfile, candidates: list[Candidate], thresholds: Thres
         )
 
     viable = [c for c in ranked if c.vetoed_by is None]
-    best = viable[0] if viable and (definition_preferred(viable[0]) or viable[0].score >= thresholds.review) else semantic_fallback(viable, thresholds.review)
+    best = (
+        viable[0]
+        if viable and (definition_preferred(viable[0]) or viable[0].score >= thresholds.review)
+        else semantic_fallback(viable, thresholds.review)
+    )
     if best is None:
         return FieldMapping(target=target.node, status=MappingStatus.UNMAPPED, alternatives=alternatives)
 

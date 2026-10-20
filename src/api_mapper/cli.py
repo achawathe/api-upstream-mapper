@@ -34,7 +34,8 @@ def main(argv: list[str] | None = None) -> int:
 def _map(args: argparse.Namespace) -> int:
     lexicon = Lexicon.load(DEFAULT_LEXICON, *args.lexicon)
     pipeline = MappingPipeline(
-        lexicon, listener=None if args.quiet else _print_event,
+        lexicon,
+        listener=None if args.quiet else _print_event,
         nlp=NlpSettings(model_path=str(args.nlp_model) if args.nlp_model else ""),
     )
     overrides = tuple(load_overrides(args.overrides)) if args.overrides else ()
@@ -78,7 +79,9 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--answer-key", type=Path, help="grade the run against this answer key")
     run.add_argument("--out", type=Path, default=Path("output"))
     run.add_argument("--quiet", action="store_true")
-    run.add_argument("--nlp-model", type=Path, help="enable offline NLP using a local Sentence Transformers model folder")
+    run.add_argument(
+        "--nlp-model", type=Path, help="enable offline NLP using a local Sentence Transformers model folder"
+    )
 
     serve = commands.add_parser("serve", help="start the web GUI")
     serve.add_argument("--host", default="127.0.0.1")

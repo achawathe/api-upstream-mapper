@@ -22,8 +22,11 @@ def attach_responses(spec: ApiSpec, endpoint_key: str, samples: list[tuple[str, 
     if endpoint.response_schema is None:
         raise ValueError(f"{endpoint_key} has no success response schema; use the API without a spec workflow")
     sources = endpoint.response_sample_sources or tuple("inline example" for _ in endpoint.response_examples)
-    enriched = replace(endpoint, response_examples=(*endpoint.response_examples, *(value for _, value in samples)),
-                       response_sample_sources=(*sources, *(name for name, _ in samples)))
+    enriched = replace(
+        endpoint,
+        response_examples=(*endpoint.response_examples, *(value for _, value in samples)),
+        response_sample_sources=(*sources, *(name for name, _ in samples)),
+    )
     return replace(spec, endpoints=tuple(enriched if e.key == endpoint_key else e for e in spec.endpoints))
 
 

@@ -18,7 +18,9 @@ Identity = frozenset[str]
 
 
 class Reachability:
-    def __init__(self, specs: tuple[ApiSpec, ...], sources: list[FieldProfile], param_identity, lexicon: Lexicon | None = None):
+    def __init__(
+        self, specs: tuple[ApiSpec, ...], sources: list[FieldProfile], param_identity, lexicon: Lexicon | None = None
+    ):
         self._params: dict[EndpointKey, list[tuple[Identity, bool]]] = {}
         self._body: dict[EndpointKey, set[Identity]] = {}
         self._has_body: set[EndpointKey] = set()
@@ -30,7 +32,8 @@ class Reachability:
                     self._has_body.add(key)
                 self._body[key] = {
                     param_identity(input_name(p, lexicon) if lexicon else p.name, endpoint.path)
-                    for p in body if bindable_body(p)
+                    for p in body
+                    if bindable_body(p)
                 }
                 self._params[key] = [
                     (param_identity(p.name, endpoint.path), p.location == "path" or p.required)
@@ -69,7 +72,9 @@ class Reachability:
                 if key in scoped or (not allow_body and key in self._has_body):
                     continue
                 required_known = all(identity in available for identity, required in params if required)
-                ties_to_record = any(identity in available for identity, _ in params) or bool(self._body[key] & available)
+                ties_to_record = any(identity in available for identity, _ in params) or bool(
+                    self._body[key] & available
+                )
                 if required_known and ties_to_record:
                     scoped.add(key)
                     available |= self._outputs.get(key, set())

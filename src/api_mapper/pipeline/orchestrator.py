@@ -56,7 +56,10 @@ class PipelineResult:
 
 class MappingPipeline:
     def __init__(
-        self, lexicon: Lexicon, thresholds: Thresholds = DEFAULT_THRESHOLDS, listener: Listener | None = None,
+        self,
+        lexicon: Lexicon,
+        thresholds: Thresholds = DEFAULT_THRESHOLDS,
+        listener: Listener | None = None,
         nlp: NlpSettings | None = None,
     ):
         self.lexicon = lexicon
@@ -66,7 +69,11 @@ class MappingPipeline:
         self._events: list[ProgressEvent] = []
 
     def load(
-        self, upstream: Path, downstreams: list[Path], error_catalog: Path | None = None, overrides: tuple[Override, ...] = ()
+        self,
+        upstream: Path,
+        downstreams: list[Path],
+        error_catalog: Path | None = None,
+        overrides: tuple[Override, ...] = (),
     ) -> PipelineInputs:
         warnings: list[str] = []
         with self._stage("load", "reading specs and samples") as counts:
@@ -79,7 +86,9 @@ class MappingPipeline:
                     warnings.append(f"skipped downstream {error.source}: {error.reason}")
                     self._emit(ProgressEvent("load", StageState.FAILED, warnings[-1]))
             catalog = load_error_catalog(error_catalog) if error_catalog else None
-            counts.update(upstream_endpoints=len(upstream_spec.endpoints), downstream_apis=len(loaded), skipped=len(warnings))
+            counts.update(
+                upstream_endpoints=len(upstream_spec.endpoints), downstream_apis=len(loaded), skipped=len(warnings)
+            )
         return PipelineInputs(upstream_spec, tuple(_unique_names(loaded)), catalog, overrides, tuple(warnings))
 
     def run(self, inputs: PipelineInputs) -> PipelineResult:
@@ -91,15 +100,29 @@ class MappingPipeline:
         with self._stage("flatten", "turning schemas into fields") as counts:
             upstream_nodes = flatten_spec(inputs.upstream)
             downstream_nodes = {spec.name: flatten_spec(spec) for spec in inputs.downstreams}
-            counts.update(upstream_fields=len(upstream_nodes), downstream_fields=sum(map(len, downstream_nodes.values())))
-            documented = sum(bool(n.documentation) for n in [*upstream_nodes, *(n for nodes in downstream_nodes.values() for n in nodes)])
+            counts.update(
+                upstream_fields=len(upstream_nodes), downstream_fields=sum(map(len, downstream_nodes.values()))
+            )
+            documented = sum(
+                bool(n.documentation)
+                for n in [*upstream_nodes, *(n for nodes in downstream_nodes.values() for n in nodes)]
+            )
             if any(s.documentation for s in (inputs.upstream, *inputs.downstreams)):
-                self._emit(ProgressEvent('flatten', StageState.INFO, 'Documentation attached to declared fields; ambiguous or unnamed passages are not used', {'documented_fields': documented}))
+                self._emit(
+                    ProgressEvent(
+                        "flatten",
+                        StageState.INFO,
+                        "Documentation attached to declared fields; ambiguous or unnamed passages are not used",
+                        {"documented_fields": documented},
+                    )
+                )
 
         with self._stage("profile", "reading names, context and qualifiers") as counts:
             profiler = Profiler(self.lexicon, Profiler.vocabulary_of(upstream_nodes))
             targets = profiler.profile_spec(inputs.upstream, upstream_nodes)
-            sources = [p for spec in inputs.downstreams for p in profiler.profile_spec(spec, downstream_nodes[spec.name])]
+            sources = [
+                p for spec in inputs.downstreams for p in profiler.profile_spec(spec, downstream_nodes[spec.name])
+            ]
             counts.update(profiles=len(targets) + len(sources))
 
         with self._stage("score", "scoring candidate pairs") as counts:
@@ -139,7 +162,9 @@ class MappingPipeline:
         mappings = [_copy(m) for m in result.automatic]
         warnings = apply_overrides(mappings, overrides, result.prepared.score_pair)
         result.run.mappings = mappings
-        result.run.call_plans = CallPlanner(self.lexicon, result.run.upstream, result.run.downstreams, result.sources).plan(mappings)
+        result.run.call_plans = CallPlanner(
+            self.lexicon, result.run.upstream, result.run.downstreams, result.sources
+        ).plan(mappings)
         return warnings
 
     @contextmanager
@@ -164,7 +189,9 @@ _GENERIC_STEMS = frozenset({"openapi", "swagger", "spec", "api", "manifest", "in
 
 
 def _copy(mapping: FieldMapping) -> FieldMapping:
-    return FieldMapping(mapping.target, mapping.status, mapping.chosen, mapping.alternatives, list(mapping.notes), mapping.category)
+    return FieldMapping(
+        mapping.target, mapping.status, mapping.chosen, mapping.alternatives, list(mapping.notes), mapping.category
+    )
 
 
 def _api_name(path: Path) -> str | None:

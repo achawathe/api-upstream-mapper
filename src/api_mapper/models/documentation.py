@@ -7,4 +7,4 @@ from dataclasses import dataclass
 class DocumentationPassage:
     text: str
     location: str
-    endpoint: str = ''
+    endpoint: str = ""

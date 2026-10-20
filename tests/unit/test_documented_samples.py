@@ -17,23 +17,44 @@ from api_mapper.normalize.profiler import Profiler
 from api_mapper.normalize.sample_context import describe_samples
 from tests.unit.test_semantic import Encoder
 
-SCHEMA = {"type": "object", "required": ["accountId"], "properties": {
-    "accountId": {"type": "string", "description": "Unique account identifier"},
-    "status": {"type": "string", "description": "Account status", "enum": ["OPEN", "CLOSED"]},
-    "balance": {"type": "number", "description": "Available account balance"},
-}}
+SCHEMA = {
+    "type": "object",
+    "required": ["accountId"],
+    "properties": {
+        "accountId": {"type": "string", "description": "Unique account identifier"},
+        "status": {"type": "string", "description": "Account status", "enum": ["OPEN", "CLOSED"]},
+        "balance": {"type": "number", "description": "Available account balance"},
+    },
+}
 
 
 def _spec(schema=SCHEMA):
-    return {"openapi": "3.0.3", "info": {"title": "Accounts", "version": "1"},
-            "paths": {"/accounts": {"get": {"responses": {"200": {"description": "OK", "content": {
-                "application/json": {"schema": schema},
-            }}}}}}}
+    return {
+        "openapi": "3.0.3",
+        "info": {"title": "Accounts", "version": "1"},
+        "paths": {
+            "/accounts": {
+                "get": {
+                    "responses": {
+                        "200": {
+                            "description": "OK",
+                            "content": {
+                                "application/json": {"schema": schema},
+                            },
+                        }
+                    }
+                }
+            }
+        },
+    }
 
 
 def _swagger(schema=SCHEMA):
-    return {"swagger": "2.0", "info": {"title": "Accounts", "version": "1"},
-            "paths": {"/accounts": {"get": {"responses": {"200": {"description": "OK", "schema": schema}}}}}}
+    return {
+        "swagger": "2.0",
+        "info": {"title": "Accounts", "version": "1"},
+        "paths": {"/accounts": {"get": {"responses": {"200": {"description": "OK", "schema": schema}}}}},
+    }
 
 
 def _upload(workspace, role, name="api.json", schema=SCHEMA):
@@ -52,10 +73,13 @@ def test_downstream_api_with_embedded_models_is_registered_once(tmp_path, factor
     workspace = Workspace(tmp_path)
     document = factory()
     document[models_key] = {"schemas": {"Account": SCHEMA}} if models_key == "components" else {"Account": SCHEMA}
-    stored = workspace.add_files(FileRole.DOWNSTREAM, [
-        ("api.json", json.dumps(document).encode()),
-        ("standalone.json", json.dumps(SCHEMA).encode()),
-    ])
+    stored = workspace.add_files(
+        FileRole.DOWNSTREAM,
+        [
+            ("api.json", json.dumps(document).encode()),
+            ("standalone.json", json.dumps(SCHEMA).encode()),
+        ],
+    )
     assert [s.name for s in stored] == ["api.json", "standalone.json"]
     assert len(workspace.files) == 2
 
@@ -65,8 +89,13 @@ def test_downstream_api_with_embedded_models_is_registered_once(tmp_path, factor
 @pytest.mark.parametrize("document", [_spec, _swagger])
 def test_models_yaml_is_a_companion_regardless_of_upload_order(tmp_path, reverse, role, document):
     workspace = Workspace(tmp_path)
-    uploads = [("bundle/models/account.yaml", b"Account:\n  type: object\n  properties:\n    id: {type: string, description: Account identity}\n"),
-               ("bundle/api.json", json.dumps(document({"$ref": "models/account.yaml#/Account"})).encode())]
+    uploads = [
+        (
+            "bundle/models/account.yaml",
+            b"Account:\n  type: object\n  properties:\n    id: {type: string, description: Account identity}\n",
+        ),
+        ("bundle/api.json", json.dumps(document({"$ref": "models/account.yaml#/Account"})).encode()),
+    ]
     stored = workspace.add_files(role, uploads[::-1] if reverse else uploads)
     assert len(stored) == 1 and stored[0].name == "bundle/api.json"
     assert stored[0].summary["warnings"] == []
@@ -79,11 +108,14 @@ def test_models_yaml_is_a_companion_regardless_of_upload_order(tmp_path, reverse
 
 def test_removing_one_downstream_keeps_shared_model_files(tmp_path):
     workspace = Workspace(tmp_path)
-    files = workspace.add_files(FileRole.DOWNSTREAM, [
-        ("api.json", json.dumps(_spec({"$ref": "models/shared%20model.yaml#/Account"})).encode()),
-        ("nested/other.json", json.dumps(_swagger({"$ref": "../models/shared%20model.yaml#/Account"})).encode()),
-        ("models/shared model.yaml", b"Account:\n  type: object\n  properties:\n    id: {type: string}\n"),
-    ])
+    files = workspace.add_files(
+        FileRole.DOWNSTREAM,
+        [
+            ("api.json", json.dumps(_spec({"$ref": "models/shared%20model.yaml#/Account"})).encode()),
+            ("nested/other.json", json.dumps(_swagger({"$ref": "../models/shared%20model.yaml#/Account"})).encode()),
+            ("models/shared model.yaml", b"Account:\n  type: object\n  properties:\n    id: {type: string}\n"),
+        ],
+    )
     workspace.remove_file(files[0].id)
     assert flatten_spec(load_any(Path(files[1].path)))[0].path == "id"
     workspace.remove_file(files[1].id)
@@ -94,11 +126,15 @@ def test_failed_bundle_preserves_existing_upstream(tmp_path):
     workspace = Workspace(tmp_path)
     original = _upload(workspace, FileRole.UPSTREAM)
     with pytest.raises(ValueError, match="one upstream entrypoint"):
-        workspace.add_files(FileRole.UPSTREAM, [("a.json", json.dumps(_spec()).encode()), ("b.json", json.dumps(_spec()).encode())])
+        workspace.add_files(
+            FileRole.UPSTREAM, [("a.json", json.dumps(_spec()).encode()), ("b.json", json.dumps(_spec()).encode())]
+        )
     assert workspace.files == [original] and Path(original.path).exists()
 
 
-@pytest.mark.parametrize("names", [["../escape.yaml"], ["/absolute.yaml"], ["same.json", "same.json"], ["C:\\escape.yaml"]])
+@pytest.mark.parametrize(
+    "names", [["../escape.yaml"], ["/absolute.yaml"], ["same.json", "same.json"], ["C:\\escape.yaml"]]
+)
 def test_bundle_rejects_unsafe_or_colliding_paths(tmp_path, names):
     workspace = Workspace(tmp_path)
     with pytest.raises(ValueError):
@@ -109,14 +145,21 @@ def test_bundle_rejects_unsafe_or_colliding_paths(tmp_path, names):
 def test_documentation_examples_supplement_specs_and_survive_reload(tmp_path):
     workspace = Workspace(tmp_path)
     upstream = _upload(workspace, FileRole.UPSTREAM)
-    downstream_schema = {**SCHEMA, "properties": {**SCHEMA["properties"], "status": {"type": "string", "description": "Account status"}}}
+    downstream_schema = {
+        **SCHEMA,
+        "properties": {**SCHEMA["properties"], "status": {"type": "string", "description": "Account status"}},
+    }
     downstream = _upload(workspace, FileRole.DOWNSTREAM, "down.json", downstream_schema)
     original = Path(downstream.path).read_bytes()
     workspace.add_response_samples(upstream.id, "GET /accounts", [("up-doc.json", b'{"status":"OPEN"}')])
-    attachment = workspace.add_response_samples(downstream.id, "GET /accounts", [
-        ("response.json", b'{"accountId":"ACC-1","status":"OPEN","balance":12.5}'),
-        ("another.json", b'{"accountId":"ACC-2","status":"CLOSED","balance":8}'),
-    ])
+    attachment = workspace.add_response_samples(
+        downstream.id,
+        "GET /accounts",
+        [
+            ("response.json", b'{"accountId":"ACC-1","status":"OPEN","balance":12.5}'),
+            ("another.json", b'{"accountId":"ACC-2","status":"CLOSED","balance":8}'),
+        ],
+    )
     workspace = Workspace(tmp_path)
     result = _run(workspace)
     assert len(result.run.downstreams) == 1
@@ -151,7 +194,9 @@ def test_endpoint_attachment_is_explicit_and_bad_json_does_not_persist(tmp_path)
 def test_examples_do_not_add_undeclared_fields_or_change_declared_enums(tmp_path):
     workspace = Workspace(tmp_path)
     file = _upload(workspace, FileRole.UPSTREAM)
-    spec = attach_responses(load_any(Path(file.path)), "GET /accounts", [("docs.json", {"extra": "new", "status": "UNKNOWN"})])
+    spec = attach_responses(
+        load_any(Path(file.path)), "GET /accounts", [("docs.json", {"extra": "new", "status": "UNKNOWN"})]
+    )
     nodes = {n.path: n for n in flatten_spec(spec)}
     assert "extra" not in nodes
     assert nodes["status"].enum == ("OPEN", "CLOSED")
@@ -159,14 +204,18 @@ def test_examples_do_not_add_undeclared_fields_or_change_declared_enums(tmp_path
 
 
 def test_documentation_samples_follow_root_discriminators_and_skip_unknown_branch():
-    schema = {"discriminator": {"propertyName": "kind"}, "oneOf": [
-        {"title": kind, "type": "object", "properties": {"kind": {"enum": [kind]}, "name": {"type": "string"}}}
-        for kind in ("LOAN", "CARD")
-    ]}
+    schema = {
+        "discriminator": {"propertyName": "kind"},
+        "oneOf": [
+            {"title": kind, "type": "object", "properties": {"kind": {"enum": [kind]}, "name": {"type": "string"}}}
+            for kind in ("LOAN", "CARD")
+        ],
+    }
     endpoint = Endpoint("GET", "/x", "x", response_schema=schema)
     spec = ApiSpec("api", "API", "1", SpecKind.OPENAPI_3, "test", endpoints=(endpoint,))
-    spec = attach_responses(spec, endpoint.key, [("card.json", {"kind": "CARD", "name": "Visa"}),
-                                               ("unknown.json", {"name": "Ambiguous"})])
+    spec = attach_responses(
+        spec, endpoint.key, [("card.json", {"kind": "CARD", "name": "Visa"}), ("unknown.json", {"name": "Ambiguous"})]
+    )
     nodes = {(n.variant, n.path): n for n in flatten_spec(spec)}
     assert nodes["CARD", "name"].observed == ("Visa",)
     assert nodes["LOAN", "name"].observed == ()
@@ -174,8 +223,15 @@ def test_documentation_samples_follow_root_discriminators_and_skip_unknown_branc
 
 def test_local_nlp_receives_bounded_documentation_context(lexicon):
     profiler = Profiler(lexicon)
-    node = FieldNode("up", "GET /x", "state", "string", description="Account state",
-                     sample_context=describe_samples(["OPEN", "CLOSED"]), sample_sources=("doc.json",))
+    node = FieldNode(
+        "up",
+        "GET /x",
+        "state",
+        "string",
+        description="Account state",
+        sample_context=describe_samples(["OPEN", "CLOSED"]),
+        sample_sources=("doc.json",),
+    )
     target = profiler.profile(node, frozenset(), ())
     source = profiler.profile(replace(node, api="down"), frozenset(), ())
     encoder = Encoder()
@@ -192,18 +248,29 @@ def test_http_upload_attach_run_and_remove(tmp_path, monkeypatch):
 
     monkeypatch.setattr(app_module, "workspace", Workspace(tmp_path))
     with TestClient(app_module.app) as client:
-        files = [("files", ("models.yaml", b"Account:\n  type: object\n  properties:\n    status: {type: string}\n", "text/yaml")),
-                 ("files", ("api.json", json.dumps(_spec({"$ref": "models.yaml#/Account"})).encode(), "application/json"))]
+        files = [
+            (
+                "files",
+                ("models.yaml", b"Account:\n  type: object\n  properties:\n    status: {type: string}\n", "text/yaml"),
+            ),
+            ("files", ("api.json", json.dumps(_spec({"$ref": "models.yaml#/Account"})).encode(), "application/json")),
+        ]
         response = client.post("/api/files", data={"role": "upstream"}, files=files)
         assert response.status_code == 200
         upstream = response.json()["files"][0]
         assert upstream["name"] == "api.json"
-        endpoints = client.get(f'/api/files/{upstream["id"]}/endpoints').json()["endpoints"]
+        endpoints = client.get(f"/api/files/{upstream['id']}/endpoints").json()["endpoints"]
         assert endpoints == ["GET /accounts"]
-        url = f'/api/files/{upstream["id"]}/response-samples'
-        attached = client.post(url, data={"endpoint": endpoints[0]}, files=[("files", ("docs.json", b'{"status":"OPEN"}', "application/json"))])
+        url = f"/api/files/{upstream['id']}/response-samples"
+        attached = client.post(
+            url,
+            data={"endpoint": endpoints[0]},
+            files=[("files", ("docs.json", b'{"status":"OPEN"}', "application/json"))],
+        )
         assert attached.status_code == 200
         assert len(client.get("/api/state").json()["response_samples"]) == 1
-        assert client.post(url, data={"endpoint": "GET /missing"}, files=[("files", ("x.json", b"{}"))]).status_code == 400
+        assert (
+            client.post(url, data={"endpoint": "GET /missing"}, files=[("files", ("x.json", b"{}"))]).status_code == 400
+        )
         sample_id = attached.json()["samples"]["id"]
         assert client.delete(f"/api/response-samples/{sample_id}").json()["response_samples"] == []

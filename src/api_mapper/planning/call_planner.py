@@ -48,10 +48,14 @@ class _Supply:
 
 
 class CallPlanner:
-    def __init__(self, lexicon: Lexicon, upstream: ApiSpec, downstreams: Iterable[ApiSpec], profiles: list[FieldProfile]):
+    def __init__(
+        self, lexicon: Lexicon, upstream: ApiSpec, downstreams: Iterable[ApiSpec], profiles: list[FieldProfile]
+    ):
         self.lexicon = lexicon
         self.upstream = upstream
-        self.endpoints: dict[EndpointKey, Endpoint] = {(spec.name, e.key): e for spec in downstreams for e in spec.endpoints}
+        self.endpoints: dict[EndpointKey, Endpoint] = {
+            (spec.name, e.key): e for spec in downstreams for e in spec.endpoints
+        }
         self.fields: dict[EndpointKey, list[FieldProfile]] = {}
         for profile in profiles:
             self.fields.setdefault((profile.node.api, profile.node.endpoint), []).append(profile)
@@ -61,7 +65,10 @@ class CallPlanner:
         for mapping in mappings:
             if mapping.chosen and mapping.status in _PLANNED_STATUSES:
                 by_endpoint.setdefault(mapping.target.endpoint, []).append(mapping)
-        return [_EndpointPlanner(self, endpoint, by_endpoint.get(endpoint.key, [])).build() for endpoint in self.upstream.endpoints]
+        return [
+            _EndpointPlanner(self, endpoint, by_endpoint.get(endpoint.key, [])).build()
+            for endpoint in self.upstream.endpoints
+        ]
 
     def param_concepts(self, name: str, path: str) -> frozenset[str]:
         concepts = list(self.lexicon.concepts(name))
@@ -101,7 +108,8 @@ class _EndpointPlanner:
         self.upstream_endpoint = upstream_endpoint
         self.upstream_params = {
             param.name: (param, planner.param_concepts(param.name, upstream_endpoint.path))
-            for param in upstream_endpoint.parameters if not param.context_only
+            for param in upstream_endpoint.parameters
+            if not param.context_only
         }
         self.variants: dict[EndpointKey, set[str]] = {}
         self.field_counts: dict[EndpointKey, int] = {}
@@ -142,8 +150,12 @@ class _EndpointPlanner:
         self.in_progress.add(key)
         endpoint = self.p.endpoints[key]
         bindings = [self._bind_path(key, endpoint, parameter, depth) for parameter in endpoint.path_parameters]
-        bindings.extend(b for b in (self._bind_query(endpoint, q) for q in endpoint.parameters if q.location == "query") if b)
-        bindings.extend(b for b in (self._bind_body(endpoint, p) for p in endpoint.parameters if p.location == "body") if b)
+        bindings.extend(
+            b for b in (self._bind_query(endpoint, q) for q in endpoint.parameters if q.location == "query") if b
+        )
+        bindings.extend(
+            b for b in (self._bind_body(endpoint, p) for p in endpoint.parameters if p.location == "body") if b
+        )
         self.in_progress.discard(key)
         self.bindings[key] = tuple(bindings)
         self.ordered.append(key)
@@ -152,7 +164,9 @@ class _EndpointPlanner:
         supply = self._best_supply(key, self.p.param_concepts(parameter.name, endpoint.path), depth)
         if supply is None:
             self.unresolved.append(f"{key[0]} {key[1]}: {parameter.name}")
-            return InputBinding(parameter.name, BindingSource.UNRESOLVED, "supply from caller context, e.g. the token subject")
+            return InputBinding(
+                parameter.name, BindingSource.UNRESOLVED, "supply from caller context, e.g. the token subject"
+            )
         if supply.supplier is not None:
             self.suppliers.add(supply.supplier)
             self._schedule(supply.supplier, depth + 1)
@@ -171,23 +185,37 @@ class _EndpointPlanner:
             return InputBinding(parameter.name, BindingSource.UPSTREAM_REQUEST, best[2], location="query")
         if parameter.required:
             self.unresolved.append(f"{endpoint.key}: query {parameter.name}")
-            return InputBinding(parameter.name, BindingSource.UNRESOLVED, "required query parameter with no upstream source", location="query")
+            return InputBinding(
+                parameter.name,
+                BindingSource.UNRESOLVED,
+                "required query parameter with no upstream source",
+                location="query",
+            )
         return None
 
     def _bind_body(self, endpoint: Endpoint, parameter: Parameter) -> InputBinding | None:
         wanted = self.p.param_concepts(input_name(parameter, self.p.lexicon), endpoint.path)
         if bindable_body(parameter):
-            matches = sorted(name for name, (upstream, concepts) in self.upstream_params.items()
-                             if wanted and wanted == concepts and not upstream.context_only
-                             and compatible_body_input(upstream.schema, parameter.schema))
+            matches = sorted(
+                name
+                for name, (upstream, concepts) in self.upstream_params.items()
+                if wanted
+                and wanted == concepts
+                and not upstream.context_only
+                and compatible_body_input(upstream.schema, parameter.schema)
+            )
             if len(matches) == 1:
                 return InputBinding(parameter.name, BindingSource.UPSTREAM_REQUEST, matches[0], location="body")
         if parameter.required or parameter.context_only:
             if parameter.required:
                 self.unresolved.append(f"{endpoint.key}: body {parameter.name}")
             requirement = "required" if parameter.required else "optional"
-            return InputBinding(parameter.name, BindingSource.UNRESOLVED,
-                                f"{requirement} JSON body input supplied by caller context", location="body")
+            return InputBinding(
+                parameter.name,
+                BindingSource.UNRESOLVED,
+                f"{requirement} JSON body input supplied by caller context",
+                location="body",
+            )
         return None
 
     def _best_supply(self, requester: EndpointKey, wanted: frozenset[str], depth: int) -> _Supply | None:
@@ -228,7 +256,10 @@ class _EndpointPlanner:
     def _callable(self, key: EndpointKey) -> bool:
         endpoint = self.p.endpoints[key]
         return all(
-            any(self.p.overlap(self.p.param_concepts(param.name, endpoint.path), concepts) >= EXACT for _, concepts in self.upstream_params.values())
+            any(
+                self.p.overlap(self.p.param_concepts(param.name, endpoint.path), concepts) >= EXACT
+                for _, concepts in self.upstream_params.values()
+            )
             for param in endpoint.path_parameters
         )
 

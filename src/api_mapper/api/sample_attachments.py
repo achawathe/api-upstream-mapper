@@ -17,8 +17,9 @@ class SampleAttachment:
     paths: tuple[str, ...]
 
 
-def store_samples(root: Path, file_id: str, spec: ApiSpec, endpoint: str,
-                  uploads: list[tuple[str, bytes]]) -> SampleAttachment:
+def store_samples(
+    root: Path, file_id: str, spec: ApiSpec, endpoint: str, uploads: list[tuple[str, bytes]]
+) -> SampleAttachment:
     if not uploads:
         raise ValueError("choose at least one JSON response")
     samples = [(Path(name).name, parse_response(name, content)) for name, content in uploads]
@@ -37,7 +38,9 @@ def store_samples(root: Path, file_id: str, spec: ApiSpec, endpoint: str,
 def apply_samples(spec: ApiSpec, attachments: list[SampleAttachment], file_id: str) -> ApiSpec:
     for attachment in attachments:
         if attachment.file_id == file_id:
-            samples = [(name, parse_response(name, Path(path).read_bytes()))
-                       for name, path in zip(attachment.names, attachment.paths, strict=True)]
+            samples = [
+                (name, parse_response(name, Path(path).read_bytes()))
+                for name, path in zip(attachment.names, attachment.paths, strict=True)
+            ]
             spec = attach_responses(spec, attachment.endpoint, samples)
     return spec

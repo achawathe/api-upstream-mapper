@@ -15,7 +15,7 @@ def compare_value_definitions(mapping: EnumMapping, source: EnumContract, target
             continue
         hits = [output for output in target.values if meanings == _meanings(target, output) and len(meanings) == 1]
         if len(hits) == 1:
-            result[value], rules[value] = hits[0], 'matching API value definitions'
+            result[value], rules[value] = hits[0], "matching API value definitions"
             unmapped = [item for item in unmapped if item != value]
         elif hits or len(meanings) > 1 or (value in result and _meanings(target, result[value])):
             result.pop(value, None)
@@ -26,4 +26,4 @@ def compare_value_definitions(mapping: EnumMapping, source: EnumContract, target
 
 
 def _meanings(contract: EnumContract, value: str) -> set[str]:
-    return {' '.join(re.findall(r'\w+', clue.text.casefold())) for clue in contract.definitions.get(value, ())}
+    return {" ".join(re.findall(r"\w+", clue.text.casefold())) for clue in contract.definitions.get(value, ())}

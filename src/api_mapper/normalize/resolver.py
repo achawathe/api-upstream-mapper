@@ -71,7 +71,9 @@ class TokenResolver:
             if match:
                 return match
         if len(token) >= MIN_PREFIX:
-            match = self._unique({word for form, word in self._forms if form.startswith(token) and len(form) > len(token)})
+            match = self._unique(
+                {word for form, word in self._forms if form.startswith(token) and len(form) > len(token)}
+            )
             if match:
                 return match
         return token

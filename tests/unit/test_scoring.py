@@ -16,7 +16,9 @@ def score(lexicon):
 
     def profile(path, endpoint_concepts=("account",), scope=frozenset(), **node):
         depth = path.count("[]")
-        field = FieldNode(api="api", endpoint="GET /x", path=path, type=node.pop("type", "string"), array_depth=depth, **node)
+        field = FieldNode(
+            api="api", endpoint="GET /x", path=path, type=node.pop("type", "string"), array_depth=depth, **node
+        )
         return profiler.profile(field, frozenset(scope), endpoint_concepts)
 
     def run(target, source):

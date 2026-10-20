@@ -91,11 +91,15 @@ class PlanExecutor:
         self.max_concurrency = max_concurrency
         self.endpoints = {(s.name, e.key): e for s in run.downstreams for e in s.endpoints}
 
-    async def execute(self, upstream_endpoint: str, params: dict[str, Any], variant_hint: str | None = None) -> ExecutionResult:
+    async def execute(
+        self, upstream_endpoint: str, params: dict[str, Any], variant_hint: str | None = None
+    ) -> ExecutionResult:
         started = perf_counter()
         plan = next(p for p in self.run.call_plans if p.upstream_endpoint == upstream_endpoint)
         mappings = [m for m in self.run.mappings if m.target.endpoint == upstream_endpoint and self._usable(m)]
-        derived = [m for m in self.run.mappings if m.target.endpoint == upstream_endpoint and m.status is MappingStatus.DERIVED]
+        derived = [
+            m for m in self.run.mappings if m.target.endpoint == upstream_endpoint and m.status is MappingStatus.DERIVED
+        ]
         targets = [m.target for m in self.run.mappings if m.target.endpoint == upstream_endpoint]
         result = ExecutionResult(upstream_endpoint, 200, None)
         result.unreviewed_fields = sum(m.status is MappingStatus.REVIEW for m in mappings)
@@ -112,7 +116,9 @@ class PlanExecutor:
                 wave = broad or ready
                 if not wave:
                     break
-                outcomes = await asyncio.gather(*(self._call(client, step, params, responses, started, result) for step in wave))
+                outcomes = await asyncio.gather(
+                    *(self._call(client, step, params, responses, started, result) for step in wave)
+                )
                 for step, outcome in zip(wave, outcomes, strict=True):
                     if isinstance(outcome, _Failure):
                         error = self._failure_response(plan, step, outcome, mappings, variants)
@@ -120,7 +126,9 @@ class PlanExecutor:
                             result.status, result.body = error
                             result.elapsed_ms = _ms(started)
                             return result
-                        result.warnings.append(f"step {step.order} {step.api} failed ({outcome.status}); its fields are left out")
+                        result.warnings.append(
+                            f"step {step.order} {step.api} failed ({outcome.status}); its fields are left out"
+                        )
                         continue
                     responses[step.order] = outcome
                 pending = [s for s in pending if s not in wave]
@@ -131,7 +139,9 @@ class PlanExecutor:
             called = {c.step for c in result.calls}
             result.skipped_steps = [f"{s.order}. {s.api} {s.endpoint}" for s in plan.steps if s.order not in called]
 
-        result.body, result.variants, issues = self._assemble(plan, mappings, derived, targets, responses, variants, per_item)
+        result.body, result.variants, issues = self._assemble(
+            plan, mappings, derived, targets, responses, variants, per_item
+        )
         result.issues = issues
         result.elapsed_ms = _ms(started)
         return result
@@ -186,30 +196,48 @@ class PlanExecutor:
         call_started = perf_counter()
         response = await client.request(endpoint.method, url, params=request.query, json=request.body)
         result.calls.append(
-            CallRecord(step.order, step.api, step.endpoint, str(response.url), response.status_code,
-                       round((call_started - started) * 1000, 1), _ms(call_started), item)
+            CallRecord(
+                step.order,
+                step.api,
+                step.endpoint,
+                str(response.url),
+                response.status_code,
+                round((call_started - started) * 1000, 1),
+                _ms(call_started),
+                item,
+            )
         )
         body = response.json() if response.content else None
         if response.status_code >= 400:
             return _Failure(response.status_code, body)
         return body
 
-    def _failure_response(self, plan, step: CallStep, failure: "_Failure", mappings, variants) -> tuple[int, Any] | None:
+    def _failure_response(
+        self, plan, step: CallStep, failure: "_Failure", mappings, variants
+    ) -> tuple[int, Any] | None:
         if not self._is_critical(plan, step, mappings, variants):
             return None
         code, message = error_code_and_message(failure.body) if isinstance(failure.body, dict) else (None, "")
         downstream = DownstreamError(step.api, step.endpoint, str(failure.status), code, message)
         mapping = self._lookup_error(downstream)
-        body = {"code": mapping.upstream_code, "message": message or mapping.rule, "debugMessage": f"{step.api} returned {failure.status}"}
+        body = {
+            "code": mapping.upstream_code,
+            "message": message or mapping.rule,
+            "debugMessage": f"{step.api} returned {failure.status}",
+        }
         return int(mapping.upstream_status), body
 
-    def _is_critical(self, plan: EndpointCallPlan, step: CallStep, mappings: list[FieldMapping], variants: set[str]) -> bool:
+    def _is_critical(
+        self, plan: EndpointCallPlan, step: CallStep, mappings: list[FieldMapping], variants: set[str]
+    ) -> bool:
         """A call matters if it supplies a required field, or feeds a call that does."""
         dependants = [s for s in plan.steps if any(b.from_step == step.order for b in s.bindings)]
         if any(self._is_critical(plan, d, mappings, variants) for d in dependants):
             return True
         return any(
-            m.target.required and m.chosen.source.api == step.api and m.chosen.source.endpoint == step.endpoint
+            m.target.required
+            and m.chosen.source.api == step.api
+            and m.chosen.source.endpoint == step.endpoint
             and (not m.target.variant or m.target.variant in variants)
             for m in mappings
         )
@@ -221,7 +249,11 @@ class PlanExecutor:
                 return known
         if self.resolve_error:
             return self.resolve_error(error)
-        status = "503" if error.http_status in ("502", "503", "504") else ("500" if error.http_status.startswith("5") else error.http_status)
+        status = (
+            "503"
+            if error.http_status in ("502", "503", "504")
+            else ("500" if error.http_status.startswith("5") else error.http_status)
+        )
         return ErrorMapping(error, status, None, "status passthrough", 0.5)
 
     def _narrow(self, variants: set[str], plan: EndpointCallPlan, responses: dict[int, Any]) -> set[str]:
@@ -235,7 +267,8 @@ class PlanExecutor:
         surviving = set()
         for variant in variants:
             enum_mappings = [
-                m for m in self.run.mappings
+                m
+                for m in self.run.mappings
                 if m.target.endpoint == plan.upstream_endpoint and m.target.variant == variant and m.target.enum
             ]
             if not any(self._contradicted(m, done, responses) for m in enum_mappings):
@@ -263,7 +296,11 @@ class PlanExecutor:
         return tried
 
     def _needed_steps(self, plan: EndpointCallPlan, mappings: list[FieldMapping], variants: set[str]) -> set[int]:
-        sources = {(m.chosen.source.api, m.chosen.source.endpoint) for m in mappings if not m.target.variant or m.target.variant in variants}
+        sources = {
+            (m.chosen.source.api, m.chosen.source.endpoint)
+            for m in mappings
+            if not m.target.variant or m.target.variant in variants
+        }
         needed = {s.order for s in plan.steps if (s.api, s.endpoint) in sources}
         changed = True
         while changed:
@@ -286,7 +323,14 @@ class PlanExecutor:
             built[variant] = (document, notes, fields)
 
         if not per_item:
-            variant = min(built, key=lambda v: (len(check_document(built[v][0], built[v][2])) + len(built[v][1].issues), -_filled(built[v][0]), v))
+            variant = min(
+                built,
+                key=lambda v: (
+                    len(check_document(built[v][0], built[v][2])) + len(built[v][1].issues),
+                    -_filled(built[v][0]),
+                    v,
+                ),
+            )
             document, notes, fields = built[variant]
             return document, [variant], [Issue("", n) for n in notes.issues] + check_document(document, fields)
 
@@ -303,7 +347,9 @@ class PlanExecutor:
             _, _, variant, item, item_fields = min(self._item_quality(built, v, collection, index) for v in built)
             items.append(item)
             chosen.append(variant)
-            issues.extend(Issue(f"{collection}[{index}].{i.path}", i.message) for i in check_document(item or {}, item_fields))
+            issues.extend(
+                Issue(f"{collection}[{index}].{i.path}", i.message) for i in check_document(item or {}, item_fields)
+            )
         merged[collection] = items
         return merged, chosen, issues
 
@@ -355,7 +401,9 @@ def _variants_of(targets: list[FieldNode], hint: str | None) -> set[str]:
     variants = {t.variant for t in targets if t.variant}
     if not hint:
         return variants
-    chosen = {t.variant for t in targets if t.variant and (t.variant == hint or (t.condition or "").endswith(f"= {hint}"))}
+    chosen = {
+        t.variant for t in targets if t.variant and (t.variant == hint or (t.condition or "").endswith(f"= {hint}"))
+    }
     return chosen or variants
 
 

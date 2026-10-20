@@ -11,7 +11,8 @@ _LABEL = re.compile(r"[A-Za-z][A-Za-z /-]{1,79}")
 
 def summarize_values(values: list[Any]) -> ValueProfile:
     return ValueProfile(
-        count=len(values), distinct=len({json.dumps(v, sort_keys=True) for v in values}),
+        count=len(values),
+        distinct=len({json.dumps(v, sort_keys=True) for v in values}),
         digit_strings=sum(isinstance(v, str) and v.isdigit() for v in values),
         text_labels=sum(isinstance(v, str) and bool(_LABEL.fullmatch(v)) and " " in v for v in values),
     )

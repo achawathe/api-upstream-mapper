@@ -55,7 +55,9 @@ def test_fan_out_calls_once_per_holder(run, lexicon):
 
 
 def test_epoch_and_minor_units_are_converted(run, lexicon):
-    result = _execute(run, lexicon, "GET /accounts/{accountId}/transactions", {"accountId": "ACC-1"}, hint="DEPOSIT_ACCOUNT")
+    result = _execute(
+        run, lexicon, "GET /accounts/{accountId}/transactions", {"accountId": "ACC-1"}, hint="DEPOSIT_ACCOUNT"
+    )
     first = result.body["transactions"][0]
     assert first["amount"] == 400.0
     assert first["postedTimestamp"] == "2025-10-17T00:00:00.000Z"
@@ -63,13 +65,17 @@ def test_epoch_and_minor_units_are_converted(run, lexicon):
 
 
 def test_downstream_failure_becomes_the_mapped_upstream_error(run, lexicon):
-    result = _execute(run, lexicon, "GET /accounts/{accountId}", {"accountId": "ACC-1"}, FaultPlan(statuses={"deposits": 409}))
+    result = _execute(
+        run, lexicon, "GET /accounts/{accountId}", {"accountId": "ACC-1"}, FaultPlan(statuses={"deposits": 409})
+    )
     assert result.status == 409
     assert result.body["code"] == "705"
 
 
 def test_independent_calls_run_concurrently(run, lexicon):
-    result = _execute(run, lexicon, "GET /accounts/{accountId}/contact", {"accountId": "ACC-1"}, FaultPlan(latency_ms=30))
+    result = _execute(
+        run, lexicon, "GET /accounts/{accountId}/contact", {"accountId": "ACC-1"}, FaultPlan(latency_ms=30)
+    )
     assert result.elapsed_ms < result.sequential_ms
 
 
@@ -80,7 +86,9 @@ def test_unresolved_inputs_come_from_caller_context(run, lexicon):
 
 def test_transform_application():
     assert apply_transforms((TransformStep(TransformKind.COMPACT_DATE_TO_ISO, ""),), "20510801") == "2051-08-01"
-    assert apply_transforms((TransformStep(TransformKind.MINOR_UNITS_TO_DECIMAL, "", {"exponent": 2}),), 139902) == 1399.02
+    assert (
+        apply_transforms((TransformStep(TransformKind.MINOR_UNITS_TO_DECIMAL, "", {"exponent": 2}),), 139902) == 1399.02
+    )
     with pytest.raises(TransformError):
         apply_transforms((TransformStep(TransformKind.ENUM_MAP, "", {"mapping": {"D": "DEBIT"}}),), "X")
 

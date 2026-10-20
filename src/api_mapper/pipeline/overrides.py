@@ -38,9 +38,11 @@ def _apply(mapping: FieldMapping, override: Override, score_pair: PairScorer) ->
     try:
         validate_enum_outputs(override.transforms, mapping.target)
     except ValueError as error:
-        return f'override on {mapping.target.key} ignored: {error}'
-    note = f"manual {override.action.value}" + (f" by {override.author}" if override.author else "") + (
-        f": {override.note}" if override.note else ""
+        return f"override on {mapping.target.key} ignored: {error}"
+    note = (
+        f"manual {override.action.value}"
+        + (f" by {override.author}" if override.author else "")
+        + (f": {override.note}" if override.note else "")
     )
     if override.action is OverrideAction.REJECT:
         if mapping.chosen:
@@ -57,14 +59,16 @@ def _apply(mapping: FieldMapping, override: Override, score_pair: PairScorer) ->
         if candidate is None:
             return f"override on {mapping.target.key} ignored: source {override.source_key} no longer exists"
         previous = mapping.chosen
-        mapping.alternatives = tuple(c for c in (previous, *mapping.alternatives) if c and c.source.key != candidate.source.key)
+        mapping.alternatives = tuple(
+            c for c in (previous, *mapping.alternatives) if c and c.source.key != candidate.source.key
+        )
         mapping.chosen = candidate
         mapping.status = MappingStatus.MANUAL
         if candidate.vetoed_by:
             note += f" (tool vetoed this pair: {candidate.vetoed_by})"
     if mapping.chosen and override.transforms is not None:
         mapping.chosen = replace(mapping.chosen, transforms=override.transforms)
-        note += ' (conversion steps edited by reviewer)'
+        note += " (conversion steps edited by reviewer)"
     mapping.notes.append(note)
     return None
 
@@ -80,7 +84,7 @@ def load_overrides(path: Path) -> list[Override]:
             source_key=item.get("source_key"),
             note=item.get("note", ""),
             author=item.get("author", ""),
-            transforms=parse_steps(item.get('transforms')),
+            transforms=parse_steps(item.get("transforms")),
         )
         for item in raw.get("overrides", [])
     ]

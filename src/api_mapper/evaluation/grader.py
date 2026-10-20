@@ -41,7 +41,16 @@ class GradeReport:
     @property
     def expected_total(self) -> int:
         c = self.counts
-        return sum(c[o] for o in (Outcome.CORRECT_AUTO, Outcome.CORRECT_REVIEW, Outcome.WRONG_AUTO, Outcome.WRONG_REVIEW, Outcome.MISSED))
+        return sum(
+            c[o]
+            for o in (
+                Outcome.CORRECT_AUTO,
+                Outcome.CORRECT_REVIEW,
+                Outcome.WRONG_AUTO,
+                Outcome.WRONG_REVIEW,
+                Outcome.MISSED,
+            )
+        )
 
     @property
     def recall(self) -> float:
@@ -55,7 +64,11 @@ class GradeReport:
 
     def failures(self) -> dict[str, str]:
         bad = {Outcome.WRONG_AUTO, Outcome.WRONG_REVIEW, Outcome.MISSED, Outcome.SPURIOUS_AUTO, Outcome.SPURIOUS_REVIEW}
-        return {key: f"{self.outcomes[key]}: {self.details.get(key, '')}" for key in self.outcomes if self.outcomes[key] in bad}
+        return {
+            key: f"{self.outcomes[key]}: {self.details.get(key, '')}"
+            for key in self.outcomes
+            if self.outcomes[key] in bad
+        }
 
     def summary(self) -> str:
         counts = ", ".join(f"{outcome.value}={self.counts[outcome]}" for outcome in Outcome)

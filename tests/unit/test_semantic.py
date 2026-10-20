@@ -33,7 +33,9 @@ class Encoder:
 def profiles(lexicon, source_type="string"):
     profiler = Profiler(lexicon)
     target = profiler.profile(FieldNode(api="up", endpoint="GET /x", path="surname", type="string"), frozenset(), ())
-    source = profiler.profile(FieldNode(api="down", endpoint="GET /x", path="patronymic", type=source_type), frozenset(), ())
+    source = profiler.profile(
+        FieldNode(api="down", endpoint="GET /x", path="patronymic", type=source_type), frozenset(), ()
+    )
     return target, source
 
 
@@ -49,7 +51,9 @@ def test_nlp_discovers_pairs_excluded_by_lexical_gate(lexicon):
     assert any(e.signal == "anchor" for e in candidate.evidence)
     assert candidate == prepared.score_pair(target.node.key, source.node.key)
     assert len(encoder.calls) == 1
-    assert assign([target], {target.node.key: candidates}, Thresholds(auto=0, review=0))[0].status is MappingStatus.REVIEW
+    assert (
+        assign([target], {target.node.key: candidates}, Thresholds(auto=0, review=0))[0].status is MappingStatus.REVIEW
+    )
 
 
 def test_semantics_cannot_override_type_veto(lexicon):
@@ -59,7 +63,10 @@ def test_semantics_cannot_override_type_veto(lexicon):
     prepared = MatchingEngine(lexicon, encoder=Encoder()).prepare([target], [source])
     candidate = prepared.score_all()[target.node.key][0]
     assert candidate.vetoed_by and candidate.score == 0
-    assert assign([target], {target.node.key: [candidate]}, Thresholds(auto=0, review=0))[0].status is MappingStatus.UNMAPPED
+    assert (
+        assign([target], {target.node.key: [candidate]}, Thresholds(auto=0, review=0))[0].status
+        is MappingStatus.UNMAPPED
+    )
 
 
 def test_semantic_cutoff_and_stable_top_k(lexicon):
@@ -97,7 +104,9 @@ def test_missing_optional_dependency_has_install_guidance(tmp_path, monkeypatch)
         LocalSentenceEncoder(str(tmp_path))
 
 
-@pytest.mark.parametrize("kwargs", [{"top_k": 0}, {"top_k": True}, {"min_similarity": 0}, {"min_similarity": float("nan")}])
+@pytest.mark.parametrize(
+    "kwargs", [{"top_k": 0}, {"top_k": True}, {"min_similarity": 0}, {"min_similarity": float("nan")}]
+)
 def test_nlp_settings_validation(kwargs):
     with pytest.raises(ValueError):
         NlpSettings(**kwargs)
@@ -116,8 +125,18 @@ def test_workspace_persists_nlp_settings(tmp_path):
 def test_cli_reports_missing_model_without_traceback(tmp_path, capsys):
     from tests.helpers import DOWNSTREAMS, UPSTREAM
 
-    code = main(["map", "--upstream", str(UPSTREAM), "--downstream", str(DOWNSTREAMS[0]),
-                 "--nlp-model", str(tmp_path / "missing"), "--quiet"])
+    code = main(
+        [
+            "map",
+            "--upstream",
+            str(UPSTREAM),
+            "--downstream",
+            str(DOWNSTREAMS[0]),
+            "--nlp-model",
+            str(tmp_path / "missing"),
+            "--quiet",
+        ]
+    )
     assert code == 2
     assert "local NLP model folder does not exist" in capsys.readouterr().err
 
@@ -134,19 +153,28 @@ def test_web_settings_and_nlp_run(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "workspace", workspace)
     monkeypatch.setattr(engine, "LocalSentenceEncoder", lambda path: Encoder())
     with TestClient(app_module.app) as client:
-        response = client.put("/api/settings", json={"auto": 0.72, "review": 0.5, "nlp": {"model_path": "/local/model"}})
+        response = client.put(
+            "/api/settings", json={"auto": 0.72, "review": 0.5, "nlp": {"model_path": "/local/model"}}
+        )
         assert response.status_code == 200
         assert Workspace(tmp_path).nlp.model_path == "/local/model"
         # Older clients changing thresholds preserve the NLP configuration.
         assert client.put("/api/settings", json={"auto": 0.72, "review": 0.5}).status_code == 200
         assert workspace.nlp.model_path == "/local/model"
-        assert client.put("/api/settings", json={"auto": 0.72, "review": 0.5, "nlp": {"min_similarity": 2}}).status_code == 422
+        assert (
+            client.put("/api/settings", json={"auto": 0.72, "review": 0.5, "nlp": {"min_similarity": 2}}).status_code
+            == 422
+        )
         run_id = client.post("/api/runs").json()["run_id"]
         with client.stream("GET", f"/api/runs/{run_id}/events") as events:
             assert '"error": null' in events.read().decode()
         result = client.get("/api/report.json").json()
-        assert any(e["signal"] == "local_nlp" for m in result["mappings"]
-                   for c in ([m["chosen"]] if m["chosen"] else []) for e in c["evidence"])
+        assert any(
+            e["signal"] == "local_nlp"
+            for m in result["mappings"]
+            for c in ([m["chosen"]] if m["chosen"] else [])
+            for e in c["evidence"]
+        )
         assert client.get("/api/report.xlsx").content.startswith(b"PK")
 
 

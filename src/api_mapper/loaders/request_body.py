@@ -4,8 +4,9 @@ from api_mapper.models import Parameter
 from api_mapper.normalize.flattener import merge_all_of
 
 MAX_BODY_DEPTH = 12
-_CONTEXT_NAMES = frozenset({"clientid", "clientsecret", "accesstoken", "refreshtoken", "apikey",
-                            "secret", "password", "authorization"})
+_CONTEXT_NAMES = frozenset(
+    {"clientid", "clientsecret", "accesstoken", "refreshtoken", "apikey", "secret", "password", "authorization"}
+)
 
 
 def json_body(operation: dict, shared: list) -> tuple[dict | None, bool]:

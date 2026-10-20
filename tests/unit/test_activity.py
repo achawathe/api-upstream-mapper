@@ -34,7 +34,12 @@ def test_request_errors_run_failures_and_reset_preserve_history(tmp_path, monkey
         assert response.status_code == 200
         assert client.put("/api/settings", json={"auto": 0.1, "review": 0.9}).status_code == 400
         assert client.put("/api/settings", json={"auto": "PRIVATE-VALUE"}).status_code == 422
-        assert client.post("/api/files", data={"role": "upstream"}, files=[("files", ("x.json", b'{"private":"PRIVATE-VALUE"}'))]).status_code == 400
+        assert (
+            client.post(
+                "/api/files", data={"role": "upstream"}, files=[("files", ("x.json", b'{"private":"PRIVATE-VALUE"}'))]
+            ).status_code
+            == 400
+        )
         workspace._run(RunState("failed-run"))
         assert client.post("/api/reset").status_code == 200
         history = client.get("/api/activity").json()["events"]

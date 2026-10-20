@@ -8,18 +8,29 @@ def definition_preferred(candidate: Candidate) -> bool:
 
 
 def semantic_fallback(candidates: list[Candidate], review_threshold: float) -> Candidate | None:
-    supported = [(e.score, c) for c in candidates for e in c.evidence
-                 if e.signal in {"semantic_review", "context_review"} and e.score >= review_threshold]
+    supported = [
+        (e.score, c)
+        for c in candidates
+        for e in c.evidence
+        if e.signal in {"semantic_review", "context_review"} and e.score >= review_threshold
+    ]
     return min(supported, key=lambda pair: (-pair[0], -pair[1].score, pair[1].source.key))[1] if supported else None
 
 
 def review_reasons(target: FieldNode, candidate: Candidate, auto_threshold: float) -> list[str]:
     reasons = []
     evidence = candidate.evidence
-    if any(step.params.get('target_origin') == 'documentation' or step.params.get('citations') or step.params.get('open_source') for step in candidate.transforms):
-        reasons.append('confirm suggested value translations against API definitions and handling of unknown downstream strings')
-    if any(e.signal == 'documentation_context' for e in evidence):
-        reasons.append('attached documentation supports interpretation; confirm field meaning and any conversion')
+    if any(
+        step.params.get("target_origin") == "documentation"
+        or step.params.get("citations")
+        or step.params.get("open_source")
+        for step in candidate.transforms
+    ):
+        reasons.append(
+            "confirm suggested value translations against API definitions and handling of unknown downstream strings"
+        )
+    if any(e.signal == "documentation_context" for e in evidence):
+        reasons.append("attached documentation supports interpretation; confirm field meaning and any conversion")
     if any(e.signal == "purpose_uncertain" for e in evidence):
         reasons.append("field-purpose evidence is uncertain or conflicting; confirm before accepting")
     if any(e.signal == "context_review" for e in evidence):

@@ -54,15 +54,18 @@ def _type_fit(target: FieldNode, source: FieldNode, lexicon: Lexicon, source_is_
         return TypeFit(1.0, detail=f"both {t}")
     if t == "number" and s == "integer":
         if _mentions(source, lexicon.minor_unit_markers, lexicon):
-            return TypeFit(1.0, (_step(TransformKind.MINOR_UNITS_TO_DECIMAL, "divide by 100 (minor units)", exponent=2),),
-                           detail="integer minor units to decimal")
+            return TypeFit(
+                1.0,
+                (_step(TransformKind.MINOR_UNITS_TO_DECIMAL, "divide by 100 (minor units)", exponent=2),),
+                detail="integer minor units to decimal",
+            )
         return TypeFit(0.9, (_cast("number"),), detail="integer widens to number")
     if t == "integer" and s == "number":
         return TypeFit(0.6, (_cast("integer"),), detail="number narrows to integer")
     if t in _NUMERIC_TYPES and s == "string":
         if source.format in _NON_QUANTITY_FORMATS:
             return TypeFit(0.0, veto=f"{source.format} text cannot supply a numeric value")
-        numeric_example = has_numeric_text(source, integer=t == 'integer')
+        numeric_example = has_numeric_text(source, integer=t == "integer")
         return TypeFit(0.85 if numeric_example else 0.55, (_cast(t),), detail="numeric text parsed to number")
     if t == "string" and s in _NUMERIC_TYPES:
         return TypeFit(0.7, (_cast("string"),), detail=f"{s} rendered as text")
@@ -106,7 +109,9 @@ def _temporal_fit(target: FieldNode, source: FieldNode, lexicon: Lexicon, source
             steps = (_step(TransformKind.DATETIME_TO_DATE, "keep the date part"),)
         elif observed_format == "date" and target.format == "date-time":
             steps = (_cast("date-time"),)
-        return TypeFit(0.6, steps, detail="documented values parse as ISO dates; schema format and event meaning need confirmation")
+        return TypeFit(
+            0.6, steps, detail="documented values parse as ISO dates; schema format and event meaning need confirmation"
+        )
     if source_is_temporal:
         return TypeFit(0.6, detail="text date with undeclared format")
     return TypeFit(0.0, veto="source has no date format or temporal meaning")

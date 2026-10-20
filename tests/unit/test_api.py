@@ -49,7 +49,9 @@ def test_demo_run_override_validate_and_download(client):
     assert result["summary"]["auto"] > 150
 
     target = next(m for m in result["mappings"] if m["target"]["path"] == "paymentNetworks[].bankId")
-    rejected = client.post("/api/overrides", json={"target_key": target["target"]["key"], "action": "reject", "note": "not yet"}).json()
+    rejected = client.post(
+        "/api/overrides", json={"target_key": target["target"]["key"], "action": "reject", "note": "not yet"}
+    ).json()
     assert rejected["mapping"]["status"] == "rejected"
     restored = client.delete("/api/overrides", params={"target_key": target["target"]["key"]}).json()
     assert restored["mapping"]["status"] == target["status"]
@@ -77,6 +79,8 @@ def test_sample_endpoint_upload_infers_an_api(client):
 
 
 def test_broken_upload_is_reported_not_fatal(client):
-    response = client.post("/api/files", data={"role": "downstream"}, files=[("files", ("bad.yaml", b"paths: [unclosed", "text/yaml"))])
+    response = client.post(
+        "/api/files", data={"role": "downstream"}, files=[("files", ("bad.yaml", b"paths: [unclosed", "text/yaml"))]
+    )
     stored = response.json()["files"][0]
     assert stored["summary"]["ok"] is False

@@ -18,38 +18,60 @@ from api_mapper.validation.request_inputs import RequestInputError, request_part
 
 STRING = {"type": "string"}
 BODY = {
-    "type": "object", "required": ["access_token"],
+    "type": "object",
+    "required": ["access_token"],
     "properties": {
         "access_token": STRING,
         "client_id": STRING,
-        "options": {"type": "object", "properties": {
-            "account_ids": {"type": "array", "items": STRING},
-        }},
+        "options": {
+            "type": "object",
+            "properties": {
+                "account_ids": {"type": "array", "items": STRING},
+            },
+        },
     },
 }
 
 
 def _spec(name, path, operation):
-    document = {"openapi": "3.0.3", "info": {"title": name, "version": "1"},
-                "paths": {path: operation}}
+    document = {"openapi": "3.0.3", "info": {"title": name, "version": "1"}, "paths": {path: operation}}
     return build_api_spec(document, source="test", base_dir=Path("."), name=name)
 
 
 def _response(properties):
-    return {"200": {"description": "OK", "content": {"application/json": {
-        "schema": {"type": "object", "required": list(properties), "properties": properties},
-    }}}}
+    return {
+        "200": {
+            "description": "OK",
+            "content": {
+                "application/json": {
+                    "schema": {"type": "object", "required": list(properties), "properties": properties},
+                }
+            },
+        }
+    }
 
 
 def _run(lexicon, body=BODY):
-    upstream = _spec("up", "/accounts/{accountId}", {"get": {
-        "parameters": [{"name": "accountId", "in": "path", "required": True, "schema": STRING}],
-        "responses": _response({"accountId": STRING}),
-    }})
-    downstream = _spec("down", "/accounts/get", {"post": {
-        "requestBody": {"required": True, "content": {"application/json": {"schema": body}}},
-        "responses": _response({"accountId": STRING}),
-    }})
+    upstream = _spec(
+        "up",
+        "/accounts/{accountId}",
+        {
+            "get": {
+                "parameters": [{"name": "accountId", "in": "path", "required": True, "schema": STRING}],
+                "responses": _response({"accountId": STRING}),
+            }
+        },
+    )
+    downstream = _spec(
+        "down",
+        "/accounts/get",
+        {
+            "post": {
+                "requestBody": {"required": True, "content": {"application/json": {"schema": body}}},
+                "responses": _response({"accountId": STRING}),
+            }
+        },
+    )
     return MappingPipeline(lexicon).run(PipelineInputs(upstream, (downstream,))).run
 
 
@@ -77,14 +99,20 @@ def test_swagger_operation_body_overrides_shared_body():
     chosen = {"type": "array", "items": STRING}
     assert json_body({"parameters": [{"in": "body", "schema": chosen}]}, shared) == (chosen, False)
     assert json_body({}, shared) == (BODY, True)
-    assert json_body({"requestBody": {"content": {"application/vnd.test+json": {"schema": chosen}}}}, []) == (chosen, False)
+    assert json_body({"requestBody": {"content": {"application/vnd.test+json": {"schema": chosen}}}}, []) == (
+        chosen,
+        False,
+    )
 
 
-@pytest.mark.parametrize("schema", [
-    {"oneOf": [STRING, {"type": "integer"}]},
-    {"type": "object", "properties": {"literal.dot": STRING}},
-    {"type": "array", "items": {"type": "object", "properties": {"id": STRING}}},
-])
+@pytest.mark.parametrize(
+    "schema",
+    [
+        {"oneOf": [STRING, {"type": "integer"}]},
+        {"type": "object", "properties": {"literal.dot": STRING}},
+        {"type": "array", "items": {"type": "object", "properties": {"id": STRING}}},
+    ],
+)
 def test_ambiguous_or_structured_body_remains_opaque(schema):
     parameters = body_parameters(schema, True)
     assert len(parameters) == 1 and parameters[0].name == "$body"
@@ -92,40 +120,57 @@ def test_ambiguous_or_structured_body_remains_opaque(schema):
 
 
 def test_required_ancestry_and_activated_optional_objects():
-    schema = {"type": "object", "properties": {"options": {
-        "type": "object", "required": ["account_id", "region"],
-        "properties": {"account_id": STRING, "region": STRING},
-    }}}
-    endpoint = Endpoint("POST", "/x", "x", parameters=body_parameters(schema, True),
-                        request_schema=schema, request_required=True)
+    schema = {
+        "type": "object",
+        "properties": {
+            "options": {
+                "type": "object",
+                "required": ["account_id", "region"],
+                "properties": {"account_id": STRING, "region": STRING},
+            }
+        },
+    }
+    endpoint = Endpoint(
+        "POST", "/x", "x", parameters=body_parameters(schema, True), request_schema=schema, request_required=True
+    )
     assert all(not p.required for p in endpoint.parameters)
     assert request_parts(endpoint, {}).body == {}
     with pytest.raises(RequestInputError, match="body:options.region"):
         request_parts(endpoint, {"body:options.account_id": "a"})
     optional = {"type": "object", "required": ["token"], "properties": {"token": STRING}}
-    endpoint = replace(endpoint, parameters=body_parameters(optional, False),
-                       request_schema=optional, request_required=False)
+    endpoint = replace(
+        endpoint, parameters=body_parameters(optional, False), request_schema=optional, request_required=False
+    )
     assert request_parts(endpoint, {}).body is None
 
 
 def test_locations_and_scalar_array_binding_do_not_collide():
-    endpoint = Endpoint("POST", "/accounts/{id}", "x", parameters=(
-        Parameter("id", "path", True, STRING), Parameter("id", "query", True, STRING),
-        Parameter("options.id", "body", True, {"type": "array", "items": STRING}),
-    ))
+    endpoint = Endpoint(
+        "POST",
+        "/accounts/{id}",
+        "x",
+        parameters=(
+            Parameter("id", "path", True, STRING),
+            Parameter("id", "query", True, STRING),
+            Parameter("options.id", "body", True, {"type": "array", "items": STRING}),
+        ),
+    )
     parts = request_parts(endpoint, {"path:id": "a/b", "query:id": "query", "body:options.id": "body"})
     assert parts.path == "/accounts/a%2Fb"
     assert parts.query == {"id": "query"}
     assert parts.body == {"options": {"id": ["body"]}}
 
 
-@pytest.mark.parametrize(("source", "target", "expected"), [
-    (STRING, {"type": "array", "items": STRING}, True),
-    ({"type": "integer"}, STRING, False),
-    ({"type": "string", "format": "date-time"}, {"type": "string", "format": "date"}, False),
-    (STRING, {"type": "string", "enum": ["a"]}, False),
-    ({"type": "string", "enum": ["a"]}, {"type": "string", "enum": ["a", "b"]}, True),
-])
+@pytest.mark.parametrize(
+    ("source", "target", "expected"),
+    [
+        (STRING, {"type": "array", "items": STRING}, True),
+        ({"type": "integer"}, STRING, False),
+        ({"type": "string", "format": "date-time"}, {"type": "string", "format": "date"}, False),
+        (STRING, {"type": "string", "enum": ["a"]}, False),
+        ({"type": "string", "enum": ["a"]}, {"type": "string", "enum": ["a", "b"]}, True),
+    ],
+)
 def test_body_bindings_require_compatible_shapes(source, target, expected):
     assert compatible_body_input(source, target) is expected
 
@@ -143,14 +188,18 @@ class StrictDownstream:
             assert request.method == "POST" and not request.url.query
             assert json.loads(request.content) == {"access_token": "test-token", "options": {"account_ids": ["ACC-2"]}}
             return httpx.Response(200, json={"accountId": "ACC-2"})
+
         return httpx.MockTransport(respond)
 
 
 def test_executor_sends_filter_and_credentials_in_json_only(lexicon):
     run, downstream = _run(lexicon), StrictDownstream()
-    result = asyncio.run(PlanExecutor(run, downstream).execute(
-        "GET /accounts/{accountId}", {"accountId": "ACC-2", "body:access_token": "test-token"},
-    ))
+    result = asyncio.run(
+        PlanExecutor(run, downstream).execute(
+            "GET /accounts/{accountId}",
+            {"accountId": "ACC-2", "body:access_token": "test-token"},
+        )
+    )
     assert len(downstream.requests) == 1 and result.body == {"accountId": "ACC-2"}
     assert "test-token" not in str(result.calls) + str(result.warnings)
 
@@ -163,11 +212,24 @@ def test_executor_does_not_send_request_without_required_context(lexicon):
 
 
 def test_body_reference_is_resolved_by_loader():
-    document = {"openapi": "3.0.3", "info": {"title": "x", "version": "1"},
-                "components": {"schemas": {"Request": BODY}},
-                "paths": {"/x": {"post": {"requestBody": {"required": True, "content": {
-                    "application/json": {"schema": {"$ref": "#/components/schemas/Request"}},
-                }}, "responses": _response({"accountId": STRING})}}}}
+    document = {
+        "openapi": "3.0.3",
+        "info": {"title": "x", "version": "1"},
+        "components": {"schemas": {"Request": BODY}},
+        "paths": {
+            "/x": {
+                "post": {
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {"schema": {"$ref": "#/components/schemas/Request"}},
+                        },
+                    },
+                    "responses": _response({"accountId": STRING}),
+                }
+            }
+        },
+    }
     endpoint = build_api_spec(document, source="test", base_dir=Path("."), name="x").endpoints[0]
     assert {p.name for p in endpoint.parameters} == {"access_token", "client_id", "options.account_ids"}
     assert endpoint.request_schema["properties"] == BODY["properties"]
@@ -199,13 +261,22 @@ def test_body_dependent_chains_inherit_review_but_not_missing_path_inputs(lexico
     from api_mapper.planning.call_planner import CallPlanner
 
     run = _run(lexicon)
-    first = replace(run.downstreams[0].endpoints[0], response_schema={
-        "type": "object", "properties": {"partyId": STRING},
-    })
+    first = replace(
+        run.downstreams[0].endpoints[0],
+        response_schema={
+            "type": "object",
+            "properties": {"partyId": STRING},
+        },
+    )
     second = Endpoint("GET", "/parties/{partyId}", "party", parameters=(Parameter("partyId", "path", True, STRING),))
-    blocked = replace(first, path="/tenants/{tenantId}/accounts/get", parameters=(
-        *first.parameters, Parameter("tenantId", "path", True, STRING),
-    ))
+    blocked = replace(
+        first,
+        path="/tenants/{tenantId}/accounts/get",
+        parameters=(
+            *first.parameters,
+            Parameter("tenantId", "path", True, STRING),
+        ),
+    )
     spec = replace(run.downstreams[0], endpoints=(first, second, blocked))
     sources = Profiler(lexicon).profile_spec(spec, flatten_spec(spec))
     planner = CallPlanner(lexicon, run.upstream, (spec,), sources)
@@ -230,21 +301,42 @@ def test_location_is_exported_and_caller_context_preserves_json_types(lexicon):
 
 def test_opaque_empty_array_is_preserved():
     schema = {"type": "array", "items": {"type": "object"}}
-    endpoint = Endpoint("POST", "/x", "x", parameters=body_parameters(schema, True),
-                        request_schema=schema, request_required=True)
+    endpoint = Endpoint(
+        "POST", "/x", "x", parameters=body_parameters(schema, True), request_schema=schema, request_required=True
+    )
     assert request_parts(endpoint, {"body:$body": []}).body == []
 
 
 def test_upstream_credentials_cannot_supply_a_downstream_customer_id(lexicon):
-    upstream = _spec("up", "/customers/get", {"post": {
-        "requestBody": {"content": {"application/json": {"schema": {
-            "type": "object", "properties": {"client_id": STRING},
-        }}}}, "responses": _response({"customerId": STRING}),
-    }})
-    downstream = _spec("down", "/customers/{customerId}", {"get": {
-        "parameters": [{"name": "customerId", "in": "path", "required": True, "schema": STRING}],
-        "responses": _response({"customerId": STRING}),
-    }})
+    upstream = _spec(
+        "up",
+        "/customers/get",
+        {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {"client_id": STRING},
+                            }
+                        }
+                    }
+                },
+                "responses": _response({"customerId": STRING}),
+            }
+        },
+    )
+    downstream = _spec(
+        "down",
+        "/customers/{customerId}",
+        {
+            "get": {
+                "parameters": [{"name": "customerId", "in": "path", "required": True, "schema": STRING}],
+                "responses": _response({"customerId": STRING}),
+            }
+        },
+    )
     run = MappingPipeline(lexicon).run(PipelineInputs(upstream, (downstream,))).run
     binding = run.call_plans[0].steps[0].bindings[0]
     assert binding.source is BindingSource.UNRESOLVED

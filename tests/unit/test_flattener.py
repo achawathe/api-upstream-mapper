@@ -31,8 +31,16 @@ def test_one_of_branches_become_variants_with_discriminator_conditions():
                 "items": {
                     "discriminator": {"propertyName": "kind", "mapping": {"A": "#/x/Alpha"}},
                     "oneOf": [
-                        {"x-schema-name": "Alpha", "type": "object", "properties": {"kind": {"type": "string"}, "a": {"type": "integer"}}},
-                        {"x-schema-name": "Beta", "type": "object", "properties": {"kind": {"enum": ["B"]}, "b": {"type": "string"}}},
+                        {
+                            "x-schema-name": "Alpha",
+                            "type": "object",
+                            "properties": {"kind": {"type": "string"}, "a": {"type": "integer"}},
+                        },
+                        {
+                            "x-schema-name": "Beta",
+                            "type": "object",
+                            "properties": {"kind": {"enum": ["B"]}, "b": {"type": "string"}},
+                        },
                     ],
                 },
             }
@@ -68,8 +76,14 @@ def test_examples_follow_the_variant_condition():
                 "items": {
                     "discriminator": {"propertyName": "kind"},
                     "oneOf": [
-                        {"x-schema-name": "Loan", "properties": {"kind": {"enum": ["LOAN"]}, "name": {"type": "string"}}},
-                        {"x-schema-name": "Card", "properties": {"kind": {"enum": ["CARD"]}, "name": {"type": "string"}}},
+                        {
+                            "x-schema-name": "Loan",
+                            "properties": {"kind": {"enum": ["LOAN"]}, "name": {"type": "string"}},
+                        },
+                        {
+                            "x-schema-name": "Card",
+                            "properties": {"kind": {"enum": ["CARD"]}, "name": {"type": "string"}},
+                        },
                     ],
                 },
             }
@@ -96,7 +110,10 @@ def test_required_needs_every_ancestor_required():
 
 
 def test_arrays_of_arrays_get_one_segment_per_level():
-    schema = {"type": "object", "properties": {"matrix": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}}}}
+    schema = {
+        "type": "object",
+        "properties": {"matrix": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}}},
+    }
     fields = _flatten(schema)
     node = fields[(None, "matrix[].[]")]
     assert node.array_depth == 2 and node.name == "matrix"

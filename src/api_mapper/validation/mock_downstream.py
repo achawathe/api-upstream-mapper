@@ -138,7 +138,10 @@ class _Synthesizer:
             values = [v for v in schema["enum"] if v is not None]
             return values[self._pick(path, len(values))] if values else None
         if kind == "object":
-            return {name: self.value(prop, f"{path}.{name}", depth + 1) for name, prop in (schema.get("properties") or {}).items()}
+            return {
+                name: self.value(prop, f"{path}.{name}", depth + 1)
+                for name, prop in (schema.get("properties") or {}).items()
+            }
         if kind == "array":
             return [self.value(schema.get("items") or {}, f"{path}[{i}]", depth + 1) for i in range(ARRAY_LENGTH)]
         return self._scalar(kind, schema, path)
@@ -148,7 +151,9 @@ class _Synthesizer:
         leaf = path.rsplit(".", 1)[-1].split("[")[0].lower()
         description = str(schema.get("description") or "").lower()
         if kind == "integer":
-            return 1_760_000_000_000 + number * 1000 if ("epoch" in description or leaf.endswith("ts")) else number % 1000
+            return (
+                1_760_000_000_000 + number * 1000 if ("epoch" in description or leaf.endswith("ts")) else number % 1000
+            )
         if kind == "number":
             return round(number / 100, 2)
         if kind == "boolean":

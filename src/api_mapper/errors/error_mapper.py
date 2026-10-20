@@ -27,7 +27,13 @@ class ErrorMapper:
         same_status = best is not None and best.http_status == error.http_status
         if best and (hits >= MIN_KEYWORD_HITS or (hits == 1 and same_status)):
             confidence = min(1.0, 0.6 + 0.1 * hits + (0.1 if same_status else 0.0))
-            return ErrorMapping(error, best.http_status or error.http_status, best.code, f"keyword ({hits} matched)", round(confidence, 2))
+            return ErrorMapping(
+                error,
+                best.http_status or error.http_status,
+                best.code,
+                f"keyword ({hits} matched)",
+                round(confidence, 2),
+            )
         if error.http_status in GATEWAY_STATUSES:
             return ErrorMapping(error, "503", None, "upstream-fault: downstream outage reported as 503", 0.8)
         if error.http_status.startswith("5"):

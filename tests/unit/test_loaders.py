@@ -52,7 +52,9 @@ class TestSpecKinds:
         assert not_found.examples[0]["code"] == "ACCT_NOT_FOUND"
 
     def test_schema_fragment_becomes_pseudo_endpoints(self):
-        document = {"components": {"schemas": {"Account": {"type": "object", "properties": {"id": {"type": "string"}}}}}}
+        document = {
+            "components": {"schemas": {"Account": {"type": "object", "properties": {"id": {"type": "string"}}}}}
+        }
         spec = build_api_spec(document, source="mem", base_dir=Path("."), name="frag")
         assert spec.kind is SpecKind.FRAGMENT
         assert spec.endpoints[0].key == "SCHEMA /Account"

@@ -51,7 +51,9 @@ def test_error_mapping(result):
     assert by_code[("deposits", "1004")].upstream_code == "705"
     assert by_code[("core-accounts", "ACCT_CLOSED")].upstream_status == "409"
     assert by_code[("deposits", "1007")].upstream_code == "706"
-    routing_outage = next(e for e in result.run.error_mappings if e.downstream.api == "routing" and e.downstream.http_status == "502")
+    routing_outage = next(
+        e for e in result.run.error_mappings if e.downstream.api == "routing" and e.downstream.http_status == "502"
+    )
     assert routing_outage.upstream_status == "503"
 
 

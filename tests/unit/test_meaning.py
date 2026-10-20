@@ -11,21 +11,27 @@ from tests.unit.test_semantic import Encoder
 
 
 def _profile(lexicon, name, description=""):
-    node = FieldNode(api="test", endpoint="GET /transactions", path=name,
-                     type="string", description=description)
+    node = FieldNode(api="test", endpoint="GET /transactions", path=name, type="string", description=description)
     return Profiler(lexicon).profile(node, frozenset(), ())
 
 
-@pytest.mark.parametrize(("left", "right", "group"), [
-    (("postedTimestamp", ""), ("authorized_datetime", "Date when the transaction was posted."), "transaction_event"),
-    (("bookingDate", ""), ("valueDate", ""), "transaction_event"),
-    (("transactionTimestamp", "Date added to the server."), ("postedDate", ""), "transaction_event"),
-    (("payeeName", ""), ("merchantId", ""), "value_kind"),
-    (("productName", "Marketed product."), ("products", "Products enabled for the Item."), "product_kind"),
-    (("category", "Merchant category code."), ("category_id", ""), "classification_system"),
-    (("isoCurrencyCode", ""), ("unofficial_currency_code", ""), "currency_standard"),
-    (("foreignCurrency", ""), ("accountCurrency", ""), "currency_role"),
-])
+@pytest.mark.parametrize(
+    ("left", "right", "group"),
+    [
+        (
+            ("postedTimestamp", ""),
+            ("authorized_datetime", "Date when the transaction was posted."),
+            "transaction_event",
+        ),
+        (("bookingDate", ""), ("valueDate", ""), "transaction_event"),
+        (("transactionTimestamp", "Date added to the server."), ("postedDate", ""), "transaction_event"),
+        (("payeeName", ""), ("merchantId", ""), "value_kind"),
+        (("productName", "Marketed product."), ("products", "Products enabled for the Item."), "product_kind"),
+        (("category", "Merchant category code."), ("category_id", ""), "classification_system"),
+        (("isoCurrencyCode", ""), ("unofficial_currency_code", ""), "currency_standard"),
+        (("foreignCurrency", ""), ("accountCurrency", ""), "currency_role"),
+    ],
+)
 def test_explicit_different_meanings_conflict(lexicon, left, right, group):
     conflicts = MeaningMatcher(lexicon.meaning_rules).conflicts(_profile(lexicon, *left), _profile(lexicon, *right))
     assert any(item.startswith(group + ":") for item in conflicts)
@@ -38,7 +44,7 @@ def test_unknown_definition_is_not_inferred_from_similar_name(lexicon):
 
 
 def test_definition_discards_markup_and_later_examples():
-    text = '<b>Date</b> when [assets](https://example.org/posted-date) become available. Example: posted date.'
+    text = "<b>Date</b> when [assets](https://example.org/posted-date) become available. Example: posted date."
     assert leading_definition(text) == "Date when assets become available."
 
 

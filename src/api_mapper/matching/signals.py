@@ -38,7 +38,9 @@ _VALUE_SHAPES = (
 
 DESCRIPTION_NAME_CREDIT = 0.75
 SAME_KIND = 0.5
-_STRONG_SHAPES = frozenset({"timestamp", "date", "uuid", "email", "code3", "code2", "digits", "decimal-text", "boolean"})
+_STRONG_SHAPES = frozenset(
+    {"timestamp", "date", "uuid", "email", "code3", "code2", "digits", "decimal-text", "boolean"}
+)
 _NUMERIC_SHAPES = frozenset({"digits", "decimal-text"})
 
 
@@ -113,17 +115,20 @@ def collection_agrees(target: FieldProfile, source: FieldProfile, ctx: SignalCon
     per item, so its endpoint only needs to be about the same thing (`holders[]` ~ `/parties/{id}`).
     """
     target_collection = target.collection
-    if (not target_collection and source.collection and target.node.array_depth == 0
-            and target.endpoint_concepts and target.endpoint_concepts[-1] in ctx.lexicon.known_words):
+    if (
+        not target_collection
+        and source.collection
+        and target.node.array_depth == 0
+        and target.endpoint_concepts
+        and target.endpoint_concepts[-1] in ctx.lexicon.known_words
+    ):
         target_collection = target.endpoint_concepts[-1:]
     if not target_collection:
         return True
     if source.collection:
         target_head, source_head = target_collection[-1], source.collection[-1]
         return ctx.lexicon.relatedness(target_head, source_head) >= SAME_KIND
-    return any(
-        ctx.lexicon.relatedness(t, s) >= SAME_KIND for t in target.collection for s in source.endpoint_concepts
-    )
+    return any(ctx.lexicon.relatedness(t, s) >= SAME_KIND for t in target.collection for s in source.endpoint_concepts)
 
 
 def type_signal(fit: TypeFit) -> tuple[float, str]:

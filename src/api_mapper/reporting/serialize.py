@@ -76,9 +76,17 @@ def candidate_to_dict(candidate: Candidate) -> dict[str, Any]:
         "source": node_to_dict(candidate.source),
         "score": candidate.score,
         "vetoed_by": candidate.vetoed_by,
-        "transforms": [{"kind": s.kind.value, "description": s.description, "params": s.params} for s in candidate.transforms],
+        "transforms": [
+            {"kind": s.kind.value, "description": s.description, "params": s.params} for s in candidate.transforms
+        ],
         "evidence": [
-            {"signal": e.signal, "score": round(e.score, 4), "weight": e.weight, "effect": e.effect.value, "detail": e.detail}
+            {
+                "signal": e.signal,
+                "score": round(e.score, 4),
+                "weight": e.weight,
+                "effect": e.effect.value,
+                "detail": e.detail,
+            }
             for e in candidate.evidence
         ],
     }
@@ -115,7 +123,14 @@ def plan_to_dict(plan: EndpointCallPlan) -> dict[str, Any]:
                 "awaits_review": step.awaits_review,
                 "fanout": step.is_fanout,
                 "bindings": [
-                    {"parameter": b.parameter, "location": b.location, "source": b.source.value, "reference": b.reference, "fanout": b.fanout, "from_step": b.from_step}
+                    {
+                        "parameter": b.parameter,
+                        "location": b.location,
+                        "source": b.source.value,
+                        "reference": b.reference,
+                        "fanout": b.fanout,
+                        "from_step": b.from_step,
+                    }
                     for b in step.bindings
                 ],
             }
@@ -155,8 +170,16 @@ def execution_to_dict(result: ExecutionResult) -> dict[str, Any]:
         "warnings": result.warnings,
         "issues": [{"path": i.path, "message": i.message} for i in result.issues],
         "calls": [
-            {"step": c.step, "api": c.api, "endpoint": c.endpoint, "url": c.url, "status": c.status,
-             "started_ms": c.started_ms, "duration_ms": c.duration_ms, "item": c.item}
+            {
+                "step": c.step,
+                "api": c.api,
+                "endpoint": c.endpoint,
+                "url": c.url,
+                "status": c.status,
+                "started_ms": c.started_ms,
+                "duration_ms": c.duration_ms,
+                "item": c.item,
+            }
             for c in result.calls
         ],
     }

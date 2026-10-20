@@ -40,13 +40,21 @@ def main() -> None:
         pipeline = MappingPipeline(lexicon, nlp=settings)
         for provider in sorted({row["provider"] for row in labels}):
             started = perf_counter()
-            loaded = pipeline.load(ROOT / "samples/upstream/fdx/core-exchange-6.4.yaml",
-                                   [fixtures / provider / "openapi.json"])
+            loaded = pipeline.load(
+                ROOT / "samples/upstream/fdx/core-exchange-6.4.yaml", [fixtures / provider / "openapi.json"]
+            )
             result = pipeline.run(loaded)
             scoped = [row for row in labels if row["provider"] == provider]
             report = grade_contract(result.run.mappings, scoped, set(result.prepared.sources))
-            reports.append({"mode": mode, "provider": provider, "summary": report.summary,
-                            "seconds": round(perf_counter() - started, 3), "rows": report.rows})
+            reports.append(
+                {
+                    "mode": mode,
+                    "provider": provider,
+                    "summary": report.summary,
+                    "seconds": round(perf_counter() - started, 3),
+                    "rows": report.rows,
+                }
+            )
             print(mode, provider, json.dumps(report.summary), flush=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(reports, indent=2) + "\n")

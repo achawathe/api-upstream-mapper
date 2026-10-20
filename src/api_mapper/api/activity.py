@@ -21,8 +21,13 @@ class ActivityLog:
         self.lock = threading.RLock()
 
     def record(self, action: str, outcome: str = "success", **details) -> None:
-        event = {"id": uuid.uuid4().hex, "time": datetime.now(UTC).isoformat(),
-                 "action": action, "outcome": outcome, "details": details}
+        event = {
+            "id": uuid.uuid4().hex,
+            "time": datetime.now(UTC).isoformat(),
+            "action": action,
+            "outcome": outcome,
+            "details": details,
+        }
         try:
             line = json.dumps(event, ensure_ascii=True) + "\n"
             with self.lock:
@@ -45,8 +50,13 @@ class ActivityLog:
         try:
             yield
         except Exception as error:
-            self.record(name, "failed", **details, error_type=type(error).__name__,
-                        elapsed_ms=round((perf_counter() - started) * 1000, 1))
+            self.record(
+                name,
+                "failed",
+                **details,
+                error_type=type(error).__name__,
+                elapsed_ms=round((perf_counter() - started) * 1000, 1),
+            )
             raise
         else:
             self.record(name, **details, elapsed_ms=round((perf_counter() - started) * 1000, 1))

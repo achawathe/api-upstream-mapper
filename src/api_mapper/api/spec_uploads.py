@@ -45,8 +45,10 @@ def _is_api(document) -> bool:
 
 
 def _is_fragment(document) -> bool:
-    return isinstance(document, dict) and (document.get("type") in ("object", "array")
-                                          or any(k in document for k in ("components", "definitions", "properties")))
+    return isinstance(document, dict) and (
+        document.get("type") in ("object", "array")
+        or any(k in document for k in ("components", "definitions", "properties"))
+    )
 
 
 def local_references(node, directory: Path):

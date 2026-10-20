@@ -63,9 +63,13 @@ def test_uk_booking_date_is_not_value_date(public_runs):
 
 def test_plaid_published_examples_preserve_each_account_identity(public_runs):
     result = public_runs["plaid"]
-    mappings = [m for m in result.run.mappings if m.target.endpoint == "GET /accounts"
-                and m.target.variant == "DepositAccountDescriptor"
-                and m.target.path in {"accounts[].accountId", "accounts[].accountNumberDisplay"}]
+    mappings = [
+        m
+        for m in result.run.mappings
+        if m.target.endpoint == "GET /accounts"
+        and m.target.variant == "DepositAccountDescriptor"
+        and m.target.path in {"accounts[].accountId", "accounts[].accountNumberDisplay"}
+    ]
     endpoints = {e.key: e for e in result.run.downstreams[0].endpoints}
     for mapping in mappings:
         assert mapping.chosen is not None

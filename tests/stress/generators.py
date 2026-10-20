@@ -26,7 +26,9 @@ class Renamer:
     """`hard` adds spellings the lexicon has never seen: dropped vowels, truncation,
     reversed word order and filler words."""
 
-    def __init__(self, lexicon: Lexicon, rng: random.Random, abbreviate: float = 0.5, synonym: float = 0.3, hard: bool = False):
+    def __init__(
+        self, lexicon: Lexicon, rng: random.Random, abbreviate: float = 0.5, synonym: float = 0.3, hard: bool = False
+    ):
         self.rng = rng
         self.abbreviate = abbreviate
         self.synonym = synonym
@@ -106,7 +108,9 @@ def _mutate_examples(examples: Any, renamer: Renamer) -> Any:
     return result
 
 
-def write_mutated_downstreams(target: Path, seed: int, lexicon: Lexicon, hard: bool = False) -> tuple[list[Path], dict[str, Renamer]]:
+def write_mutated_downstreams(
+    target: Path, seed: int, lexicon: Lexicon, hard: bool = False
+) -> tuple[list[Path], dict[str, Renamer]]:
     rng = random.Random(seed)
     source_root = SAMPLES / "downstream"
     shutil.copytree(source_root / "common", target / "common")
@@ -156,17 +160,77 @@ def _rename_path(path: str, renamer: Renamer) -> str:
 
 
 NOISE_RESOURCES = [
-    "branch", "atm", "merchant", "offer", "notification", "document", "device", "session", "fx rate", "reward",
-    "dispute", "beneficiary", "standing order", "direct debit", "card control", "budget", "goal", "alert",
-    "consent", "kyc check", "loyalty tier", "statement request", "address change", "travel notice", "tax form",
-    "fee schedule", "product catalog", "interest tier", "rate sheet", "chargeback", "token", "webhook",
-    "audit event", "login", "message", "appointment", "complaint", "survey", "campaign", "referral", "voucher",
+    "branch",
+    "atm",
+    "merchant",
+    "offer",
+    "notification",
+    "document",
+    "device",
+    "session",
+    "fx rate",
+    "reward",
+    "dispute",
+    "beneficiary",
+    "standing order",
+    "direct debit",
+    "card control",
+    "budget",
+    "goal",
+    "alert",
+    "consent",
+    "kyc check",
+    "loyalty tier",
+    "statement request",
+    "address change",
+    "travel notice",
+    "tax form",
+    "fee schedule",
+    "product catalog",
+    "interest tier",
+    "rate sheet",
+    "chargeback",
+    "token",
+    "webhook",
+    "audit event",
+    "login",
+    "message",
+    "appointment",
+    "complaint",
+    "survey",
+    "campaign",
+    "referral",
+    "voucher",
     "limit change",
 ]
 NOISE_FIELDS = [
-    "id", "name", "status", "type", "createdAt", "updatedAt", "description", "amount", "currency", "code",
-    "externalRef", "ownerPartyId", "accountId", "nickname", "email", "phone", "effectiveDate", "expiryDate",
-    "rate", "priority", "channel", "category", "region", "count", "enabled", "label", "version",
+    "id",
+    "name",
+    "status",
+    "type",
+    "createdAt",
+    "updatedAt",
+    "description",
+    "amount",
+    "currency",
+    "code",
+    "externalRef",
+    "ownerPartyId",
+    "accountId",
+    "nickname",
+    "email",
+    "phone",
+    "effectiveDate",
+    "expiryDate",
+    "rate",
+    "priority",
+    "channel",
+    "category",
+    "region",
+    "count",
+    "enabled",
+    "label",
+    "version",
 ]
 
 
@@ -178,15 +242,46 @@ def write_noise_apis(target: Path, count: int, seed: int) -> list[Path]:
         resource = NOISE_RESOURCES[index % len(NOISE_RESOURCES)]
         slug = resource.replace(" ", "-")
         camel = "".join(w.capitalize() for w in resource.split())
-        fields = rng.sample(NOISE_FIELDS, 12) + [f"{camel[0].lower()}{camel[1:]}Id", f"{camel[0].lower()}{camel[1:]}Name"]
+        fields = rng.sample(NOISE_FIELDS, 12) + [
+            f"{camel[0].lower()}{camel[1:]}Id",
+            f"{camel[0].lower()}{camel[1:]}Name",
+        ]
         properties = {f: _noise_schema(f) for f in fields}
         item = {"type": "object", "properties": properties}
         spec = {
             "openapi": "3.0.3",
             "info": {"title": f"{camel} Service {index}", "version": "1.0.0"},
             "paths": {
-                f"/{slug}s": {"get": {"responses": {"200": {"description": "list", "content": {"application/json": {"schema": {"type": "object", "properties": {"items": {"type": "array", "items": item}}}}}}}}},
-                f"/{slug}s/{{{camel[0].lower()}{camel[1:]}Id}}": {"get": {"parameters": [{"name": f"{camel[0].lower()}{camel[1:]}Id", "in": "path", "required": True, "schema": {"type": "string"}}], "responses": {"200": {"description": "one", "content": {"application/json": {"schema": item}}}}}},
+                f"/{slug}s": {
+                    "get": {
+                        "responses": {
+                            "200": {
+                                "description": "list",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {"items": {"type": "array", "items": item}},
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                },
+                f"/{slug}s/{{{camel[0].lower()}{camel[1:]}Id}}": {
+                    "get": {
+                        "parameters": [
+                            {
+                                "name": f"{camel[0].lower()}{camel[1:]}Id",
+                                "in": "path",
+                                "required": True,
+                                "schema": {"type": "string"},
+                            }
+                        ],
+                        "responses": {"200": {"description": "one", "content": {"application/json": {"schema": item}}}},
+                    }
+                },
             },
         }
         path = target / f"noise-{index:02d}-{slug}.json"

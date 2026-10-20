@@ -34,3 +34,16 @@ api_mapper = ["py.typed"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "B", "UP", "SIM", "I"]
+# FastAPI parameters and frozen settings dataclasses are idiomatic call defaults;
+# nested conditional expressions read worse than the if/else they would replace.
+ignore = ["B008", "SIM108"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api_mapper", "tests", "experiments"]

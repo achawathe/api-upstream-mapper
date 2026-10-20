@@ -42,7 +42,9 @@ def test_most_expected_mappings_need_no_review(report):
 
 
 def test_decoy_api_never_maps_automatically(result):
-    decoys = [m for m in result.run.mappings if m.chosen and m.chosen.source.api == "transfers" and m.status.value == "auto"]
+    decoys = [
+        m for m in result.run.mappings if m.chosen and m.chosen.source.api == "transfers" and m.status.value == "auto"
+    ]
     assert decoys == []
 
 

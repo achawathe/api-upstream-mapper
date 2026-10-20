@@ -30,7 +30,9 @@ class PreparedMatch:
         self.targets = {t.node.key: t for t in targets}
         self.sources = {s.node.key: s for s in sources}
         weights = ConceptWeights([*targets, *sources], lexicon)
-        self.scorer = PairScorer(SignalContext(lexicon, weights, fitter.enum_mapper, reachability), fitter, semantic=semantic)
+        self.scorer = PairScorer(
+            SignalContext(lexicon, weights, fitter.enum_mapper, reachability), fitter, semantic=semantic
+        )
         self.index = CandidateIndex(sources, lexicon, semantic)
 
     def score_all(self) -> dict[str, list[Candidate]]:
@@ -49,8 +51,11 @@ class PreparedMatch:
 
 class MatchingEngine:
     def __init__(
-        self, lexicon: Lexicon, thresholds: Thresholds = Thresholds(),
-        nlp: NlpSettings | None = None, encoder: TextEncoder | None = None,
+        self,
+        lexicon: Lexicon,
+        thresholds: Thresholds = Thresholds(),
+        nlp: NlpSettings | None = None,
+        encoder: TextEncoder | None = None,
     ):
         self.lexicon = lexicon
         self.thresholds = thresholds

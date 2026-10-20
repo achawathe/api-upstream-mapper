@@ -165,9 +165,7 @@ class Lexicon:
 def _parse(raw: dict) -> Lexicon:
     raw = raw or {}
     synonyms = {
-        _normal(word): concept
-        for concept, words in (raw.get("synonyms") or {}).items()
-        for word in [concept, *words]
+        _normal(word): concept for concept, words in (raw.get("synonyms") or {}).items() for word in [concept, *words]
     }
     families = {
         synonyms.get(_normal(word), _normal(word)): family
@@ -190,19 +188,22 @@ def _parse(raw: dict) -> Lexicon:
         exclusive_modifiers=frozenset(
             synonyms.get(_normal(w), _normal(w)) for w in raw.get("exclusive_modifiers") or ()
         ),
-        defining_modifiers=frozenset(
-            synonyms.get(_normal(w), _normal(w)) for w in raw.get("defining_modifiers") or ()
-        ),
+        defining_modifiers=frozenset(synonyms.get(_normal(w), _normal(w)) for w in raw.get("defining_modifiers") or ()),
         vocabulary=frozenset(str(w).lower() for w in raw.get("vocabulary") or ()),
         minor_unit_markers=tuple(str(m).lower() for m in raw.get("minor_unit_markers") or ()),
         epoch_markers=tuple(str(m).lower() for m in raw.get("epoch_markers") or ()),
-        meaning_rules=tuple(MeaningRule(
-            group=str(r["group"]), role=str(r["role"]), concepts=frozenset(r["concepts"]),
-            name_phrases=tuple(r.get("name_phrases") or ()),
-            definition_phrases=tuple(r.get("definition_phrases") or ()),
-            require_source=bool(r.get("require_source", False)),
-            name_concepts=frozenset(r.get("name_concepts") or ()),
-        ) for r in raw.get("meaning_rules") or ()),
+        meaning_rules=tuple(
+            MeaningRule(
+                group=str(r["group"]),
+                role=str(r["role"]),
+                concepts=frozenset(r["concepts"]),
+                name_phrases=tuple(r.get("name_phrases") or ()),
+                definition_phrases=tuple(r.get("definition_phrases") or ()),
+                require_source=bool(r.get("require_source", False)),
+                name_concepts=frozenset(r.get("name_concepts") or ()),
+            )
+            for r in raw.get("meaning_rules") or ()
+        ),
         purpose_rules=tuple(_purpose_rule(r) for r in raw.get("purpose_rules") or ()),
     )
 

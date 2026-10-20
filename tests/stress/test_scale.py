@@ -41,7 +41,9 @@ def test_fifty_apis_run_within_budget(scaled):
 
 def test_noise_apis_never_win_automatically(scaled):
     result, _ = scaled
-    noise_autos = [m for m in result.run.mappings if m.status.value == "auto" and m.chosen.source.api.startswith("noise")]
+    noise_autos = [
+        m for m in result.run.mappings if m.status.value == "auto" and m.chosen.source.api.startswith("noise")
+    ]
     assert noise_autos == [], [f"{m.target.key} <- {m.chosen.source.key}" for m in noise_autos]
 
 

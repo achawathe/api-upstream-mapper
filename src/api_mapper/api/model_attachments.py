@@ -27,8 +27,11 @@ def attach_models(files_root: Path, entrypoint: Path, uploads: list[tuple[str, b
                 if not isinstance(load_document(path), dict):
                     raise SpecLoadError(path.name, "a model file must contain a schema object")
             _place_models(new_entrypoint, destination, incoming, paths)
-        names = sorted(str(p.relative_to(destination)) for p in destination.rglob("*")
-                       if p.is_file() and p != new_entrypoint and p.suffix.lower() in {".yaml", ".yml", ".json"})
+        names = sorted(
+            str(p.relative_to(destination))
+            for p in destination.rglob("*")
+            if p.is_file() and p != new_entrypoint and p.suffix.lower() in {".yaml", ".yml", ".json"}
+        )
         return new_entrypoint, names
     except Exception:
         shutil.rmtree(destination, ignore_errors=True)
@@ -45,7 +48,9 @@ def _place_models(entrypoint: Path, bundle: Path, incoming: Path, paths: list[Pa
             exact = {bundle / relative, entrypoint.parent / relative} & references
             matches = exact or {ref for ref in references if ref.name == path.name}
             if len(matches) > 1:
-                raise ValueError(f"{relative}: more than one reference uses this filename; upload a folder with the referenced paths")
+                raise ValueError(
+                    f"{relative}: more than one reference uses this filename; upload a folder with the referenced paths"
+                )
             if not matches:
                 continue
             _place(path, next(iter(matches)), entrypoint, bundle, placed)

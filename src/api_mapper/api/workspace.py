@@ -76,7 +76,7 @@ class Workspace:
         self.categories: dict[str, str] = {}
         self.thresholds = Thresholds()
         self.nlp = NlpSettings()
-        self.domain = 'finance'
+        self.domain = "finance"
         self.overrides: list[Override] = load_overrides(self._overrides_path)
         self.result: PipelineResult | None = None
         self.pipeline: MappingPipeline | None = None
@@ -104,13 +104,17 @@ class Workspace:
             folder = self.root / "files" / uuid.uuid4().hex[:12]
             try:
                 paths = save_bundle(folder, uploads)
-                registered = spec_entrypoints(paths, role == FileRole.UPSTREAM) if role in (
-                    FileRole.UPSTREAM, FileRole.DOWNSTREAM
-                ) else paths
+                registered = (
+                    spec_entrypoints(paths, role == FileRole.UPSTREAM)
+                    if role in (FileRole.UPSTREAM, FileRole.DOWNSTREAM)
+                    else paths
+                )
                 if role in SINGLE_FILE_ROLES and len(registered) != 1:
                     raise ValueError("this input accepts one file")
-                stored = [StoredFile(uuid.uuid4().hex[:12], role, str(p.relative_to(folder)), str(p),
-                                     _summarise(role, p)) for p in registered]
+                stored = [
+                    StoredFile(uuid.uuid4().hex[:12], role, str(p.relative_to(folder)), str(p), _summarise(role, p))
+                    for p in registered
+                ]
                 if role == FileRole.UPSTREAM:
                     stored[0].model_files = sorted(str(p.relative_to(folder)) for p in paths if p not in registered)
             except Exception:
@@ -143,7 +147,12 @@ class Workspace:
         return [e.key for e in load_any(Path(stored.path)).endpoints if e.response_schema is not None]
 
     def add_response_samples(self, file_id: str, endpoint: str, uploads: list[tuple[str, bytes]]) -> SampleAttachment:
-        with self.activity.action("Attach response examples", file_id=file_id, endpoint=endpoint, sample_count=len(uploads)), self.lock:
+        with (
+            self.activity.action(
+                "Attach response examples", file_id=file_id, endpoint=endpoint, sample_count=len(uploads)
+            ),
+            self.lock,
+        ):
             stored = self._spec_file(file_id)
             attachment = store_samples(self.root, file_id, load_any(Path(stored.path)), endpoint, uploads)
             self.samples.append(attachment)
@@ -167,10 +176,12 @@ class Workspace:
             raise ValueError("choose an uploaded upstream or downstream API")
         return stored
 
-    def add_documentation(self, file_id: str, uploads: list[tuple[str, bytes]], endpoint: str = '') -> DocumentAttachment:
-        with self.activity.action('Attach documentation', file_id=file_id, file_count=len(uploads)), self.lock:
+    def add_documentation(
+        self, file_id: str, uploads: list[tuple[str, bytes]], endpoint: str = ""
+    ) -> DocumentAttachment:
+        with self.activity.action("Attach documentation", file_id=file_id, file_count=len(uploads)), self.lock:
             if any(not run.done for run in self.runs.values()):
-                raise ValueError('Wait for the current mapping run to finish before changing documentation')
+                raise ValueError("Wait for the current mapping run to finish before changing documentation")
             stored = self._spec_file(file_id)
             attachment = store_documents(self.root, file_id, load_any(Path(stored.path)), uploads, endpoint)
             self.documents.append(attachment)
@@ -179,29 +190,42 @@ class Workspace:
             return attachment
 
     def remove_documentation(self, document_id: str) -> None:
-        with self.activity.action('Remove documentation', document_id=document_id), self.lock:
+        with self.activity.action("Remove documentation", document_id=document_id), self.lock:
             if any(not run.done for run in self.runs.values()):
-                raise ValueError('Wait for the current mapping run to finish before changing documentation')
+                raise ValueError("Wait for the current mapping run to finish before changing documentation")
             attachment = next((d for d in self.documents if d.id == document_id), None)
             if attachment:
                 self.documents.remove(attachment)
-                shutil.rmtree(self.root / 'documentation' / attachment.id, ignore_errors=True)
+                shutil.rmtree(self.root / "documentation" / attachment.id, ignore_errors=True)
                 self.result = None
                 self._save_index()
 
-    def add_sample_endpoint(self, api_name: str, method: str, path: str, payloads: list[tuple[str, bytes]]) -> StoredFile:
+    def add_sample_endpoint(
+        self, api_name: str, method: str, path: str, payloads: list[tuple[str, bytes]]
+    ) -> StoredFile:
         """Adds captured responses as one endpoint of a spec-less API, creating its manifest on first use."""
-        with self.activity.action("Add API without a spec", method=method.upper(), endpoint=path, sample_count=len(payloads)), self.lock:
+        with (
+            self.activity.action(
+                "Add API without a spec", method=method.upper(), endpoint=path, sample_count=len(payloads)
+            ),
+            self.lock,
+        ):
             folder = self.root / "files" / f"samples-{_slug(api_name)}"
             folder.mkdir(parents=True, exist_ok=True)
             manifest_path = folder / "manifest.json"
-            manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {"name": api_name, "title": api_name, "endpoints": []}
+            manifest = (
+                json.loads(manifest_path.read_text())
+                if manifest_path.exists()
+                else {"name": api_name, "title": api_name, "endpoints": []}
+            )
             names = []
             for index, (name, content) in enumerate(payloads):
                 file_name = f"{_slug(method)}-{_slug(path)}-{index}-{Path(name).name}"
                 (folder / file_name).write_bytes(content)
                 names.append(file_name)
-            manifest["endpoints"] = [e for e in manifest["endpoints"] if (e["method"], e["path"]) != (method.upper(), path)]
+            manifest["endpoints"] = [
+                e for e in manifest["endpoints"] if (e["method"], e["path"]) != (method.upper(), path)
+            ]
             manifest["endpoints"].append({"method": method.upper(), "path": path, "samples": names})
             manifest_path.write_text(json.dumps(manifest, indent=2))
             existing = next((f for f in self.files if Path(f.path) == manifest_path), None)
@@ -209,8 +233,13 @@ class Workspace:
                 existing.summary = _summarise(FileRole.DOWNSTREAM, manifest_path)
                 self._save_index()
                 return existing
-            stored = StoredFile(uuid.uuid4().hex[:12], FileRole.DOWNSTREAM, f"{api_name} (samples)", str(manifest_path),
-                                _summarise(FileRole.DOWNSTREAM, manifest_path))
+            stored = StoredFile(
+                uuid.uuid4().hex[:12],
+                FileRole.DOWNSTREAM,
+                f"{api_name} (samples)",
+                str(manifest_path),
+                _summarise(FileRole.DOWNSTREAM, manifest_path),
+            )
             self.files.append(stored)
             self._save_index()
             return stored
@@ -238,8 +267,14 @@ class Workspace:
     def load_demo(self, samples: Path) -> None:
         with self.activity.action("Load example workspace"), self.lock:
             self.reset()
-            self.add_file(FileRole.UPSTREAM, "core-exchange-6.4.yaml", (samples / "upstream/fdx/core-exchange-6.4.yaml").read_bytes())
-            self.add_file(FileRole.CATALOG, "error-catalog.yaml", (samples / "upstream/fdx/error-catalog.yaml").read_bytes())
+            self.add_file(
+                FileRole.UPSTREAM,
+                "core-exchange-6.4.yaml",
+                (samples / "upstream/fdx/core-exchange-6.4.yaml").read_bytes(),
+            )
+            self.add_file(
+                FileRole.CATALOG, "error-catalog.yaml", (samples / "upstream/fdx/error-catalog.yaml").read_bytes()
+            )
             self.add_file(FileRole.ANSWER_KEY, "answer_key.yaml", (samples / "answer_key.yaml").read_bytes())
             downstream_root = samples / "downstream"
             shutil.copytree(downstream_root / "common", self.root / "files" / "common", dirs_exist_ok=True)
@@ -247,8 +282,15 @@ class Workspace:
                 destination = self.root / "files" / api_dir.name
                 shutil.copytree(api_dir, destination, dirs_exist_ok=True)
                 spec = next(p for p in sorted(destination.iterdir()) if p.stem in ("openapi", "swagger", "manifest"))
-                self.files.append(StoredFile(uuid.uuid4().hex[:12], FileRole.DOWNSTREAM, f"{api_dir.name}/{spec.name}", str(spec),
-                                             _summarise(FileRole.DOWNSTREAM, spec)))
+                self.files.append(
+                    StoredFile(
+                        uuid.uuid4().hex[:12],
+                        FileRole.DOWNSTREAM,
+                        f"{api_dir.name}/{spec.name}",
+                        str(spec),
+                        _summarise(FileRole.DOWNSTREAM, spec),
+                    )
+                )
             self._save_index()
 
     def reset(self) -> None:
@@ -274,11 +316,25 @@ class Workspace:
     def _run(self, state: RunState) -> None:
         self.activity.record("Mapping run", "started", run_id=state.id, local_nlp=bool(self.nlp.model_path))
         failure_type = None
+
         def listen(event: ProgressEvent) -> None:
-            state.events.append({"stage": event.stage, "state": event.state.value, "message": event.message,
-                                 "counts": dict(event.counts), "elapsed_ms": event.elapsed_ms})
-            self.activity.record("Mapping stage", event.state.value, run_id=state.id, stage=event.stage,
-                                 counts=dict(event.counts), elapsed_ms=event.elapsed_ms)
+            state.events.append(
+                {
+                    "stage": event.stage,
+                    "state": event.state.value,
+                    "message": event.message,
+                    "counts": dict(event.counts),
+                    "elapsed_ms": event.elapsed_ms,
+                }
+            )
+            self.activity.record(
+                "Mapping stage",
+                event.state.value,
+                run_id=state.id,
+                stage=event.stage,
+                counts=dict(event.counts),
+                elapsed_ms=event.elapsed_ms,
+            )
 
         try:
             upstream = self._single(FileRole.UPSTREAM)
@@ -288,16 +344,26 @@ class Workspace:
             if not downstreams:
                 raise SpecLoadError("workspace", "add at least one downstream spec or sample API")
             catalog = self._single(FileRole.CATALOG)
-            base_lexicon = DEFAULT_LEXICON.with_name(f'{self.domain}.yaml')
+            base_lexicon = DEFAULT_LEXICON.with_name(f"{self.domain}.yaml")
             lexicon = Lexicon.load(base_lexicon, *(Path(f.path) for f in self.files if f.role == FileRole.LEXICON))
             pipeline = MappingPipeline(lexicon, self.thresholds, listener=listen, nlp=self.nlp)
-            inputs = pipeline.load(Path(upstream.path), downstreams, Path(catalog.path) if catalog else None, tuple(self.overrides))
-            enriched = {f.id: apply_documents(apply_samples(spec, self.samples, f.id), self.documents, f.id)
-                        for f in self.files if f.role in (FileRole.UPSTREAM, FileRole.DOWNSTREAM)
-                        for spec in (inputs.upstream, *inputs.downstreams) if spec.source == f.path}
-            inputs = replace(inputs, upstream=enriched[upstream.id], downstreams=tuple(
-                enriched[f.id] for f in self.files if f.role == FileRole.DOWNSTREAM and f.id in enriched
-            ))
+            inputs = pipeline.load(
+                Path(upstream.path), downstreams, Path(catalog.path) if catalog else None, tuple(self.overrides)
+            )
+            enriched = {
+                f.id: apply_documents(apply_samples(spec, self.samples, f.id), self.documents, f.id)
+                for f in self.files
+                if f.role in (FileRole.UPSTREAM, FileRole.DOWNSTREAM)
+                for spec in (inputs.upstream, *inputs.downstreams)
+                if spec.source == f.path
+            }
+            inputs = replace(
+                inputs,
+                upstream=enriched[upstream.id],
+                downstreams=tuple(
+                    enriched[f.id] for f in self.files if f.role == FileRole.DOWNSTREAM and f.id in enriched
+                ),
+            )
             result = pipeline.run(inputs)
             self._apply_categories(result)
             with self.lock:
@@ -311,11 +377,21 @@ class Workspace:
             state.error = f"{type(error).__name__}: {error}"
             listen(ProgressEvent("run", StageState.FAILED, state.error))
         finally:
-            self.activity.record("Mapping run", "failed" if state.error else "success", run_id=state.id, error_type=failure_type)
+            self.activity.record(
+                "Mapping run", "failed" if state.error else "success", run_id=state.id, error_type=failure_type
+            )
             state.done = True
 
     def set_override(self, override: Override | None, target_key: str) -> list[str]:
-        with self.activity.action("Change mapping decision", target=target_key, source=override.source_key if override else None, decision=override.action.value if override else "clear"), self.lock:
+        with (
+            self.activity.action(
+                "Change mapping decision",
+                target=target_key,
+                source=override.source_key if override else None,
+                decision=override.action.value if override else "clear",
+            ),
+            self.lock,
+        ):
             self.overrides = [o for o in self.overrides if o.target_key != target_key]
             if override is not None:
                 self.overrides.append(override)
@@ -327,12 +403,12 @@ class Workspace:
             return []
 
     def set_category(self, target_key: str, category: str) -> None:
-        with self.activity.action('Categorize mapping', target=target_key), self.lock:
+        with self.activity.action("Categorize mapping", target=target_key), self.lock:
             category = category.strip()
             if len(category) > 80:
-                raise ValueError('Category names can contain at most 80 characters')
+                raise ValueError("Category names can contain at most 80 characters")
             if not self.result or target_key not in self.result.prepared.targets:
-                raise ValueError('Choose a field from the current mapping run')
+                raise ValueError("Choose a field from the current mapping run")
             if category:
                 self.categories[target_key] = category
             else:
@@ -342,7 +418,7 @@ class Workspace:
 
     def _apply_categories(self, result: PipelineResult) -> None:
         for mapping in result.run.mappings:
-            mapping.category = self.categories.get(mapping.target.key, '')
+            mapping.category = self.categories.get(mapping.target.key, "")
 
     def grade(self) -> GradeReport | None:
         answer_key = self._single(FileRole.ANSWER_KEY)
@@ -353,7 +429,7 @@ class Workspace:
     def state(self) -> dict[str, Any]:
         return {
             "files": [asdict(f) for f in self.files],
-            "settings": {**asdict(self.thresholds), "nlp": asdict(self.nlp), 'domain': self.domain},
+            "settings": {**asdict(self.thresholds), "nlp": asdict(self.nlp), "domain": self.domain},
             "overrides": [asdict(o) for o in self.overrides],
             "has_result": self.result is not None,
             "response_samples": [asdict(s) for s in self.samples],
@@ -364,34 +440,57 @@ class Workspace:
         return next((f for f in self.files if f.role == role), None)
 
     def configure(self, thresholds: Thresholds, nlp: NlpSettings, domain: str | None = None) -> None:
-        if domain is not None and domain not in {'finance', 'general'}:
-            raise ValueError('Choose general or finance vocabulary')
-        with self.activity.action("Change settings", automatic=thresholds.auto, review=thresholds.review, local_nlp=bool(nlp.model_path)), self.lock:
+        if domain is not None and domain not in {"finance", "general"}:
+            raise ValueError("Choose general or finance vocabulary")
+        with (
+            self.activity.action(
+                "Change settings", automatic=thresholds.auto, review=thresholds.review, local_nlp=bool(nlp.model_path)
+            ),
+            self.lock,
+        ):
             self.thresholds, self.nlp = thresholds, nlp
             self.domain = domain or self.domain
             self._save_index()
 
     def _save_index(self) -> None:
-        payload = {"files": [asdict(f) for f in self.files], "settings": asdict(self.thresholds), "nlp": asdict(self.nlp), "response_samples": [asdict(s) for s in self.samples]}
-        payload['documentation'] = [asdict(d) for d in self.documents]
-        payload['domain'] = self.domain
-        payload['categories'] = self.categories
+        payload = {
+            "files": [asdict(f) for f in self.files],
+            "settings": asdict(self.thresholds),
+            "nlp": asdict(self.nlp),
+            "response_samples": [asdict(s) for s in self.samples],
+        }
+        payload["documentation"] = [asdict(d) for d in self.documents]
+        payload["domain"] = self.domain
+        payload["categories"] = self.categories
         self._index_path.write_text(json.dumps(payload, indent=2, default=str))
 
     def _load_index(self) -> None:
         if not self._index_path.exists():
             return
         raw = json.loads(self._index_path.read_text())
-        self.files = [StoredFile(f["id"], FileRole(f["role"]), f["name"], f["path"], f.get("summary", {}), f.get("model_files", []))
-                      for f in raw.get("files", []) if Path(f["path"]).exists()]
-        self.samples = [SampleAttachment(**s) for s in raw.get("response_samples", [])
-                        if any(f.id == s["file_id"] for f in self.files)]
-        self.documents = [DocumentAttachment(**d) for d in raw.get('documentation', [])
-                          if any(f.id == d['file_id'] for f in self.files) and Path(d['path']).exists()]
+        self.files = [
+            StoredFile(
+                f["id"], FileRole(f["role"]), f["name"], f["path"], f.get("summary", {}), f.get("model_files", [])
+            )
+            for f in raw.get("files", [])
+            if Path(f["path"]).exists()
+        ]
+        self.samples = [
+            SampleAttachment(**s)
+            for s in raw.get("response_samples", [])
+            if any(f.id == s["file_id"] for f in self.files)
+        ]
+        self.documents = [
+            DocumentAttachment(**d)
+            for d in raw.get("documentation", [])
+            if any(f.id == d["file_id"] for f in self.files) and Path(d["path"]).exists()
+        ]
         self.thresholds = Thresholds(**raw.get("settings", {}))
         self.nlp = NlpSettings(**raw.get("nlp", {}))
-        self.domain = raw.get('domain', 'finance') if raw.get('domain', 'finance') in {'finance', 'general'} else 'finance'
-        self.categories = raw.get('categories', {})
+        self.domain = (
+            raw.get("domain", "finance") if raw.get("domain", "finance") in {"finance", "general"} else "finance"
+        )
+        self.categories = raw.get("categories", {})
 
 
 def parse_override(payload: dict[str, Any]) -> Override:
@@ -401,7 +500,7 @@ def parse_override(payload: dict[str, Any]) -> Override:
         source_key=payload.get("source_key"),
         note=str(payload.get("note", "")),
         author=str(payload.get("author", "")),
-        transforms=parse_steps(payload.get('transforms')),
+        transforms=parse_steps(payload.get("transforms")),
     )
 
 
