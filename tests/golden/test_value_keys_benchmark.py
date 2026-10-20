@@ -22,10 +22,12 @@ def run(lexicon):
 def test_no_wrong_automatic_mapping_and_decoys_never_chosen(run):
     report = grade(run.mappings, load_answer_key(BENCHMARK / "answer_key.yaml", run.upstream.name))
     assert report.counts[Outcome.WRONG_AUTO] + report.counts[Outcome.SPURIOUS_AUTO] == 0, report.failures()
-    assert report.recall >= 0.85, report.summary()
+    assert report.recall == 1.0, report.summary()
+    temperature = next(m for m in run.mappings if m.target.path == "temperature")
+    assert temperature.chosen.source.path == "snapshot.weather.city.{key}"
+    assert any("shared weather context" in note for note in temperature.notes)
     chosen = {m.chosen.source.path for m in run.mappings if m.chosen}
     assert not chosen & {"cpu.temp", "station.tempSensorId"}
-    temperature = next(m for m in run.mappings if m.target.path == "temperature")
     sensor = next(c for c in temperature.alternatives if c.source.path == "station.tempSensorId")
     assert sensor.vetoed_by == "sample value 'TS-104' is text, not the number the target needs"
 

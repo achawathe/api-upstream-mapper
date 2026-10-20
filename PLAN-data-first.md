@@ -119,6 +119,19 @@ Deterministic first; each step lands with its benchmark result.
   still 100%; CDR and UK/Plaid unchanged. Units and ranges were left out: they need domain
   priors that would be fitted to this benchmark's decoys. Still missed: `temperature`, whose
   source is named only by its parents (`snapshot.weather.city`), which is B2.
+- **B2, context:** done, in two parts chosen from what the renamed sets actually missed.
+  (1) Most misses were fields whose own name matched but whose array was renamed past
+  recognition (`addrsssPstl[]` for `addresses[]`), which halved their score. A guessed or
+  abbreviated array name now agrees through any of its words; a clearly spelled one keeps the
+  head-noun rule (`assetTransferNetworks[]` still does not match `transfers[]`). (2) A value
+  named only by its keys (`snapshot.weather.city.{key}` when the request has `{city}`) is
+  suggested for review when both sides share a context word (`weather`) and it is the only
+  field of a native fitting type on both sides; never automatic. Hard-renamed Northwind (16
+  seeds) 73-96% to 79-98% recall, mean 92.5%, no wrong automatic mapping; value-key benchmark
+  100% recall. Northwind, CDR and UK/Plaid unchanged. Not addressed: renames that reverse
+  word order and add filler words to a clearly spelled array name, and leaf spellings the
+  resolver cannot read (`NmNick`, `stts`); CDR without descriptions keeps one wrong automatic
+  mapping that predates this work.
 
 ## Order
 

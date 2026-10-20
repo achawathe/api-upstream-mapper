@@ -126,6 +126,7 @@ class Profiler:
             temporal=bool(_TEMPORAL_CONCEPTS & set(leaf)) or (node.format in _TEMPORAL_FORMATS),
             guesses=tuple(dict.fromkeys(g for segment in node.segments for g in self._guesses(segment))),
             purposes=field_purposes(node, self.lexicon.purpose_rules),
+            collection_words=self._guessed_collection_words(node),
         )
 
     def _bag(
@@ -175,6 +176,13 @@ class Profiler:
                 return concepts
             break
         return resource
+
+    def _guessed_collection_words(self, node: FieldNode) -> frozenset[str]:
+        arrays = [segment.removesuffix("[]") for segment in node.path.split(".") if segment.endswith("[]")]
+        name = next((a for a in reversed(arrays) if a), "")
+        if not name or not (self._guesses(name) or self._abbreviated(name)):
+            return frozenset()
+        return frozenset(c for c in self._concepts(name) if self._is_known(c))
 
     def _guesses(self, text: str) -> list[tuple[str, str]]:
         return [(token, word) for token in split_identifier(text) if (word := self.resolver.resolve(token)) != token]

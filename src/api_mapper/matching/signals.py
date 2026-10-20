@@ -113,6 +113,7 @@ def collection_agrees(target: FieldProfile, source: FieldProfile, ctx: SignalCon
     Two arrays must share their head noun (`transactions[]` ~ `entries[]`, but not
     `assetTransferNetworks[]` ~ `transfers[]`). A source outside any array is read once
     per item, so its endpoint only needs to be about the same thing (`holders[]` ~ `/parties/{id}`).
+    A guessed or abbreviated array name agrees through any of its words (`addrsssPstl[]` ~ `addresses[]`).
     """
     target_collection = target.collection
     if (
@@ -124,6 +125,8 @@ def collection_agrees(target: FieldProfile, source: FieldProfile, ctx: SignalCon
     ):
         target_collection = target.endpoint_concepts[-1:]
     if not target_collection:
+        return True
+    if any(ctx.lexicon.relatedness(target_collection[-1], word) >= SAME_KIND for word in source.collection_words):
         return True
     if source.collection:
         target_head, source_head = target_collection[-1], source.collection[-1]

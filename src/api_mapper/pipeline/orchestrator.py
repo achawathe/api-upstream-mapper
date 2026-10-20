@@ -15,6 +15,7 @@ from api_mapper.errors.catalog import (
 from api_mapper.errors.error_mapper import ErrorMapper
 from api_mapper.loaders import SpecLoadError, load_any
 from api_mapper.matching.assigner import Thresholds, assign
+from api_mapper.matching.context_fallback import suggest_from_context
 from api_mapper.matching.engine import MatchingEngine, PreparedMatch
 from api_mapper.matching.reachability import Reachability
 from api_mapper.matching.semantic import NlpSettings
@@ -143,6 +144,7 @@ class MappingPipeline:
 
         with self._stage("assign", "choosing a source per field") as counts:
             automatic = assign(targets, candidates, self.thresholds)
+            suggest_from_context(automatic, prepared, self.lexicon)
             mappings = [_copy(m) for m in automatic]
             active, notes = _active_overrides(inputs.overrides, scope)
             warnings.extend(notes)

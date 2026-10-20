@@ -45,17 +45,23 @@ def review_reasons(target: FieldNode, candidate: Candidate, auto_threshold: floa
         reasons.append("local NLP supports this suggestion; confirm the field meaning before accepting")
     if any(e.signal is Signal.SEMANTIC_REVIEW for e in evidence) and candidate.score < auto_threshold:
         reasons.append("descriptive similarity supports review; rule confidence remains below the automatic threshold")
-    if candidate.source.map_path is not None:
-        what = "the key of each entry" if candidate.source.is_map_key else "one value per entry"
-        reasons.append(
-            f"source is {what} of {candidate.source.map_path}, whose keys are data; "
-            "confirm which entry this request selects, for example by a path parameter"
-        )
+    if entry := map_entry_reason(candidate.source):
+        reasons.append(entry)
     if candidate.source.array_depth > target.array_depth:
         reasons.append("source has additional array levels; confirm which item supplies this value")
     if target.type in {"number", "integer"} and candidate.source.type == "string" and type_score < 0.85:
         reasons.append("string-to-number conversion lacks numeric sample evidence; confirm before accepting")
     return reasons
+
+
+def map_entry_reason(source: FieldNode) -> str | None:
+    if source.map_path is None:
+        return None
+    what = "the key of each entry" if source.is_map_key else "one value per entry"
+    return (
+        f"source is {what} of {source.map_path}, whose keys are data; "
+        "confirm which entry this request selects, for example by a path parameter"
+    )
 
 
 def unrouted_enum_values(params: dict, routed_elsewhere: set[str]) -> list[str] | None:

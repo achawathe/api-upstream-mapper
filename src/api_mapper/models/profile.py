@@ -12,7 +12,9 @@ class FieldProfile:
     parent names count less, unless the leaf is too generic (`id`, `amount`) to stand alone.
     `anchor` is what the field itself is about: its leaf concepts without the entity
     word, preferring meaningful ones over generic ones. `collection` is the concept of the
-    innermost array it sits in (`transaction` for `transactions[].amount`).
+    innermost array it sits in (`transaction` for `transactions[].amount`). When that array's
+    name is only a guess or an abbreviation (`addrsssPstl[]`), its word order cannot be trusted,
+    so `collection_words` keeps every word it was read as (address, postal).
     `qualifiers` are account families stated on the field's own path or schemas;
     `scope` are families implied only by the API or endpoint it belongs to.
     `identity` is what the field names, without account-family words (`loan_id` -> account
@@ -42,6 +44,7 @@ class FieldProfile:
     endpoint_inputs: frozenset[frozenset[str]] = frozenset()
     record: frozenset[str] = frozenset()
     purposes: tuple[PurposeFact, ...] = ()
+    collection_words: frozenset[str] = frozenset()
 
     @property
     def families(self) -> frozenset[str]:
