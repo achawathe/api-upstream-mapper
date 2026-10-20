@@ -2,6 +2,7 @@ import { api } from "../api.js";
 import { h, mount, scoreBar, statusPill, STATUS_LABELS, toast } from "../dom.js";
 import { applyOverrideResponse, changed, store } from "../state.js";
 import { comparisonView } from "./candidate-comparison.js";
+import { flatten, groupTree, statusCounts } from "./field-groups.js";
 import { mappingBlocks } from "./mapping-blocks.js";
 
 const MAX_ROWS = 600;
@@ -92,11 +93,37 @@ function table(rows) {
         "table",
         {},
         h("thead", {}, h("tr", {}, h("th", {}, "Upstream field"), h("th", {}, "Status"), h("th", {}, "Confidence"), h("th", {}, "Downstream source"), h("th", {}, "Transform"))),
-        h("tbody", {}, shown.map(row)),
+        h("tbody", {}, groupedRows(shown)),
       ),
     ),
     rows.length > MAX_ROWS && h("p", { class: "muted small" }, `Showing ${MAX_ROWS} of ${rows.length}. Narrow the filters to see the rest.`),
   );
+}
+
+function groupedRows(rows) {
+  const collapsed = store.mappings.collapsed;
+  const header = (level, id, label, mappings) => h("tr", { class: `group-row ${level}`, tabindex: 0, "aria-expanded": String(!collapsed.has(id)),
+    onclick: () => { collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id); changed(); },
+    onkeydown: (event) => { if (event.key === "Enter") { collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id); changed(); } } },
+  h("td", { colspan: 5 }, h("span", { class: "caret" }, collapsed.has(id) ? "▸" : "▾"), " ", h("span", { class: level === "object" ? "mono" : "" }, label), ` (${mappings.length}) `, statusCounts(mappings)));
+  return [...groupTree(rows).entries()].flatMap(([endpoint, variants]) => {
+    const endpointId = endpoint;
+    const out = [header("endpoint", endpointId, endpoint, flatten(variants))];
+    if (collapsed.has(endpointId)) return out;
+    for (const [variant, objects] of variants) {
+      const variantId = `${endpointId}|${variant}`;
+      if (variant) {
+        out.push(header("variant", variantId, variant, flatten(objects)));
+        if (collapsed.has(variantId)) continue;
+      }
+      for (const [object, mappings] of objects) {
+        const objectId = `${variantId}|${object}`;
+        out.push(header("object", objectId, object, mappings));
+        if (!collapsed.has(objectId)) out.push(...mappings.map(row));
+      }
+    }
+    return out;
+  });
 }
 
 function row(mapping) {

@@ -161,6 +161,12 @@ Command line, writing `output/mapping-report.xlsx` and `.json`:
 .venv/bin/api-mapper map --upstream samples/upstream/fdx/core-exchange-6.4.yaml --downstream samples/downstream/*/openapi.* samples/downstream/deposits/swagger.json samples/downstream/routing/manifest.yaml --errors samples/upstream/fdx/error-catalog.yaml --answer-key samples/answer_key.yaml
 ```
 
+To map only some upstream endpoints, add `--endpoint "GET /accounts"` once per endpoint. In
+the GUI, tick them under **Endpoints to map** and save; the selection is kept with the
+workspace. Only the selected endpoints are scored, and their decisions match a full run.
+Saved decisions for other endpoints are kept and not applied, and reports name the endpoints
+mapped. Results are grouped by endpoint, then schema variant, then parent object.
+
 Tests (unit, golden accuracy, mutation stress, 50-API scale):
 
 ```bash

@@ -90,6 +90,10 @@ class SettingsBody(BaseModel):
     domain: Literal["finance", "general"] | None = None
 
 
+class EndpointScopeBody(BaseModel):
+    endpoints: list[str] = []
+
+
 class ValidateBody(BaseModel):
     endpoint: str
     params: dict[str, Any] = {}
@@ -230,6 +234,20 @@ def settings(body: SettingsBody) -> dict[str, Any]:
         raise HTTPException(400, "the review threshold cannot be above the automatic threshold")
     nlp = NlpSettings(**body.nlp.model_dump()) if body.nlp else workspace.nlp
     workspace.configure(Thresholds(auto=body.auto, review=body.review), nlp, body.domain)
+    return workspace.state()
+
+
+@app.get("/api/upstream/endpoints")
+def upstream_endpoints() -> dict[str, Any]:
+    return {"endpoints": workspace.upstream_endpoints()}
+
+
+@app.put("/api/endpoint-scope")
+def endpoint_scope(body: EndpointScopeBody) -> dict[str, Any]:
+    try:
+        workspace.set_endpoints(body.endpoints)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
     return workspace.state()
 
 

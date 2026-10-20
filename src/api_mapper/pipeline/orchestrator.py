@@ -39,11 +39,14 @@ DEFAULT_THRESHOLDS = Thresholds()
 
 @dataclass(frozen=True)
 class PipelineInputs:
+    """`endpoints` limits mapping to these upstream endpoint keys; empty maps every endpoint."""
+
     upstream: ApiSpec
     downstreams: tuple[ApiSpec, ...]
     error_catalog: ErrorCatalog | None = None
     overrides: tuple[Override, ...] = ()
     load_warnings: tuple[str, ...] = ()
+    endpoints: tuple[str, ...] = ()
 
 
 @dataclass
@@ -100,9 +103,13 @@ class MappingPipeline:
         with self._stage("flatten", "turning schemas into fields") as counts:
             upstream_nodes = flatten_spec(inputs.upstream)
             downstream_nodes = {spec.name: flatten_spec(spec) for spec in inputs.downstreams}
+            scope = _scope(inputs.endpoints, inputs.upstream, warnings)
             counts.update(
-                upstream_fields=len(upstream_nodes), downstream_fields=sum(map(len, downstream_nodes.values()))
+                upstream_fields=sum(_in_scope(n.endpoint, scope) for n in upstream_nodes),
+                downstream_fields=sum(map(len, downstream_nodes.values())),
             )
+            if scope:
+                counts.update(selected_endpoints=len(scope))
             documented = sum(
                 bool(n.documentation)
                 for n in [*upstream_nodes, *(n for nodes in downstream_nodes.values() for n in nodes)]
@@ -119,7 +126,8 @@ class MappingPipeline:
 
         with self._stage("profile", "reading names, context and qualifiers") as counts:
             profiler = Profiler(self.lexicon, Profiler.vocabulary_of(upstream_nodes))
-            targets = profiler.profile_spec(inputs.upstream, upstream_nodes)
+            every_target = profiler.profile_spec(inputs.upstream, upstream_nodes)
+            targets = [t for t in every_target if _in_scope(t.node.endpoint, scope)]
             sources = [
                 p for spec in inputs.downstreams for p in profiler.profile_spec(spec, downstream_nodes[spec.name])
             ]
@@ -129,17 +137,24 @@ class MappingPipeline:
             if self.engine.nlp.model_path:
                 self._emit(ProgressEvent("score", StageState.INFO, f"local NLP enabled: {self.engine.nlp.model_path}"))
             reachability = Reachability(inputs.downstreams, sources, profiler.param_identity, self.lexicon)
-            prepared = self.engine.prepare(targets, sources, reachability)
+            prepared = self.engine.prepare(targets, sources, reachability, every_target)
             candidates = prepared.score_all()
             counts.update(pairs_scored=sum(map(len, candidates.values())))
 
         with self._stage("assign", "choosing a source per field") as counts:
             automatic = assign(targets, candidates, self.thresholds)
             mappings = [_copy(m) for m in automatic]
-            warnings.extend(apply_overrides(mappings, inputs.overrides, prepared.score_pair))
-            counts.update(fields=len(mappings), overrides=len(inputs.overrides))
+            active, notes = _active_overrides(inputs.overrides, scope)
+            warnings.extend(notes)
+            warnings.extend(apply_overrides(mappings, active, prepared.score_pair))
+            counts.update(fields=len(mappings), overrides=len(active))
 
-        run = MappingRun(upstream=inputs.upstream, downstreams=inputs.downstreams, mappings=mappings)
+        run = MappingRun(
+            upstream=inputs.upstream,
+            downstreams=inputs.downstreams,
+            mappings=mappings,
+            scope=tuple(sorted(scope or ())),
+        )
         counts_by_status = run.status_counts()
         self._emit(ProgressEvent("assign", StageState.INFO, "status breakdown", counts_by_status))
 
@@ -150,7 +165,8 @@ class MappingPipeline:
             counts.update(errors=len(run.error_mappings))
 
         with self._stage("plan", "planning downstream calls") as counts:
-            run.call_plans = CallPlanner(self.lexicon, inputs.upstream, inputs.downstreams, sources).plan(mappings)
+            plans = CallPlanner(self.lexicon, inputs.upstream, inputs.downstreams, sources).plan(mappings)
+            run.call_plans = [plan for plan in plans if _in_scope(plan.upstream_endpoint, scope)]
             counts.update(calls=sum(len(plan.steps) for plan in run.call_plans))
 
         run.warnings = warnings
@@ -160,11 +176,12 @@ class MappingPipeline:
     def reapply_overrides(self, result: PipelineResult, overrides: tuple[Override, ...]) -> list[str]:
         """Re-decides from the automatic baseline with a new set of overrides, without re-scoring."""
         mappings = [_copy(m) for m in result.automatic]
-        warnings = apply_overrides(mappings, overrides, result.prepared.score_pair)
+        scope = frozenset(result.run.scope) or None
+        active, warnings = _active_overrides(overrides, scope)
+        warnings.extend(apply_overrides(mappings, active, result.prepared.score_pair))
         result.run.mappings = mappings
-        result.run.call_plans = CallPlanner(
-            self.lexicon, result.run.upstream, result.run.downstreams, result.sources
-        ).plan(mappings)
+        plans = CallPlanner(self.lexicon, result.run.upstream, result.run.downstreams, result.sources).plan(mappings)
+        result.run.call_plans = [plan for plan in plans if _in_scope(plan.upstream_endpoint, scope)]
         return warnings
 
     @contextmanager
@@ -204,6 +221,34 @@ def _api_name(path: Path) -> str | None:
     if re.fullmatch(r"[0-9a-f]{12}", path.parent.name):
         return None
     return path.parent.name
+
+
+def _scope(selected: tuple[str, ...], upstream: ApiSpec, warnings: list[str]) -> frozenset[str] | None:
+    """None maps every endpoint; a selection that names no real endpoint maps nothing."""
+    if not selected:
+        return None
+    known = {endpoint.key for endpoint in upstream.endpoints}
+    warnings.extend(f"selected endpoint {key} is not in the upstream spec" for key in selected if key not in known)
+    return frozenset(key for key in selected if key in known)
+
+
+def _in_scope(endpoint: str, scope: frozenset[str] | None) -> bool:
+    return scope is None or endpoint in scope
+
+
+def _active_overrides(
+    overrides: tuple[Override, ...], scope: frozenset[str] | None
+) -> tuple[tuple[Override, ...], list[str]]:
+    """Saved decisions for endpoints outside the selection are kept for later runs, not applied."""
+    active = tuple(o for o in overrides if _in_scope(_endpoint_of(o.target_key), scope))
+    kept = len(overrides) - len(active)
+    note = [f"{kept} saved decisions belong to endpoints outside the selection; kept, not applied"] if kept else []
+    return active, note
+
+
+def _endpoint_of(target_key: str) -> str:
+    parts = target_key.split("|")
+    return parts[1] if len(parts) == 3 else ""
 
 
 def _ms(started: float) -> float:

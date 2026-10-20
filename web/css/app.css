@@ -230,3 +230,14 @@ td .mono { word-break: break-all; }
   .block-workbench { grid-template-columns: 1fr; grid-template-areas: "fields" "sources" "mapping"; }
   .field-organizer, .palette { position: static; max-height: 320px; }
 }
+.scope-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; margin-top: 8px; }
+.scope-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.scope-row:last-child { border-bottom: 0; }
+.scope-row[hidden] { display: none; }
+.group-row td { background: #f4f6f9; cursor: pointer; font-weight: 600; font-size: 12.5px; }
+.group-row.variant td { padding-left: 22px; background: #f8f9fb; }
+.group-row.object td { padding-left: 38px; background: #fcfcfd; font-weight: 500; }
+.group-row .caret { display: inline-block; width: 10px; color: var(--muted); }
+.group-counts span + span::before { content: " · "; }
+.field-group > summary { cursor: pointer; padding: 4px 0; }
+.field-group .field-group { margin-left: 12px; }

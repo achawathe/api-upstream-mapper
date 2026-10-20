@@ -5,6 +5,7 @@ import { canRun, refreshWorkspace, startRun, store } from "../state.js";
 import { jsonResponseInput } from "./json-response-input.js";
 import { upstreamModels } from "./upstream-models.js";
 import { documentationCard } from "./documentation.js";
+import { endpointScopeCard } from "./endpoint-scope.js";
 
 const ROLES = [
   { role: "upstream", title: "Upstream spec", hint: "Upload the upstream spec together with its referenced model YAML/JSON files. Use Choose folder for nested references.", multiple: true },
@@ -27,6 +28,7 @@ export function renderInputs(container) {
       h("button", { class: "btn danger", onclick: () => act(api.reset(), "Workspace cleared") }, "Clear workspace"),
     ),
     h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, ROLES.map((role) => roleCard(role, files))),
+    files.some((f) => f.role === "upstream" && f.summary?.ok !== false) && h("div", { style: { marginTop: "16px" } }, endpointScopeCard()),
     h("div", { class: "grid grid-2", style: { marginTop: "16px" } }, documentationCard(), responseSamplesCard(), settingsCard(), sampleCard()),
     h(
       "div",

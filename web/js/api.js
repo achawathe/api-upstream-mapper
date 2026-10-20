@@ -20,6 +20,8 @@ export const api = {
     return request("POST", "/api/files", form);
   },
   fileEndpoints: (id) => request("GET", `/api/files/${id}/endpoints`),
+  upstreamEndpoints: () => request("GET", "/api/upstream/endpoints"),
+  setEndpointScope: (endpoints) => request("PUT", "/api/endpoint-scope", { endpoints }),
   attachModelFiles: (id, files) => {
     const form = new FormData();
     files.forEach((file) => form.append("files", file, file.webkitRelativePath || file.name));

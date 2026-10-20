@@ -32,6 +32,7 @@ class MappingRun:
     call_plans: list[EndpointCallPlan] = field(default_factory=list)
     events: list[ProgressEvent] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    scope: tuple[str, ...] = ()
 
     def by_status(self, status: MappingStatus) -> list[FieldMapping]:
         return [m for m in self.mappings if m.status == status]

@@ -88,6 +88,7 @@ def _summary(sheet: Worksheet, run: MappingRun) -> None:
     sheet.title = "Summary"
     sheet["A1"] = f"Mapping report: {run.upstream.title} {run.upstream.version}".strip()
     sheet["A1"].font = Font(bold=True, size=14)
+    sheet["A2"] = f"Endpoints mapped: {', '.join(run.scope)}" if run.scope else "Endpoints mapped: all"
     rows: list[Sequence[Any]] = [("Downstream API", "Title", "Source kind", "Endpoints")]
     rows += [(s.name, s.title, s.kind.value, len(s.endpoints)) for s in run.downstreams]
     _table(sheet, rows, start_row=3)

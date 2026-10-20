@@ -84,3 +84,24 @@ def test_broken_upload_is_reported_not_fatal(client):
     )
     stored = response.json()["files"][0]
     assert stored["summary"]["ok"] is False
+
+
+def test_endpoint_selection_limits_the_run_and_persists(client):
+    client.post("/api/demo")
+    listed = client.get("/api/upstream/endpoints").json()["endpoints"]
+    assert listed and all(item["fields"] > 0 and not item["selected"] for item in listed)
+    chosen = [item["key"] for item in listed[:2]]
+
+    state = client.put("/api/endpoint-scope", json={"endpoints": chosen}).json()
+    assert state["settings"]["endpoints"] == chosen
+    assert client.put("/api/endpoint-scope", json={"endpoints": ["GET /nowhere"]}).status_code == 400
+
+    result = _run(client)
+    assert {m["target"]["endpoint"] for m in result["mappings"]} == set(chosen)
+    assert result["endpoints_mapped"] == sorted(chosen)
+    assert [item["key"] for item in client.get("/api/upstream/endpoints").json()["endpoints"] if item["selected"]] == [
+        key for key in (item["key"] for item in listed) if key in chosen
+    ]
+
+    client.put("/api/endpoint-scope", json={"endpoints": []})
+    assert {m["target"]["endpoint"] for m in _run(client)["mappings"]} > set(chosen)

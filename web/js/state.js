@@ -5,7 +5,7 @@ export const store = {
   workspace: null,
   result: null,
   run: { id: null, events: [], done: false, error: null },
-  mappings: { filters: { statuses: new Set(), endpoint: "", variant: "", text: "", requiredOnly: false, category: "" }, selected: null, mode: "blocks", grouping: "endpoint", drafts: {} },
+  mappings: { filters: { statuses: new Set(), endpoint: "", variant: "", text: "", requiredOnly: false, category: "" }, selected: null, mode: "blocks", grouping: "endpoint", collapsed: new Set(), drafts: {} },
   plan: { endpoint: null },
   validate: { form: null, result: null, options: null, busy: false },
 };

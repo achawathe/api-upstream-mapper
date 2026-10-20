@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from api_mapper.evaluation.answer_key import load_answer_key
@@ -40,7 +41,7 @@ def _map(args: argparse.Namespace) -> int:
     )
     overrides = tuple(load_overrides(args.overrides)) if args.overrides else ()
     inputs = pipeline.load(args.upstream, args.downstream, args.errors, overrides)
-    run = pipeline.run(inputs).run
+    run = pipeline.run(replace(inputs, endpoints=tuple(args.endpoint))).run
 
     args.out.mkdir(parents=True, exist_ok=True)
     excel = write_excel_report(run, args.out / "mapping-report.xlsx")
@@ -76,6 +77,12 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--errors", type=Path, help="upstream error catalog (YAML)")
     run.add_argument("--overrides", type=Path, help="saved manual decisions (JSON)")
     run.add_argument("--lexicon", type=Path, nargs="*", default=[], help="extra lexicon files merged over the default")
+    run.add_argument(
+        "--endpoint",
+        action="append",
+        default=[],
+        help='map only this upstream endpoint, e.g. "GET /accounts"; repeat for more (default: all)',
+    )
     run.add_argument("--answer-key", type=Path, help="grade the run against this answer key")
     run.add_argument("--out", type=Path, default=Path("output"))
     run.add_argument("--quiet", action="store_true")

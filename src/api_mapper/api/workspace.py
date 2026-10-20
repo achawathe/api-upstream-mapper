@@ -29,6 +29,7 @@ from api_mapper.loaders import SpecLoadError, load_any
 from api_mapper.matching.assigner import Thresholds
 from api_mapper.matching.semantic import NlpSettings
 from api_mapper.models import Override, OverrideAction, ProgressEvent, StageState
+from api_mapper.normalize.flattener import flatten_spec
 from api_mapper.normalize.lexicon import DEFAULT_LEXICON, Lexicon
 from api_mapper.pipeline.orchestrator import MappingPipeline, PipelineResult
 from api_mapper.pipeline.overrides import load_overrides, save_overrides
@@ -77,6 +78,7 @@ class Workspace:
         self.thresholds = Thresholds()
         self.nlp = NlpSettings()
         self.domain = "finance"
+        self.endpoints: list[str] = []
         self.overrides: list[Override] = load_overrides(self._overrides_path)
         self.result: PipelineResult | None = None
         self.pipeline: MappingPipeline | None = None
@@ -124,6 +126,9 @@ class Workspace:
                 for existing in [f for f in self.files if f.role == role]:
                     self.remove_file(existing.id)
             self.files.extend(stored)
+            if role == FileRole.UPSTREAM:
+                known = {item["key"] for item in self.upstream_endpoints()}
+                self.endpoints = [key for key in self.endpoints if key in known]
             self.result = None
             self._save_index()
             return stored
@@ -145,6 +150,34 @@ class Workspace:
     def spec_endpoints(self, file_id: str) -> list[str]:
         stored = self._spec_file(file_id)
         return [e.key for e in load_any(Path(stored.path)).endpoints if e.response_schema is not None]
+
+    def upstream_endpoints(self) -> list[dict[str, Any]]:
+        """Upstream endpoints that have response fields, with field counts and whether each is selected."""
+        upstream = self._single(FileRole.UPSTREAM)
+        if upstream is None:
+            return []
+        try:
+            spec = load_any(Path(upstream.path))
+        except SpecLoadError:
+            return []
+        fields: dict[str, int] = {}
+        for node in flatten_spec(spec):
+            fields[node.endpoint] = fields.get(node.endpoint, 0) + 1
+        return [
+            {"key": e.key, "fields": fields[e.key], "selected": e.key in self.endpoints}
+            for e in spec.endpoints
+            if e.key in fields
+        ]
+
+    def set_endpoints(self, endpoints: list[str]) -> None:
+        """An empty selection maps every upstream endpoint."""
+        with self.activity.action("Select upstream endpoints", endpoint_count=len(endpoints)), self.lock:
+            known = {item["key"] for item in self.upstream_endpoints()}
+            unknown = [key for key in endpoints if key not in known]
+            if unknown:
+                raise ValueError(f"not an upstream endpoint with response fields: {', '.join(unknown)}")
+            self.endpoints = list(dict.fromkeys(endpoints))
+            self._save_index()
 
     def add_response_samples(self, file_id: str, endpoint: str, uploads: list[tuple[str, bytes]]) -> SampleAttachment:
         with (
@@ -303,6 +336,7 @@ class Workspace:
             self.files = []
             self.overrides = []
             self.categories = {}
+            self.endpoints = []
             self.result = None
             save_overrides(self._overrides_path, [])
             self._save_index()
@@ -363,6 +397,7 @@ class Workspace:
                 downstreams=tuple(
                     enriched[f.id] for f in self.files if f.role == FileRole.DOWNSTREAM and f.id in enriched
                 ),
+                endpoints=tuple(self.endpoints),
             )
             result = pipeline.run(inputs)
             self._apply_categories(result)
@@ -429,7 +464,12 @@ class Workspace:
     def state(self) -> dict[str, Any]:
         return {
             "files": [asdict(f) for f in self.files],
-            "settings": {**asdict(self.thresholds), "nlp": asdict(self.nlp), "domain": self.domain},
+            "settings": {
+                **asdict(self.thresholds),
+                "nlp": asdict(self.nlp),
+                "domain": self.domain,
+                "endpoints": list(self.endpoints),
+            },
             "overrides": [asdict(o) for o in self.overrides],
             "has_result": self.result is not None,
             "response_samples": [asdict(s) for s in self.samples],
@@ -462,6 +502,7 @@ class Workspace:
         payload["documentation"] = [asdict(d) for d in self.documents]
         payload["domain"] = self.domain
         payload["categories"] = self.categories
+        payload["endpoints"] = self.endpoints
         self._index_path.write_text(json.dumps(payload, indent=2, default=str))
 
     def _load_index(self) -> None:
@@ -491,6 +532,7 @@ class Workspace:
             raw.get("domain", "finance") if raw.get("domain", "finance") in {"finance", "general"} else "finance"
         )
         self.categories = raw.get("categories", {})
+        self.endpoints = [str(key) for key in raw.get("endpoints", [])]
 
 
 def parse_override(payload: dict[str, Any]) -> Override:

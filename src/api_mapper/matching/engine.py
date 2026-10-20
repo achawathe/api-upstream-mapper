@@ -16,7 +16,10 @@ from api_mapper.transforms.inference import TypeFitter
 
 
 class PreparedMatch:
-    """Scoring state for one run; kept so a user can ask for any (target, source) pair later."""
+    """Scoring state for one run; kept so a user can ask for any (target, source) pair later.
+
+    `corpus` is every upstream field when only some are mapped, so concept weights match a full run.
+    """
 
     def __init__(
         self,
@@ -26,10 +29,11 @@ class PreparedMatch:
         fitter: TypeFitter,
         reachability: Reachability | None = None,
         semantic: SemanticIndex | None = None,
+        corpus: list[FieldProfile] | None = None,
     ):
         self.targets = {t.node.key: t for t in targets}
         self.sources = {s.node.key: s for s in sources}
-        weights = ConceptWeights([*targets, *sources], lexicon)
+        weights = ConceptWeights([*(targets if corpus is None else corpus), *sources], lexicon)
         self.scorer = PairScorer(
             SignalContext(lexicon, weights, fitter.enum_mapper, reachability), fitter, semantic=semantic
         )
@@ -64,14 +68,18 @@ class MatchingEngine:
         self._encoder = encoder
 
     def prepare(
-        self, targets: list[FieldProfile], sources: list[FieldProfile], reachability: Reachability | None = None
+        self,
+        targets: list[FieldProfile],
+        sources: list[FieldProfile],
+        reachability: Reachability | None = None,
+        corpus: list[FieldProfile] | None = None,
     ) -> PreparedMatch:
         semantic = None
         if self.nlp.model_path or self._encoder is not None:
             if self._encoder is None:
                 self._encoder = LocalSentenceEncoder(self.nlp.model_path)
             semantic = SemanticIndex([*targets, *sources], self._encoder, self.nlp)
-        return PreparedMatch(targets, sources, self.lexicon, self.fitter, reachability, semantic)
+        return PreparedMatch(targets, sources, self.lexicon, self.fitter, reachability, semantic, corpus)
 
     def match(self, targets: list[FieldProfile], sources: list[FieldProfile]) -> list[FieldMapping]:
         prepared = self.prepare(targets, sources)

@@ -26,6 +26,7 @@ def run_to_dict(run: MappingRun, include_timings: bool = True) -> dict[str, Any]
             for s in run.downstreams
         ],
         "summary": run.status_counts(),
+        "endpoints_mapped": list(run.scope) or "all",
         "mappings": [mapping_to_dict(m) for m in run.mappings],
         "errors": [error_to_dict(e) for e in run.error_mappings],
         "call_plans": [plan_to_dict(p) for p in run.call_plans],

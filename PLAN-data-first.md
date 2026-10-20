@@ -1,0 +1,114 @@
+# Plan: data-first matching and mapping by endpoint
+
+Status: approved 20 October 2026, decisions recorded at the end. Building Workstream A first.
+
+## Goals
+
+1. **Map by meaning, not spelling.** Fields named wildly differently should still map when the
+   response data and the documentation agree. Example: a "Weather Snapshot Service" whose
+   sample JSON holds the temperature at `snapshot.weather.city.toronto` should beat a
+   `station.tempSensorId` or a `cpu.temp` that only shares the word "temp". Likewise a
+   downstream `entitlements` should be caught for an upstream `inheritance` when their
+   definitions or data agree, although the names share nothing.
+2. **Map only what is needed.** Pick the upstream endpoints to map (say three of forty); the app
+   maps only those, and the results are grouped by endpoint and object in the GUI.
+
+Hard rules stay: no wrong automatic mapping on any benchmark; uncertain matches go to review.
+Review suggestions may be wrong up to 5–10% of the time. Sample JSON is evidence, never proof:
+a sample can be partial or unrepresentative, so values support or contradict a match but never
+make one on their own.
+
+## What the measurements showed (20 October)
+
+- Sample inference treats every JSON key as a field name. In the weather case the cities
+  became five fields (`...city.toronto`, `...city.vancouver`, ...), the temperatures were never
+  candidates, and the closest candidates for `temperature` were `station.tempSensorId` (0.26)
+  and `cpu.temp` (0.24).
+- MiniLM changed 0 decisions on Northwind and four renamed copies, documented or not, at
+  thresholds from 0.80 down to 0.50. On CDR, lowering the threshold only added wrong review
+  suggestions (59 to 78) with no recall gain.
+- Its review fallback requires both fields to have descriptions, so it cannot act on
+  undocumented fields, which is where it was meant to help.
+- MiniLM scores the correct source about the same as the best wrong one (CDR medians 0.611 and
+  0.612). Blending it into the rules' top five never improved the choice.
+- Names alone mislead the model; definitions fix it. For `inheritance`, MiniLM ranked
+  `inheritedFrom` first (0.668) and `entitlements` at 0.379. With one-line definitions on both,
+  `entitlements` ranked first (0.723) and `inheritedFrom` fell to 0.469. Ranking candidates
+  against each other works where a fixed 0.80 bar never fires.
+- The recall gap is mostly upstream of scoring: on CDR, 11 targets never had the right source in
+  the rules' top five.
+
+## Workstream A: map by endpoint
+
+- **Scope setting.** A list of upstream endpoint keys (`GET /accounts/{accountId}`); empty means
+  all. Set in the GUI, sent with each run, accepted by the CLI as a repeatable
+  `--endpoint "GET /accounts"`.
+- **Pipeline.** Targets outside the scope are dropped before profiling and scoring, so a narrow
+  run is also a faster run. Downstream sources are not filtered: any downstream can still feed a
+  selected endpoint. Call plans cover only the selected endpoints.
+- **Overrides and grading.** Overrides for out-of-scope fields are kept and reported as
+  inactive, never deleted. Answer-key grading counts only in-scope targets.
+- **Reports.** Excel and JSON reports state the scope and include only in-scope fields.
+- **GUI, inputs.** An endpoint checklist for the upstream API: search, select all or none, and
+  the number of fields per endpoint, from the existing `/api/files/{id}/endpoints` route.
+- **GUI, results.** Mappings grouped by endpoint, then object (see decision 1), as collapsible
+  sections with per-group counts of automatic, review and unmapped. The current filters keep
+  working inside the groups.
+- **Tests.** Scope filtering in the pipeline, the API, overrides kept but inactive, grading by
+  scope, and a GUI check in the browser preview.
+
+## Workstream B: data and documentation first
+
+Deterministic first; each step lands with its benchmark result.
+
+1. **Value keys in sample JSON.** When sibling keys vary between samples, or look like values
+   (city names, dates, IDs, codes, numbers) and all hold the same value shape, read them as a map:
+   `snapshot.weather.city{key}`. The key becomes a field of its own (`city`), and a value inside
+   the map can be bound to an upstream input with a selection condition (entry where key equals
+   `{city}`). Declared `additionalProperties` maps already work this way; inferred ones do not.
+2. **Context gives meaning.** A field is judged by its operation ("Weather Snapshot Service",
+   `GET /weather/snapshot`), its parent path (`snapshot.weather.city`) and its leaf together.
+   A leaf that is a value or an unknown token takes its meaning from its parents.
+3. **Values as checks.** From samples and examples: type, format, range, units, sign and
+   cardinality. A clear contradiction rules a candidate out (`"TS-104"` cannot be a temperature
+   in Celsius); agreement supports it. Values never make a match alone.
+4. **Documentation outranks names.** Matching definitions already take precedence over name
+   similarity for review. Extend that to definitions attached from separate documents and to
+   undocumented sources whose parents are documented.
+5. **NLP for narrow questions.** Use the local model where general language knowledge is
+   reliable and the answer can be checked: is this key a value or a field name ("toronto" is a
+   city), does "temp" mean temperature or temporary here, which expansion fits an unknown
+   abbreviation. Answers become explainable evidence; proposed lexicon entries wait for a person.
+   Allow NLP retrieval for undocumented fields, ranked against the other candidates rather
+   than against a fixed threshold, and embed definitions and parent context, not bare names. A MiniLM fine-tuned on labelled field pairs
+   (still about 90 MB, so plain git) is kept only if, on CDR, the correct source beats the best
+   wrong one far more often than today's 53%.
+6. **Learning from review.** Accepted overrides become project-specific lexicon entries, so the
+   next API with the same naming maps without help.
+
+## Benchmarks
+
+- **New: sample-only APIs with value keys and decoys**, starting with the weather case, answer key
+  written before the first run.
+- **New: name-disjoint synonyms**, such as `inheritance` and `entitlements`, with and without
+  definitions, plus spelling decoys like `inheritedFrom`.
+- CDR with descriptions removed, and four renamed Northwind copies with and without descriptions.
+- The existing Northwind, CDR, UK/Plaid and stress sets must not regress.
+
+## Order
+
+1. Workstream A, independent of B and small.
+2. B1 with the weather benchmark.
+3. B3, then B2.
+4. B5 measured on CDR undocumented and renamed sets; keep only what improves them.
+5. B4 and B6.
+
+## Decisions (20 October)
+
+1. Results group by endpoint, then variant, then parent object
+   (`GET /accounts/{accountId}` > `DepositAccount` > `currency`).
+2. The endpoint selection is saved with the workspace and kept across runs and restarts; the
+   CLI takes it as a flag.
+3. When a value-key map has no matching upstream input, the app may suggest a fixed key
+   (`city{toronto}`) for review, with a note; never automatically.
+4. Workstream A first, then B1 with the weather benchmark.

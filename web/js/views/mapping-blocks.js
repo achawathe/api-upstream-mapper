@@ -3,6 +3,7 @@ import { h, mount, statusPill, toast } from "../dom.js";
 import { applyOverrideResponse, changed, store } from "../state.js";
 import { comparisonView } from "./candidate-comparison.js";
 import { conversionBlocks } from "./conversion-blocks.js";
+import { flatten, groupTree, statusCounts } from "./field-groups.js";
 import { sourcePalette } from "./source-palette.js";
 
 export function mappingBlocks(rows) {
@@ -98,14 +99,21 @@ function connector() {
 
 function fieldOrganizer(rows, selected) {
   const grouping = store.mappings.grouping ?? "endpoint";
-  const groups = Map.groupBy(rows, (m) => grouping === "category" ? m.category || "Uncategorized" : m.target.endpoint);
   const choose = h("select", { "aria-label": "Group output fields", onchange: (e) => { store.mappings.grouping = e.target.value; changed(); } },
-    h("option", { value: "endpoint", selected: grouping === "endpoint" }, "By endpoint"), h("option", { value: "category", selected: grouping === "category" }, "By category"));
-  return h("aside", { class: "card field-organizer", "aria-label": "Output field groups" }, h("h2", {}, `Output fields (${rows.length})`), choose,
-    [...groups.entries()].map(([name, mappings]) => h("details", { open: mappings.includes(selected) }, h("summary", {}, `${name} (${mappings.length})`),
-      mappings.map((m) => h("button", { class: `field-choice ${m === selected ? "selected" : ""}`, "aria-pressed": String(m === selected), onclick: () => { store.mappings.selected = m.target.key; changed(); } },
-        h("span", { class: "mono" }, m.target.path), m.target.variant && h("span", { class: "small muted" }, m.target.variant), statusPill(m.status),
-        store.mappings.drafts[m.target.key]?.dirty && h("span", { class: "small" }, "Unsaved"))))));
+    h("option", { value: "endpoint", selected: grouping === "endpoint" }, "By endpoint, variant and object"), h("option", { value: "category", selected: grouping === "category" }, "By category"));
+  const field = (m) => h("button", { class: `field-choice ${m === selected ? "selected" : ""}`, "aria-pressed": String(m === selected), onclick: () => { store.mappings.selected = m.target.key; changed(); } },
+    h("span", { class: "mono" }, grouping === "category" ? m.target.path : m.target.path.split(".").at(-1)), grouping === "category" && m.target.variant && h("span", { class: "small muted" }, m.target.variant), statusPill(m.status),
+    store.mappings.drafts[m.target.key]?.dirty && h("span", { class: "small" }, "Unsaved"));
+  const section = (level, name, mappings, children) => h("details", { class: `field-group ${level}`, open: mappings.includes(selected) },
+    h("summary", {}, h("span", { class: level === "object" ? "mono" : "" }, name), ` (${mappings.length}) `, statusCounts(mappings)), children);
+  const groups = grouping === "category"
+    ? [...Map.groupBy(rows, (m) => m.category || "Uncategorized").entries()].map(([name, mappings]) => section("category", name, mappings, mappings.map(field)))
+    : [...groupTree(rows).entries()].map(([endpoint, variants]) => section("endpoint", endpoint, flatten(variants),
+      [...variants.entries()].map(([variant, objects]) => {
+        const inner = [...objects.entries()].map(([object, mappings]) => section("object", object, mappings, mappings.map(field)));
+        return variant ? section("variant", variant, flatten(objects), inner) : inner;
+      })));
+  return h("aside", { class: "card field-organizer", "aria-label": "Output field groups" }, h("h2", {}, `Output fields (${rows.length})`), choose, groups);
 }
 
 function categoryEditor(mapping) {
