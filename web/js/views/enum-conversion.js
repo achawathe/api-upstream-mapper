@@ -1,11 +1,11 @@
 import { h, mount } from "../dom.js";
 
 export function enumConversion(step, edited, target, source) {
-  const contract = target.enum_contract ?? { values: target.enum ?? [], origin: "specification", aliases: {}, warnings: [], citations: [] };
+  const contract = target.enum_contract ?? { values: target.enum ?? [], origin: "specification", definitions: {}, warnings: [], citations: [] };
   const values = contract.values;
-  const known = [...new Set([...(source?.enum_contract?.values ?? source?.enum ?? []), ...(source?.observed ?? []), ...(typeof source?.example === "string" ? [source.example] : []), ...Object.keys(contract.aliases ?? {})])];
+  const known = [...new Set([...(source?.enum_contract?.values ?? source?.enum ?? []), ...(source?.observed ?? []), ...(typeof source?.example === "string" ? [source.example] : [])])];
   const pairs = step.editorPairs ?? Object.entries(step.params.mapping ?? {});
-  if (!step.editorPairs) for (const value of known) if (!pairs.some(([from]) => from === value)) pairs.push([value, step.params.unmapped?.includes(value) ? "" : contract.aliases?.[value] ?? ""]);
+  if (!step.editorPairs) for (const value of known) if (!pairs.some(([from]) => from === value)) pairs.push([value, ""]);
   if (!pairs.length) pairs.push(["", ""]);
   step.editorPairs = pairs;
   const region = h("div");
@@ -41,10 +41,13 @@ export function enumConversion(step, edited, target, source) {
   } }, h("option", { value: "", selected: !Object.hasOwn(step.params, "fallback") }, "Report a conversion error"),
   values.map((value) => h("option", { value, selected: value === step.params.fallback }, `Use ${value}`)));
   return h("div", { class: "enum-editor" },
-    h("p", { class: "small" }, values.length ? `Allowed outputs from ${contract.origin}: ${values.join(", ")}` : "No allowed set found. Attach an explicit value list to this field, or enter a manual translation."),
+    h("p", { class: "small" }, values.length ? `Allowed outputs from ${contract.origin}: ${values.join(", ")}` : "No allowed set found. The specification and documentation do not declare allowed values. Enter a translation for review."),
     (contract.warnings ?? []).map((warning) => h("p", { class: "warn" }, warning)),
     (step.params.translation_warnings ?? []).map((warning) => h("p", { class: "warn" }, warning)),
     [...(contract.citations ?? []), ...(step.params.citations ?? [])].length > 0 && h("details", {}, h("summary", {}, "Value definitions"),
+      [["Source", source?.enum_contract], ["Output", contract]].flatMap(([label, definition]) =>
+        Object.entries(definition?.definitions ?? {}).flatMap(([value, clues]) =>
+          clues.map((clue) => h("p", { class: "small" }, `${label} ${value}: ${clue.text} (${clue.location})`)))),
       [...new Set([...(contract.citations ?? []), ...(step.params.citations ?? [])])].map((text) => h("p", { class: "small muted" }, text))),
     region, coverage,
     h("label", { class: "field" }, "Match incoming strings", h("select", { "aria-label": "String normalization", onchange: (e) => { step.params.normalization = e.target.value; edited(); } },

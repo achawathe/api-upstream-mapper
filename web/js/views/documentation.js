@@ -37,13 +37,13 @@ export function documentationCard() {
       try { await api.removeDocumentation(document.id); await refreshWorkspace(); } catch (error) { toast(error.message); }
     } }, "Remove")));
   return h("div", { class: "card" }, h("h2", {}, "Supporting documentation (optional)"),
-    h("p", { class: "small muted" }, "Add field definitions for this API. Include field names and endpoint headings for documents covering several endpoints. Relevant passages support local NLP and appear in the mapping evidence."),
+    h("p", { class: "small muted" }, "Add details about what this API returns: field meanings, units, formats and allowed values. Include field names and endpoint headings for documents covering several endpoints. The mapper compares these definitions with the other API. You do not need to describe how to map them."),
     h("label", { class: "field" }, "API", selected), h("label", { class: "field" }, "Applies to", scope),
     h("label", { class: "field" }, "PDF, DOCX, TXT or Markdown", files),
     h("details", {}, h("summary", {}, "Or paste documentation"), text),
-    h("details", {}, h("summary", {}, "Document allowed values and translations"),
-      h("p", { class: "small muted" }, 'Name the field on each line. Use explicit allowed lists and quoted translations; specification enums take precedence.'),
-      h("pre", { class: "small" }, 'GET /orders\nstatus: Allowed values: PROCESSING, COMPLETED, UNKNOWN.\nstatus: "in progress" -> "PROCESSING"; "done" -> "COMPLETED".')),
+    h("details", {}, h("summary", {}, "Example API details"),
+      h("p", { class: "small muted" }, 'Describe values in this API’s own terms. Specification enums take precedence over documented lists.'),
+      h("pre", { class: "small" }, 'GET /orders\nstatus: Allowed values: PROCESSING, COMPLETED, UNKNOWN.\nstatus: PROCESSING means the order is being prepared.\nstatus: COMPLETED means the order has been fulfilled.')),
     h("p", { class: "small muted" }, "Text-based PDFs only. Documents stay on this machine; attaching them does not retrain the model."), attach,
     attachments.length > 0 && h("details", { style: { marginTop: "12px" } }, h("summary", {}, `Attached documentation (${attachments.length})`), attachments));
 }

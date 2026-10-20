@@ -1,7 +1,8 @@
-"""Build a channel value translation from declared sets, examples and cited aliases."""
+"""Suggest value translations by comparing each API's own contract and definitions."""
 
 from api_mapper.models import FieldNode, TransformKind, TransformStep
 from api_mapper.normalize.enum_contract import enum_contract
+from api_mapper.transforms.enum_definition_matching import compare_value_definitions
 from api_mapper.transforms.enum_mapping import EnumMapper, EnumMapping
 
 
@@ -11,34 +12,20 @@ def enum_transform(target: FieldNode, source: FieldNode, mapper: EnumMapper) -> 
     source_values = source.enum or source_contract.values or source.observed or ((source.example,) if isinstance(source.example, str) else ())
     if not contract.values:
         return None, None
-    enum_mapping = mapper.map(source_values, contract.values)
-    source_translations = enum_contract(source, contract.values)
-    conflicts = {value for value in contract.aliases.keys() & source_translations.aliases.keys()
-                 if contract.aliases[value] != source_translations.aliases[value]}
-    conflicts.update((*contract.unresolved_aliases, *source_translations.unresolved_aliases))
-    aliases = {value: output for value, output in {**source_translations.aliases, **contract.aliases}.items() if value not in conflicts}
-    if conflicts:
-        enum_mapping = EnumMapping({value: output for value, output in enum_mapping.mapping.items() if value not in conflicts},
-                                   {value: rule for value, rule in enum_mapping.rule_by_value.items() if value not in conflicts},
-                                   tuple(dict.fromkeys((*enum_mapping.unmapped, *(value for value in source_values if value in conflicts)))))
-    if aliases:
-        supported = {value: aliases[value] for value in source_values if value in aliases}
-        mapping = {**enum_mapping.mapping, **supported}
-        enum_mapping = EnumMapping(mapping, {**enum_mapping.rule_by_value, **dict.fromkeys(supported, 'documented alias')},
-                                   tuple(value for value in enum_mapping.unmapped if value not in aliases))
-    if source.enum and set(source.enum) <= set(contract.values) and contract.origin == 'specification' and not aliases and not conflicts:
+    preliminary = mapper.map(source_values, contract.values)
+    enum_mapping = compare_value_definitions(preliminary, source_contract, contract)
+    uses_context = enum_mapping != preliminary or target.documentation or source.documentation or 'documentation' in (contract.origin, source_contract.origin)
+    citations = list(dict.fromkeys((*contract.citations, *source_contract.citations))) if uses_context else []
+    if source.enum and all(enum_mapping.mapping.get(value) == value for value in source.enum) and contract.origin == 'specification' and not citations:
         return None, enum_mapping
-    mapping = {**enum_mapping.mapping, **aliases}
-    if not source_values:
-        mapping = {**{value: value for value in contract.values if value not in conflicts}, **aliases}
+    mapping = enum_mapping.mapping if source_values else {value: value for value in contract.values}
     inferred = "" if source.enum else " (source strings are not schema-enumerated; unlisted strings fail)"
     step = TransformStep(
         kind=TransformKind.ENUM_MAP,
         description=_describe_enum(enum_mapping) + inferred,
-        params={"mapping": mapping, "unmapped": list(dict.fromkeys((*enum_mapping.unmapped, *sorted(conflicts)))), "from_samples": not source.enum,
+        params={"mapping": mapping, "unmapped": list(enum_mapping.unmapped), "from_samples": not source.enum,
                 "target_origin": contract.origin, "rule_by_value": enum_mapping.rule_by_value,
-                "citations": list(dict.fromkeys((*contract.citations, *source_translations.citations))), "open_source": not source_values,
-                "translation_warnings": [f'Documented translation for {value!r} is unresolved; choose its output explicitly.' for value in sorted(conflicts)]},
+                "citations": citations, "open_source": not source_values},
     )
     return step, enum_mapping if source_values else None
 

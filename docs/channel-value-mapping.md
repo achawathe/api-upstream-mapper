@@ -25,11 +25,18 @@ business orchestration and deploying a channel API remain outside this feature.
 The Blocks editor's **Normalize to allowed values** conversion replaces the generic
 value-translation inputs with allowed output choices when a value set is available.
 Each source string maps to one output; several source strings may map to the same
-output. Sources come from declared values, sample observations, schema examples and
-explicit documented aliases. Aliases may be attached to either the upstream or
-downstream API; their outputs must belong to the channel's allowed set. Conflicting
-translations across the two APIs remain unresolved, even if spelling alone would
-suggest a match. Existing heuristic suggestions still need review.
+output. Source values come from declared values and examples. Supporting documents
+explain only their own API: field meanings, units, formats, allowed values and what
+each value represents. They need not mention the other API or contain mapping rules.
+
+The mapper compares these independent definitions to suggest a translation. The
+current enum comparison recognizes identical definitions after case, spacing and
+punctuation normalization. Distinct wording is not automatically treated as equivalent;
+local NLP continues to assist field selection. Ambiguous or conflicting value meanings
+remain unresolved, including an identical code with differing meanings. The editor
+shows both definitions with citations, and document-assisted suggestions require review.
+Cross-API arrows or `maps to` statements in documentation are not executed as rules.
+Explicit mapping decisions belong in the mapping editor.
 
 The allowed output set comes from the target OpenAPI enum first. If no enum is
 declared, an explicit list in its field description or attached documentation may
@@ -62,24 +69,28 @@ Use endpoint headings and name the field on each definition line:
 ```text
 GET /orders
 status: Allowed values: PROCESSING, COMPLETED, FAILED, UNKNOWN.
-status: "in progress" -> "PROCESSING"; "packing" -> "PROCESSING"; "done" -> "COMPLETED".
+status: PROCESSING means the order is being prepared.
+status: COMPLETED means the order has been fulfilled.
 ```
 
-The current reader supports explicit comma/pipe-separated lists with uppercase
-unquoted values or quoted text values, and quoted `->`, `→` or `maps to`
-translations. General prose, illustrations and arbitrary document tables are not
-automatically interpreted as exhaustive value sets. Documentation may be pasted
-or extracted locally from the supported text/PDF/DOCX formats. Alias extraction is
-field/endpoint scoped and conflicting aliases remain unresolved.
+A separate provider document might describe `Q1` as "the order is being prepared".
+Neither document specifies a translation. The mapper compares the meanings.
 
-Everything executes locally. This is contract-aware conversion, not a fine-tuned
-model or an LLM classifying new strings at runtime. Local NLP can assist field
-selection; the saved conversion table determines actual output values.
+The current reader supports explicit comma/pipe-separated allowed lists with uppercase
+unquoted values or quoted text values. Value definitions can use `means`, `denotes`,
+`represents`, `indicates` or a colon. These are supported extraction patterns, not a
+required mapping language. Arbitrary prose and document tables are not comprehensively
+understood. Documents may be pasted or extracted locally from text/PDF/DOCX files;
+field names and endpoint context are needed to associate passages reliably.
+
+Everything executes locally. Reviewed conversion tables determine actual outputs.
+Attaching documentation does not train the model. Existing manually saved conversions
+remain explicit reviewer decisions; rerun mapping to regenerate suggestions.
 
 ## Try the example
 
 Upload `samples/channel-enums/channel.yaml` as upstream and `provider.yaml` as
-downstream, then attach `channel-guide.md` to the upstream. Select General
-applications and run mapping. Orders use a specification enum; shipments use a
-documented enum. Both include explicit aliases and remain review suggestions.
-These are synthetic feature tests, not evidence of a real provider's behavior.
+downstream. Attach `channel-guide.md` to upstream and `provider-guide.md` to downstream.
+Select General applications and run mapping. Orders use a specification enum; shipments
+use a documented enum. Both guides describe only their own API. Suggested translations
+remain review suggestions. These are synthetic feature tests, not real provider evidence.

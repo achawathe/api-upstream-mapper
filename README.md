@@ -375,6 +375,6 @@ for usage, research references and validation limits.
 
 Channel value mapping: the **Normalize to allowed values** block now uses enums from
 the target specification or explicit documentation. It provides allowed-value
-selectors, documented aliases, optional case/separator normalization, collision
+selectors, comparisons of independently documented value meanings, optional case/separator normalization, collision
 checks and explicit unknown-value handling. See [channel value mapping](docs/channel-value-mapping.md)
 and the runnable `samples/channel-enums/` example.

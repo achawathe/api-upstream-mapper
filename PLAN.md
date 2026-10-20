@@ -4,7 +4,7 @@ Status: **built** (all nine steps). See README.md for usage, design and measured
 
 Channel value mapping: enum conversion now distinguishes source-field lineage from
 value translation into the channel's allowed set. Specification enums take priority;
-explicit documented lists/aliases supplement missing definitions. Reviewed tables
+explicit documented lists and independent API value meanings supplement definitions. Reviewed tables
 support normalization and allowed fallbacks, and are checked on save and replay.
 See docs/channel-value-mapping.md for scope and example inputs.
 

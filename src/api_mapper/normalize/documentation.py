@@ -8,7 +8,7 @@ from api_mapper.models import ApiSpec, FieldNode
 from api_mapper.models.purpose import ContextClue
 
 _ENDPOINT = re.compile(r'\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(/[^\s`|,;]+)', re.IGNORECASE)
-_MAX_PASSAGES = 3
+_MAX_PASSAGES = 16
 
 
 def enrich_documentation(spec: ApiSpec, nodes: list[FieldNode]) -> list[FieldNode]:
@@ -28,8 +28,11 @@ def enrich_documentation(spec: ApiSpec, nodes: list[FieldNode]) -> list[FieldNod
             if scope and scope not in endpoints:
                 continue
             eligible = [node for node in nodes if not scope or node.endpoint == scope]
+            line_fields = [node for node in eligible if _mentions(line, node.name)]
             for sentence in re.split(r'(?<=[.!?])\s+', line):
                 found = [node for node in eligible if _mentions(sentence, node.name)]
+                if not found and len(line_fields) == 1:
+                    found = line_fields
                 by_name = defaultdict(set)
                 for node in found:
                     by_name[node.name].add((node.endpoint, node.path))

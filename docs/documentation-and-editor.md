@@ -7,6 +7,10 @@ headings such as `GET /inventory`. Field definitions should mention the actual
 field name or path. Ambiguous unscoped field names are excluded instead of being
 applied to every endpoint.
 
+Supporting docs describe the API itself: field meanings, units, formats, values and behavior.
+They do not need to say how to map to another API. The mapper makes suggestions from
+these definitions; explicit mapping choices belong in the editor.
+
 Extraction and inference stay local. PDF support requires selectable text; scanned
 pages need OCR outside this app. Documents supply context, not executable
 instructions, new schema fields, or model-weight training. Extracted passages

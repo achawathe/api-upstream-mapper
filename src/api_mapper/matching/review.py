@@ -17,7 +17,7 @@ def review_reasons(target: FieldNode, candidate: Candidate, auto_threshold: floa
     reasons = []
     evidence = candidate.evidence
     if any(step.params.get('target_origin') == 'documentation' or step.params.get('citations') or step.params.get('open_source') for step in candidate.transforms):
-        reasons.append('confirm documented value translations and handling of unknown downstream strings')
+        reasons.append('confirm suggested value translations against API definitions and handling of unknown downstream strings')
     if any(e.signal == 'documentation_context' for e in evidence):
         reasons.append('attached documentation supports interpretation; confirm field meaning and any conversion')
     if any(e.signal == "purpose_uncertain" for e in evidence):
