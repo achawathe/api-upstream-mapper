@@ -17,7 +17,9 @@ def audit(data: Path, tokenizer, max_tokens: int) -> dict:
         inputs[split] = set()
         for row in rows:
             messages = row["messages"]
-            prompt = tokenizer.apply_chat_template(messages[:-1], add_generation_prompt=True, return_dict=False)
+            prompt = tokenizer.apply_chat_template(
+                messages[:-1], add_generation_prompt=True, return_dict=False, enable_thinking=False
+            )
             full, offset = completion_tokens(row, tokenizer)
             if full[: len(prompt)] != prompt:
                 raise ValueError("Training and inference chat prefixes differ")

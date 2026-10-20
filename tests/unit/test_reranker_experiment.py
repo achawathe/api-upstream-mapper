@@ -38,7 +38,7 @@ def test_training_uses_the_inference_prefix_and_literal_answer():
         eos_token_id = 99
 
         def apply_chat_template(self, messages, **options):
-            assert options == {"add_generation_prompt": True, "return_dict": False}
+            assert options == {"add_generation_prompt": True, "return_dict": False, "enable_thinking": False}
             assert all(message["role"] != "assistant" for message in messages)
             return [1, 2, 3]
 

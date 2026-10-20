@@ -7,6 +7,9 @@ replace the application's embedding encoder or execute generated transformations
 The [completed 20 October pilot](artifacts/2026-10-20-pilot/RESULTS.md) improved
 origin recovery but introduced wrong suggestions compared with the current app.
 Its saved adapter failed the promotion gate and is not active in the application.
+A [repeat with Qwen3-1.7B-8bit](artifacts/2026-10-20-qwen3-1.7b/RESULTS.md), small enough for
+GitHub LFS, failed the same gate by a wider margin (2 and 5 wrong public suggestions).
+Prompts pass `enable_thinking=False`, which Qwen3 hybrid models need and the 4B template ignores.
 
 The base is `mlx-community/Qwen3-4B-Instruct-2507-4bit`, revision
 `50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b`. Supply an existing local copy with

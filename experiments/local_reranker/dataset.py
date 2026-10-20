@@ -5,7 +5,9 @@ from experiments.local_reranker.runtime import read_rows
 
 def completion_tokens(row, tokenizer):
     messages = row["messages"]
-    prompt = tokenizer.apply_chat_template(messages[:-1], add_generation_prompt=True, return_dict=False)
+    prompt = tokenizer.apply_chat_template(
+        messages[:-1], add_generation_prompt=True, return_dict=False, enable_thinking=False
+    )
     answer = tokenizer.encode(messages[-1]["content"], add_special_tokens=False)
     return prompt + answer + [tokenizer.eos_token_id], len(prompt)
 

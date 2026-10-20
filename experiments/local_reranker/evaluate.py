@@ -83,7 +83,9 @@ def main():
             if order == "reversed":
                 payload["candidates"].reverse()
             messages = [messages[0], {"role": "user", "content": json.dumps(payload, separators=(",", ":"))}]
-            prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            prompt = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
+            )
             mx.random.seed(0)
             started = time.perf_counter()
             chunks = list(stream_generate(model, tokenizer, prompt=prompt, max_tokens=32, sampler=make_sampler(temp=0)))

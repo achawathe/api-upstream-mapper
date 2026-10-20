@@ -1,0 +1,4 @@
+{
+  "reason": "First training attempt stopped in the data audit after 6 seconds: audit.py rendered prompts without enable_thinking=False, so its prefix lacked the empty think block that training uses. No weights were updated and the empty output directory was removed. audit.py was fixed and training restarted from scratch in run/.",
+  "updates_completed": 0
+}
