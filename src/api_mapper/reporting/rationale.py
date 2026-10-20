@@ -1,30 +1,30 @@
 """Readable explanations grounded in recorded signals and the supplied API definitions."""
 
-from api_mapper.models import Candidate, EvidenceEffect, FieldNode
+from api_mapper.models import Candidate, EvidenceEffect, FieldNode, Signal
 
 SIGNAL_NAMES = {
-    "name": "field-name meaning",
-    "spelling": "name spelling",
-    "type": "data type",
-    "enum": "allowed values",
-    "sample": "example values",
-    "description": "description",
-    "structure": "record structure",
-    "context": "API context",
-    "endpoint": "endpoint context",
-    "local_nlp": "local NLP similarity",
+    Signal.NAME: "field-name meaning",
+    Signal.SPELLING: "name spelling",
+    Signal.TYPE: "data type",
+    Signal.ENUM: "allowed values",
+    Signal.SAMPLE: "example values",
+    Signal.DESCRIPTION: "description",
+    Signal.STRUCTURE: "record structure",
+    Signal.CONTEXT: "API context",
+    Signal.ENDPOINT: "endpoint context",
+    Signal.LOCAL_NLP: "local NLP similarity",
 }
 
 
 def support(candidate: Candidate) -> list[str]:
-    purpose = [e.detail for e in candidate.evidence if e.signal == "purpose_support"]
+    purpose = [e.detail for e in candidate.evidence if e.signal is Signal.PURPOSE_SUPPORT]
     signals = sorted(
         (e for e in candidate.evidence if e.effect is EvidenceEffect.WEIGHTED and e.weight > 0 and e.score >= 0.5),
         key=lambda e: (-e.score * e.weight, e.signal),
     )
     reasons = [
         f"The local model finds the supplied field descriptions and context similar (similarity {e.score:.2f})."
-        if e.signal == "local_nlp"
+        if e.signal is Signal.LOCAL_NLP
         else f"{SIGNAL_NAMES.get(e.signal, e.signal)}: {e.detail}"
         for e in signals[:3]
     ]
@@ -34,19 +34,19 @@ def support(candidate: Candidate) -> list[str]:
 def concerns(candidate: Candidate) -> list[str]:
     found = [
         "Field names alone do not identify the requested concept; check the API definitions."
-        if e.signal == "anchor"
+        if e.signal is Signal.ANCHOR
         else e.detail
         for e in candidate.evidence
         if e.effect is not EvidenceEffect.WEIGHTED
-        or e.signal in {"body_context", "identity_review", "nlp_only", "documentation_samples"}
+        or e.signal in {Signal.BODY_CONTEXT, Signal.IDENTITY_REVIEW, Signal.NLP_ONLY, Signal.DOCUMENTATION_SAMPLES}
     ]
     if candidate.vetoed_by:
         found.insert(0, candidate.vetoed_by)
-    if any(e.signal == "local_nlp" for e in candidate.evidence):
+    if any(e.signal is Signal.LOCAL_NLP for e in candidate.evidence):
         found.append(
             "Local NLP measures similarity; it does not prove that the fields refer to the same fact or record."
         )
-    if not any(e.signal == "purpose_support" for e in candidate.evidence):
+    if not any(e.signal is Signal.PURPOSE_SUPPORT for e in candidate.evidence):
         found.append(
             "The recorded evidence does not establish matching business definitions. Check the API references below."
         )

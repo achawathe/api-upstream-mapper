@@ -5,7 +5,7 @@ anchor. Structural, role, enum, reachability and type safeguards still apply.
 """
 
 from api_mapper.matching.context_review import can_review
-from api_mapper.models import Evidence, FieldProfile
+from api_mapper.models import Evidence, FieldProfile, Signal
 from api_mapper.transforms.inference import TypeFit
 
 
@@ -20,23 +20,24 @@ def add_semantic_evidence(
     semantic_match: bool,
     lexical_match: bool,
 ) -> None:
-    evidence.append(Evidence("rules_score", round(rules_score, 4), 0.0, "confidence before local NLP"))
+    evidence.append(Evidence(Signal.RULES_SCORE, round(rules_score, 4), 0.0, "confidence before local NLP"))
     evidence.append(
         Evidence(
-            "local_nlp",
+            Signal.LOCAL_NLP,
             similarity,
             weight,
-            "local cosine similarity of field context and cited definitions; zero weight when it would dilute rule evidence",
+            "local cosine similarity of field context and cited definitions; "
+            "zero weight when it would dilute rule evidence",
         )
     )
     if semantic_match and not lexical_match:
-        evidence.append(Evidence("nlp_only", 1.0, 0.0, "candidate discovered by local NLP; requires human review"))
+        evidence.append(Evidence(Signal.NLP_ONLY, 1.0, 0.0, "candidate discovered by local NLP; requires human review"))
     target_defined = bool(target.node.description.strip() or target.node.documentation)
     source_defined = bool(source.node.description.strip() or source.node.documentation)
     if semantic_match and target_defined and source_defined and can_review(target, source, fit, evidence):
         evidence.append(
             Evidence(
-                "semantic_review",
+                Signal.SEMANTIC_REVIEW,
                 similarity,
                 0.0,
                 "strong descriptive similarity supports review despite weak lexical evidence",

@@ -14,7 +14,7 @@ from api_mapper.matching.purpose import compare_purposes, comparison_evidence
 from api_mapper.matching.semantic import SemanticIndex
 from api_mapper.matching.semantic_evidence import add_semantic_evidence
 from api_mapper.matching.signals import SignalContext
-from api_mapper.models import Candidate, Evidence, EvidenceEffect, FieldProfile
+from api_mapper.models import Candidate, Evidence, EvidenceEffect, FieldProfile, Signal
 from api_mapper.transforms.inference import TypeFit, TypeFitter
 
 OBSERVED_VALUES_FOR_FULL_TRUST = 5
@@ -52,6 +52,7 @@ class Penalties:
     guessed_spelling: float = 0.95
     echoed_input: float = 0.85
     unreachable: float = 0.6
+    different_record: float = 0.5
     min_name_score: float = 0.3
     min_string_score: float = 0.75
 
@@ -91,25 +92,25 @@ class PairScorer:
         type_score, type_detail = signals.type_signal(fit)
         structure_score, structure_detail = signals.structure_signal(target, source)
         evidence = [
-            Evidence("name", name_score, self.weights.name, name_detail),
-            Evidence("spelling", string_score, self.weights.string, string_detail),
-            Evidence("type", type_score, self.weights.type, type_detail),
-            Evidence("structure", structure_score, self.weights.structure, structure_detail),
+            Evidence(Signal.NAME, name_score, self.weights.name, name_detail),
+            Evidence(Signal.SPELLING, string_score, self.weights.string, string_detail),
+            Evidence(Signal.TYPE, type_score, self.weights.type, type_detail),
+            Evidence(Signal.STRUCTURE, structure_score, self.weights.structure, structure_detail),
         ]
-        self._add(evidence, "enum", signals.enum_signal(fit, target), self.weights.enum * _enum_trust(source))
-        self._add(evidence, "sample", signals.value_signal(target, source, fit), self.weights.value)
+        self._add(evidence, Signal.ENUM, signals.enum_signal(fit, target), self.weights.enum * _enum_trust(source))
+        self._add(evidence, Signal.SAMPLE, signals.value_signal(target, source, fit), self.weights.value)
         self._add(
-            evidence, "description", signals.description_signal(target, source, self.ctx), self.weights.description
+            evidence, Signal.DESCRIPTION, signals.description_signal(target, source, self.ctx), self.weights.description
         )
-        self._add(evidence, "endpoint", signals.endpoint_signal(target, source, self.ctx), self.weights.endpoint)
-        self._add(evidence, "context", signals.context_signal(target, source, self.ctx), self.weights.context)
+        self._add(evidence, Signal.ENDPOINT, signals.endpoint_signal(target, source, self.ctx), self.weights.endpoint)
+        self._add(evidence, Signal.CONTEXT, signals.context_signal(target, source, self.ctx), self.weights.context)
         evidence.extend(self._penalties(target, source, fit))
         evidence.extend(comparison_evidence(purpose))
         unmet = self.meanings.unmet_requirements(target, source)
-        evidence.extend(Evidence("origin_requirement", 0.0, 0.0, detail, EvidenceEffect.VETO) for detail in unmet)
+        evidence.extend(Evidence(Signal.ORIGIN_REQUIREMENT, 0.0, 0.0, detail, EvidenceEffect.VETO) for detail in unmet)
         for label, profile in (("Target", target), ("Source", source)):
             evidence.extend(
-                Evidence("documentation_context", 1.0, 0.0, f'{label}: {clue.location}: "{clue.text}"')
+                Evidence(Signal.DOCUMENTATION_CONTEXT, 1.0, 0.0, f'{label}: {clue.location}: "{clue.text}"')
                 for clue in profile.node.documentation
             )
         if (
@@ -119,16 +120,17 @@ class PairScorer:
         ):
             evidence.append(
                 Evidence(
-                    "context_review",
+                    Signal.CONTEXT_REVIEW,
                     1.0,
                     0.0,
-                    "explicit definitions or documented value patterns support a candidate for review; lexical score is unchanged",
+                    "explicit definitions or documented value patterns support a candidate for review; "
+                    "lexical score is unchanged",
                 )
             )
             if purpose.definition_match:
                 evidence.append(
                     Evidence(
-                        "definition_preferred",
+                        Signal.DEFINITION_PREFERRED,
                         1.0,
                         0.0,
                         "matching explicit definitions take precedence over name similarity; confirm record selection",
@@ -137,7 +139,7 @@ class PairScorer:
         if target.node.sample_sources or source.node.sample_sources:
             evidence.append(
                 Evidence(
-                    "documentation_samples",
+                    Signal.DOCUMENTATION_SAMPLES,
                     1.0,
                     0.0,
                     "documentation response examples supplement declared schemas; "
@@ -149,13 +151,16 @@ class PairScorer:
         ):
             evidence.append(
                 Evidence(
-                    "body_context", 1.0, 0.0, "JSON body inputs require confirmed identity binding and caller context"
+                    Signal.BODY_CONTEXT,
+                    1.0,
+                    0.0,
+                    "JSON body inputs require confirmed identity binding and caller context",
                 )
             )
         if target.roles and "identifier" in target.leaf and "identifier" not in source.leaf:
             evidence.append(
                 Evidence(
-                    "identity_review",
+                    Signal.IDENTITY_REVIEW,
                     1.0,
                     0.0,
                     "a role-qualified identifier needs proof of the referenced record's identity",
@@ -164,7 +169,7 @@ class PairScorer:
         if semantic_score is not None:
             rules_score = _combine(evidence)
             nlp_signal = Evidence(
-                "local_nlp",
+                Signal.LOCAL_NLP,
                 semantic_score,
                 self.weights.local_nlp,
                 "cosine similarity of local field-name and description embeddings",
@@ -177,7 +182,7 @@ class PairScorer:
         veto = fit.veto or next(iter((*purpose.conflicts, *unmet)), None)
         if veto:
             if fit.veto:
-                evidence.append(Evidence("type", 0.0, 0.0, fit.veto, EvidenceEffect.VETO))
+                evidence.append(Evidence(Signal.TYPE, 0.0, 0.0, fit.veto, EvidenceEffect.VETO))
             return Candidate(
                 source=source.node, score=0.0, evidence=tuple(evidence), transforms=fit.steps, vetoed_by=veto
             )
@@ -190,33 +195,37 @@ class PairScorer:
         found: list[Evidence] = []
         p = self.penalties
         for conflict in self.meanings.conflicts(target, source):
-            found.append(self._multiplier("meaning", p.qualifier_conflict, conflict))
+            found.append(self._multiplier(Signal.MEANING, p.qualifier_conflict, conflict))
 
         relation = signals.qualifier_relation(target, source)
         families = f"{'/'.join(sorted(target.families))} vs {'/'.join(sorted(source.families))}"
         if relation == "agree":
             found.append(
-                Evidence("qualifier", 1.0, self.weights.qualifier_agreement, f"same account family ({families})")
+                Evidence(Signal.QUALIFIER, 1.0, self.weights.qualifier_agreement, f"same account family ({families})")
             )
         elif relation == "conflict":
-            found.append(self._multiplier("qualifier", p.qualifier_conflict, f"different account family ({families})"))
+            found.append(
+                self._multiplier(Signal.QUALIFIER, p.qualifier_conflict, f"different account family ({families})")
+            )
 
         roles = signals.role_mismatch(target, source)
         if roles:
             found.append(
-                self._multiplier("role", p.role_mismatch, f"role words on one side only: {', '.join(sorted(roles))}")
+                self._multiplier(
+                    Signal.ROLE, p.role_mismatch, f"role words on one side only: {', '.join(sorted(roles))}"
+                )
             )
 
         modifiers = signals.modifier_difference(target, source, self.ctx)
         if modifiers:
             one_sided = "none" in modifiers
             factor = p.modifier_one_sided if one_sided else p.modifier_conflict
-            found.append(self._multiplier("modifier", factor, f"{modifiers[0]} is not {modifiers[1]}"))
+            found.append(self._multiplier(Signal.MODIFIER, factor, f"{modifiers[0]} is not {modifiers[1]}"))
 
         if not signals.anchored(target, source, self.ctx):
             found.append(
                 self._multiplier(
-                    "anchor", p.anchor_missing, f"source never mentions {', '.join(sorted(target.anchor))}"
+                    Signal.ANCHOR, p.anchor_missing, f"source never mentions {', '.join(sorted(target.anchor))}"
                 )
             )
 
@@ -224,64 +233,75 @@ class PairScorer:
             other = source.collection or source.endpoint_concepts
             found.append(
                 self._multiplier(
-                    "collection",
+                    Signal.COLLECTION,
                     p.collection_mismatch,
-                    f"items are different things ({'/'.join(target.collection or target.endpoint_concepts[-1:])} vs {'/'.join(other)})",
+                    f"items are different things "
+                    f"({'/'.join(target.collection or target.endpoint_concepts[-1:])} vs {'/'.join(other)})",
                 )
             )
 
         conflict = signals.shapes_conflict(target, source, fit)
         if conflict:
-            found.append(self._multiplier("sample", p.shape_conflict, f"incompatible samples: {conflict}"))
+            found.append(self._multiplier(Signal.SAMPLE, p.shape_conflict, f"incompatible samples: {conflict}"))
 
         same_record = bool(target.endpoint_inputs & source.endpoint_inputs)
         if source.node.array_depth > target.node.array_depth and not same_record:
             found.append(
-                self._multiplier("list-to-one", p.list_to_single, "source is a list; the target holds one value")
+                self._multiplier(Signal.LIST_TO_ONE, p.list_to_single, "source is a list; the target holds one value")
             )
 
         if signals.per_item_fanout(target, source):
             found.append(
                 self._multiplier(
-                    "fan-out", p.per_item_fanout, "list filled by one detail call per item instead of a list source"
+                    Signal.FAN_OUT,
+                    p.per_item_fanout,
+                    "list filled by one detail call per item instead of a list source",
                 )
             )
         elif target.node.array_depth > source.node.array_depth:
             found.append(
-                self._multiplier("fan-out", p.fanout, "source sits outside the target's array; repeated into each item")
+                self._multiplier(
+                    Signal.FAN_OUT, p.fanout, "source sits outside the target's array; repeated into each item"
+                )
             )
 
         if fit.enum_mapping is not None and not fit.enum_mapping.mapping:
-            found.append(self._multiplier("enum", p.enum_disjoint, "no enum value in common"))
+            found.append(self._multiplier(Signal.ENUM, p.enum_disjoint, "no enum value in common"))
 
         guesses = [*target.guesses, *source.guesses]
         if guesses:
             read = ", ".join(f"{token!r} as {word}" for token, word in guesses)
-            found.append(self._multiplier("spelling", p.guessed_spelling, f"read {read}"))
+            found.append(self._multiplier(Signal.SPELLING, p.guessed_spelling, f"read {read}"))
 
         if signals.unreachable(target, source, self.ctx):
             found.append(
-                self._multiplier("reach", p.unreachable, "cannot be called for the record this request asks about")
+                self._multiplier(Signal.REACH, p.unreachable, "cannot be called for the record this request asks about")
+            )
+
+        records = signals.different_record(target, source, self.ctx)
+        if records:
+            found.append(
+                self._multiplier(Signal.RECORD, p.different_record, f"describes a {records[1]}, not the {records[0]}")
             )
 
         if source.echoes_input and target.endpoint_inputs and source.identity not in target.endpoint_inputs:
             found.append(
                 self._multiplier(
-                    "echo", p.echoed_input, "source only repeats an input the upstream request does not have"
+                    Signal.ECHO, p.echoed_input, "source only repeats an input the upstream request does not have"
                 )
             )
 
         if source.node.deprecated:
-            found.append(self._multiplier("deprecated", p.deprecated_source, "source field is deprecated"))
+            found.append(self._multiplier(Signal.DEPRECATED, p.deprecated_source, "source field is deprecated"))
         return found
 
     @staticmethod
-    def _add(evidence: list[Evidence], signal: str, result: signals.SignalResult, weight: float) -> None:
+    def _add(evidence: list[Evidence], signal: Signal, result: signals.SignalResult, weight: float) -> None:
         if result is not None:
             evidence.append(Evidence(signal, result[0], weight, result[1]))
 
     @staticmethod
-    def _multiplier(signal: str, factor: float, detail: str) -> Evidence:
+    def _multiplier(signal: Signal, factor: float, detail: str) -> Evidence:
         return Evidence(signal, factor, 0.0, detail, EvidenceEffect.MULTIPLIER)
 
 

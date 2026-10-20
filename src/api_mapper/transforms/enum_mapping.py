@@ -1,7 +1,8 @@
 """Maps each source enum value to at most one target enum value.
 
-An exact match (ignoring case and separators) is tried first; then rules run from strictest to loosest and a looser rule only applies when it picks a
-single target; ambiguous values stay unmapped rather than guessed.
+An exact match (ignoring case and separators) is tried first; then rules run from strictest
+to loosest and a looser rule only applies when it picks a single target; ambiguous values
+stay unmapped rather than guessed.
 """
 
 import re

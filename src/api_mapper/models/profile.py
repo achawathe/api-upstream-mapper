@@ -17,6 +17,8 @@ class FieldProfile:
     `scope` are families implied only by the API or endpoint it belongs to.
     `identity` is what the field names, without account-family words (`loan_id` -> account
     identifier); `endpoint_inputs` holds the identities of its endpoint's path parameters and bindable JSON body inputs.
+    `record` names the thing the endpoint returns, from its last path parameter (`payee` for
+    `/payees/{payeeId}`, `account` for `/accounts/{accountId}/balance`).
     `guesses` lists unknown spellings that were read as known words, e.g. ("blnc", "balance").
     """
 
@@ -38,6 +40,7 @@ class FieldProfile:
     guesses: tuple[tuple[str, str], ...] = ()
     identity: frozenset[str] = frozenset()
     endpoint_inputs: frozenset[frozenset[str]] = frozenset()
+    record: frozenset[str] = frozenset()
     purposes: tuple[PurposeFact, ...] = ()
 
     @property

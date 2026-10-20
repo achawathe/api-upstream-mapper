@@ -6,7 +6,7 @@ import pytest
 
 from api_mapper.matching.assigner import Thresholds, assign
 from api_mapper.matching.engine import MatchingEngine
-from api_mapper.models import Candidate, Evidence, FieldNode, MappingStatus
+from api_mapper.models import ApiSpec, Candidate, Endpoint, Evidence, FieldNode, MappingStatus, Parameter, SpecKind
 from api_mapper.normalize.profiler import Profiler
 from tests.unit.test_semantic import Encoder
 
@@ -129,3 +129,48 @@ def test_semantic_fallback_respects_a_stricter_review_threshold(lexicon):
         lexicon, thresholds=Thresholds(auto=0.99, review=0.95), encoder=Encoder([[1, 0], [0.9, 0.19**0.5]])
     )
     assert engine.match([target], [source])[0].status is MappingStatus.UNMAPPED
+
+
+def test_misspelt_evidence_signal_fails_loudly():
+    with pytest.raises(ValueError):
+        Evidence("semantic_reveiw", 1.0, 0.0, "typo must not silently disable a review rule")
+
+
+def test_a_single_value_comes_from_an_endpoint_about_the_same_record(lexicon):
+    profiler = Profiler(lexicon)
+    account = FieldNode("up", "GET /accounts/{accountId}", "nickname", "string")
+    payee = FieldNode("down", "GET /payees/{payeeId}", "nickname", "string")
+    own = FieldNode("down", "GET /banking/accounts/{accountId}", "data.nickname", "string")
+
+    def record(node, path):
+        spec = ApiSpec(node.api, node.api, "1", SpecKind.OPENAPI_3, "mem", endpoints=(_endpoint(path),))
+        return profiler.profile_spec(spec, [node])[0]
+
+    target = record(account, "/accounts/{accountId}")
+    engine = MatchingEngine(lexicon)
+    candidates = engine.prepare(
+        [target], [record(payee, "/payees/{payeeId}"), record(own, "/banking/accounts/{accountId}")]
+    )
+    ranked = candidates.score_all()[target.node.key]
+    assert ranked[0].source.endpoint == "GET /banking/accounts/{accountId}"
+    payee_candidate = next(c for c in ranked if c.source.endpoint == "GET /payees/{payeeId}")
+    assert any(e.signal == "record" for e in payee_candidate.evidence)
+
+
+def test_tags_do_not_set_an_api_wide_account_family(lexicon):
+    spec = ApiSpec(
+        "bank",
+        "Banking API",
+        "1",
+        SpecKind.OPENAPI_3,
+        "mem",
+        tags=("Direct Debits",),
+        endpoints=(_endpoint("/accounts/{accountId}"),),
+    )
+    node = FieldNode("bank", "GET /accounts/{accountId}", "accountId", "string")
+    assert Profiler(lexicon).profile_spec(spec, [node])[0].families == frozenset()
+
+
+def _endpoint(path):
+    name = path.rsplit("{", 1)[-1].rstrip("}")
+    return Endpoint("GET", path, path, parameters=(Parameter(name, "path", True),))

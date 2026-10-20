@@ -4,17 +4,15 @@ import argparse
 import json
 import os
 import socket
-import sys
 from pathlib import Path
 from time import perf_counter
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
 
 from api_mapper.evaluation.contracts import grade_contract
 from api_mapper.matching.semantic import NlpSettings
 from api_mapper.normalize.lexicon import Lexicon
 from api_mapper.pipeline.orchestrator import MappingPipeline
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def forbid_network(*args, **kwargs):

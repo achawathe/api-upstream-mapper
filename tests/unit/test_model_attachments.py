@@ -10,7 +10,10 @@ from api_mapper.api.workspace import FileRole, Workspace
 from api_mapper.loaders import SpecLoadError, load_any
 from api_mapper.normalize.flattener import flatten_spec
 
-MODEL = b"Account:\n  type: object\n  properties:\n    ledgerKey: {type: string, description: Persistent bank account identifier}\n"
+MODEL = (
+    b"Account:\n  type: object\n  properties:\n"
+    b"    ledgerKey: {type: string, description: Persistent bank account identifier}\n"
+)
 
 
 def upstream(workspace, reference="models.yaml#/Account"):

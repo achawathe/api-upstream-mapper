@@ -235,6 +235,16 @@ def unreachable(target: FieldProfile, source: FieldProfile, ctx: SignalContext) 
     return not ctx.reachability.reachable(target.endpoint_inputs, (source.node.api, source.node.endpoint))
 
 
+def different_record(target: FieldProfile, source: FieldProfile, ctx: SignalContext) -> tuple[str, str] | None:
+    """A single value of one record must not come from an endpoint about another record:
+    an account's nickname is not a payee's nickname, even when the payee is reachable."""
+    if target.node.array_depth or source.node.array_depth or not target.record or not source.record:
+        return None
+    if any(ctx.lexicon.relatedness(t, s) > 0 for t in target.record for s in source.record):
+        return None
+    return "/".join(sorted(target.record)), "/".join(sorted(source.record))
+
+
 def role_mismatch(target: FieldProfile, source: FieldProfile) -> frozenset[str]:
     return target.roles ^ source.roles
 

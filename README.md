@@ -61,7 +61,18 @@ raise the recorded rule confidence. The decision notes explain the exception.
 
 NLP scores are similarity signals, not probabilities. Accuracy and timing figures below
 describe rules-only matching. Evaluate a chosen model against your own answer key before
-relying on its rankings. NLP reproducibility requires the same model files, dependency
+relying on its rankings.
+
+**Measured effect so far.** `tools/nlp_effect.py` runs every benchmark with and without the
+model. With `all-MiniLM-L6-v2` it changed 0 of 351 decisions on the Northwind sample set and 1
+on the held-out CDR set, with identical precision and recall on both, and made runs 6–11 times
+slower. Its only measured benefit is on three small hand-made documentation cases (see
+`docs/documentation-and-editor.md`), which are too small to generalise from. Treat it as
+unproven until it changes outcomes on a held-out answer key:
+
+```bash
+.venv/bin/python tools/nlp_effect.py --nlp-model models/all-MiniLM-L6-v2
+``` NLP reproducibility requires the same model files, dependency
 versions and runtime; byte-identical output across runtimes is not promised.
 
 ## Why one candidate fits better
@@ -259,6 +270,7 @@ The score is then multiplied down by penalties, each with a stated reason:
 | source never mentions what the target is about | `rail` as `bankId` just because both sit under "network" |
 | items of a different collection | `transfers[].amount` as `transactions[].amount` |
 | unreachable for this record | a bank-wide `/address-changes` list as one account's addresses |
+| describes a different record | a payee's `nickname` (`/payees/{payeeId}`) as the account's nickname |
 | list into one value, per-item detail calls | taking the first of many, or calling a detail endpoint per list item |
 | echoed input | `acctNum` returned by `/routing/{acctNum}` as the account number |
 | incompatible samples, no shared enum value, deprecated source | |
@@ -270,42 +282,41 @@ Decisions: at or above 0.72 a mapping is `auto` unless a different candidate is 
 0.03 (then `review`); from 0.50 it is `review`; below it stays `unmapped`. When two
 upstream fields of one record claim the same source, the weaker one goes to review.
 Thresholds are adjustable in the GUI. Additional array levels, unproven numeric/date
-conversions, mostly unmapped enums, and role-qualified IDs without identifier evidence
-require review even when their names score highly.
+conversions, enum values that no variant of the field accepts, and role-qualified IDs
+without identifier evidence require review even when their names score highly. Account
+families (deposit, credit, loan) come from a field's own path and schemas, its endpoint, or
+the API's name, never from the API's tag list.
 
 ## Measured accuracy
 
-Ground truth is `samples/answer_key.yaml`, written before the matcher existed.
-
-| Scenario | Precision of automatic decisions | Expected mappings surfaced |
+| Benchmark | Precision of automatic decisions | Expected mappings found |
 |---|---|---|
-| FDX 6.4 against the eight Northwind APIs, including a decoy API | 100% (0 wrong of 183) | 100% (84% automatically) |
+| FDX 6.4 against the eight Northwind sample APIs, including a decoy API | 100% (0 wrong of 188) | 100% (87% automatically) |
 | Same, every downstream renamed with lexicon abbreviations, synonyms and casing (8 seeds) | 100% | 100% |
-| Same, renamed with spellings no lexicon lists: dropped vowels, truncation, reversed word order, filler words (16 seeds) | 100% | 74–98% |
+| Same, renamed with spellings no lexicon lists: dropped vowels, truncation, reversed word order, filler words (16 seeds) | 100% | 73–96% |
 | Same, plus 42 generated noise APIs sharing generic field names (50 APIs) | 100% | 100% |
+| **Held-out:** Australian Consumer Data Right banking and common APIs | 98.8% (1 wrong of 86) | 98.5% (70% automatically) |
+| UK Open Banking and Plaid excerpts (99 labelled cases) | 100% (9 automatic) | 40 of 48 origins; 51 of 51 no-source cases left unmapped |
 
-Missed mappings land in review or unmapped; the tests fail on any wrong automatic
-decision beyond a stated budget. A real public spec (UK Open Banking Account and
-Transaction API, 2,898 fields) loads and maps in about 2.5 seconds.
+The Northwind APIs were written for this project and the UK Open Banking and Plaid excerpts
+were used while developing rules, so those rows show the matcher works as designed rather
+than how it performs on an unfamiliar API. The CDR row is the closest to that: its answer
+key was written from the specs before the first run. That run scored 66.7% precision and
+34% recall and exposed two general defects: an API's tag list set its account family for
+every endpoint, and single-record fields could come from endpoints about a different record.
+Both are fixed, and one label was widened, so CDR is no longer untouched. The next real
+downstream you add, with its answer key written first, is the honest test.
 
-Speed: 8 APIs 0.25 s, 50 APIs 0.9 s, 200 APIs 3.4 s on a laptop, against FDX's 351 fields.
+On UK Open Banking and Plaid, most correct mappings still wait for review: Plaid selects
+records through a JSON body (`access_token`, `account_ids`), so identifier compatibility needs
+a person.
 
-### Real financial API validation
+Speed (rules only, laptop, FDX's 351 fields): 8 APIs 0.4 s, 50 APIs 1.5 s, 200 APIs 5.6 s; the
+full UK Open Banking spec (2,898 fields) 3.8 s.
 
-The [public-contract benchmark](samples/real-contracts/README.md) compares 99 labelled
-FDX cases with pinned UK Open Banking and Plaid contracts (10 operations, 716 source
-fields). Request-body context and explicit financial meanings raise correct origins
-from 22 to 31 of 48 labelled origins for both rules and local MiniLM NLP. There are
-zero incorrect automatic origins, nine missed origins and 21 incorrect review
-suggestions (previously 18). Nine origins are automatic, one with an additional
-condition. Body-dependent suggestions require review. These results do **not** establish
-FDX parity. NLP helps the separate semantic challenge set, but adds no correct origins
-on this financial-contract development benchmark.
-
-Run `.venv/bin/python tools/validate_contracts.py`, optionally adding
-`--nlp-model /absolute/path/to/model`. The JSON report lists every graded field and the
-remaining conditions. The fixtures and ordinary contract tests require no network or
-model download.
+Run the contract benchmark with `.venv/bin/python tools/validate_contracts.py`, optionally
+adding `--nlp-model /absolute/path/to/model`. The JSON report lists every graded field. The
+fixtures and ordinary tests need no network or model download.
 
 ## Layout
 

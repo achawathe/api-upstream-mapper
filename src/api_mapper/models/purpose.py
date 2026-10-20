@@ -19,10 +19,13 @@ class ValueProfile:
 
 @dataclass(frozen=True)
 class PurposeRule:
+    """`expects_labels` marks purposes whose values are human-readable words, not codes."""
+
     group: str
     role: str
     label: str
     patterns: tuple[str, ...]
+    expects_labels: bool = False
 
 
 @dataclass(frozen=True)
@@ -32,3 +35,4 @@ class PurposeFact:
     label: str
     location: str
     quote: str
+    expects_labels: bool = False

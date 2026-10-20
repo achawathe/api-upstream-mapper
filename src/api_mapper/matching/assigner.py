@@ -12,6 +12,7 @@ from api_mapper.matching.review import (
     definition_preferred,
     review_reasons,
     semantic_fallback,
+    unrouted_enum_values,
 )
 from api_mapper.models import (
     Candidate,
@@ -19,6 +20,8 @@ from api_mapper.models import (
     FieldNode,
     FieldProfile,
     MappingStatus,
+    TransformKind,
+    TransformStep,
 )
 
 
@@ -39,6 +42,7 @@ def assign(
     thresholds: Thresholds = DEFAULT_THRESHOLDS,
 ) -> list[FieldMapping]:
     mappings = [_decide(target, candidates_by_target.get(target.node.key, []), thresholds) for target in targets]
+    _review_unrouted_enum_values(mappings)
     _demote_shared_sources(mappings)
     return mappings
 
@@ -111,7 +115,36 @@ def _requirement_notes(target: FieldNode, candidate: Candidate) -> list[str]:
     unmapped = next((step.params.get("unmapped") for step in candidate.transforms if step.params.get("unmapped")), None)
     if unmapped:
         notes.append(f"enum values with no upstream match: {', '.join(unmapped)}")
+    if any(step.params.get("open_source") for step in candidate.transforms):
+        notes.append("source is free text; values outside the upstream's allowed list fail when converted")
     return notes
+
+
+def _review_unrouted_enum_values(mappings: list[FieldMapping]) -> None:
+    routed: dict[tuple[str, str, str], set[str]] = {}
+    for mapping in mappings:
+        for step in _enum_steps(mapping):
+            routed.setdefault(_value_route(mapping), set()).update(step.params.get("mapping") or {})
+    for mapping in mappings:
+        for step in _enum_steps(mapping):
+            orphans = unrouted_enum_values(step.params, routed[_value_route(mapping)])
+            if orphans and mapping.status in (MappingStatus.AUTO, MappingStatus.REVIEW):
+                mapping.status = MappingStatus.REVIEW
+                mapping.notes.append(
+                    f"most source enum values lack upstream equivalents in any variant ({', '.join(orphans)}); "
+                    "confirm the value mapping"
+                )
+
+
+def _enum_steps(mapping: FieldMapping) -> list[TransformStep]:
+    if mapping.chosen is None:
+        return []
+    return [step for step in mapping.chosen.transforms if step.kind is TransformKind.ENUM_MAP]
+
+
+def _value_route(mapping: FieldMapping) -> tuple[str, str, str]:
+    """Sibling variants of one upstream field that read the same source share their value maps."""
+    return mapping.target.endpoint, mapping.target.path, mapping.chosen.source.key
 
 
 def _demote_shared_sources(mappings: list[FieldMapping]) -> None:

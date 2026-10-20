@@ -40,7 +40,7 @@ class CandidateIndex:
         for group, values in roles(target).items():
             if group != "origin" and len(values) == 1:
                 indexes |= self._by_purpose.get((group, next(iter(values))), set())
-        if roles(target).get("presentation") == {"product_label"}:
+        if any(fact.expects_labels for fact in target.purposes):
             indexes |= self._labels
         for concept, share in target.bag.items():
             if share < MIN_INDEXED_SHARE:

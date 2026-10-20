@@ -270,3 +270,29 @@ no new accuracy gain is claimed. Small modules handle bundle selection, attachme
 sample context and persistent activity history. The Run screen shows a concise live
 status, with detailed logs collapsed by default. Workspace actions and run stages are
 recorded locally with bounded retention, excluding payloads and free-form review notes.
+
+
+## Review fixes (2026-10-20)
+
+Earlier figures in this log (for example 31/48 correct origins) are superseded by the
+README's measured-accuracy table.
+
+- A held-out benchmark (Australian CDR banking and common APIs, MIT, pinned in
+  `samples/held-out/cdr`) was labelled before its first run. That run scored 66.7%
+  precision and 34% recall, for the base rules as much as for later additions. Two general
+  defects caused most of it: tags set an API-wide account family ("Direct Debits" made the
+  whole banking API a deposit API), and single-record fields could come from endpoints
+  about another record (a payee's nickname). Both are fixed; CDR now scores 98.8% / 98.5%
+  and is no longer untouched.
+- Enum review now looks across sibling variants: a deposit variant's map leaving out `CC`
+  is not a gap when the credit variant accepts it. Free-text sources into a closed list keep
+  their automatic source decision with a runtime-validity note. Northwind automatic
+  decisions returned from 82% to 87%.
+- Evidence signals are a `Signal` enum; an unknown name now raises instead of silently
+  disabling a rule. A lexicon flag (`expects_labels`) replaces a `product_label` special
+  case in code.
+- ruff format and lint rules are configured in `pyproject.toml` and the codebase passes them.
+- `tools/nlp_effect.py` measures the local model: it changed 0 and 1 decisions on the two
+  benchmarks with no accuracy change, at 6–11 times the runtime.
+- The Qwen reranker adapter and its data stay in git so the experiment is portable; the
+  Qwen3-4B base model it needs is not included.

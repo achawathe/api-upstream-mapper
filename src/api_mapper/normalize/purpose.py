@@ -11,7 +11,7 @@ from api_mapper.normalize.definitions import leading_definition
 def field_purposes(node: FieldNode, rules: tuple[PurposeRule, ...]) -> tuple[PurposeFact, ...]:
     clues = (ContextClue(node.description, f"schema:{node.path}.description"), *node.context_clues, *node.documentation)
     return tuple(
-        PurposeFact(rule.group, rule.role, rule.label, clue.location, definition)
+        PurposeFact(rule.group, rule.role, rule.label, clue.location, definition, rule.expects_labels)
         for clue in clues
         if (definition := _affirmative(clue.text))
         for rule in rules

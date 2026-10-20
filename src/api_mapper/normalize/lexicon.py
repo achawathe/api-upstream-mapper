@@ -217,7 +217,9 @@ def _purpose_rule(raw: dict) -> PurposeRule:
             re.compile(pattern, re.IGNORECASE)
         except re.error as error:
             raise ValueError(f"invalid purpose rule pattern: {error}") from error
-    return PurposeRule(str(raw["group"]), str(raw["role"]), str(raw["label"]), tuple(patterns))
+    return PurposeRule(
+        str(raw["group"]), str(raw["role"]), str(raw["label"]), tuple(patterns), bool(raw.get("expects_labels", False))
+    )
 
 
 def _normal(word: str) -> str:

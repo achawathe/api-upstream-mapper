@@ -79,7 +79,8 @@ def test_value_definitions_are_bound_to_the_documented_endpoint():
     )
     documentation = read_documentation(
         "guide.md",
-        b"GET /orders\nstatus: Allowed values: PROCESSING, COMPLETED. PROCESSING means the order is being prepared.\nGET /shipments\nstatus: Allowed values: IN_TRANSIT, DELIVERED.",
+        b"GET /orders\nstatus: Allowed values: PROCESSING, COMPLETED. PROCESSING means the order is being prepared.\n"
+        b"GET /shipments\nstatus: Allowed values: IN_TRANSIT, DELIVERED.",
     )
     fields = flatten_spec(replace(api, documentation=documentation))
     contracts = {node.endpoint: enum_contract(node) for node in fields}

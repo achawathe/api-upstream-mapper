@@ -38,7 +38,7 @@ def test_every_expected_mapping_is_surfaced(report):
 
 
 def test_most_expected_mappings_need_no_review(report):
-    assert report.auto_recall >= 0.80, report.summary()
+    assert report.auto_recall >= 0.85, report.summary()
 
 
 def test_decoy_api_never_maps_automatically(result):

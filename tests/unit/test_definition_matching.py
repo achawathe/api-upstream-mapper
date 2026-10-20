@@ -88,7 +88,10 @@ def test_definitions_retrieve_names_without_equating_nickname_and_official_name(
                     },
                     "x2": {
                         "type": "string",
-                        "description": "The name of the account, either assigned by the user or by the financial institution itself",
+                        "description": (
+                            "The name of the account, either assigned by the user "
+                            "or by the financial institution itself"
+                        ),
                     },
                 }
             )

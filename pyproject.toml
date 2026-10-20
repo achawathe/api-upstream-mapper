@@ -1,7 +1,7 @@
 [project]
 name = "api-mapper"
 version = "0.1.0"
-description = "Deterministic field mapper from downstream API specs to an upstream API spec"
+description = "Rule-based field mapper from downstream API specs to an upstream API spec, with optional local NLP"
 requires-python = ">=3.12"
 dependencies = [
     "pyyaml>=6.0",

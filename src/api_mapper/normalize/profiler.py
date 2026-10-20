@@ -43,20 +43,34 @@ class Profiler:
         return self.lexicon.concepts_of_tokens(self.resolver.resolve_all(split_identifier(text)))
 
     def profile_spec(self, spec: ApiSpec, nodes: list[FieldNode]) -> list[FieldProfile]:
-        api_scope = self.lexicon.family_of(self._concepts(" ".join((spec.name, spec.title, *spec.tags))))
+        # Only the API's own name says what it is about. Its tag list names groups of endpoints
+        # (a "Direct Debits" tag does not make a whole banking API a deposit-account API).
+        api_scope = self.lexicon.family_of(self._concepts(" ".join((spec.name, spec.title))))
         endpoints = {endpoint.key: endpoint for endpoint in spec.endpoints}
         endpoint_info = {key: self._endpoint_context(endpoint) for key, endpoint in endpoints.items()}
         inputs = {key: self._input_concepts(endpoint) for key, endpoint in endpoints.items()}
+        records = {key: self._record(endpoint) for key, endpoint in endpoints.items()}
         profiles = []
         for node in nodes:
             concepts, endpoint_scope = endpoint_info.get(node.endpoint, ((), frozenset()))
             profile = self.profile(node, api_scope | endpoint_scope, concepts)
             profiles.append(
                 replace(
-                    profile, identity=self._identity(profile), endpoint_inputs=frozenset(inputs.get(node.endpoint, ()))
+                    profile,
+                    identity=self._identity(profile),
+                    endpoint_inputs=frozenset(inputs.get(node.endpoint, ())),
+                    record=records.get(node.endpoint, frozenset()),
                 )
             )
         return profiles
+
+    def _record(self, endpoint: Endpoint) -> frozenset[str]:
+        path_parameters = [p.name for p in endpoint.path_parameters if f"{{{p.name}}}" in endpoint.path]
+        if not path_parameters:
+            return frozenset()
+        last = max(path_parameters, key=lambda name: endpoint.path.index(f"{{{name}}}"))
+        identity = self.param_identity(last, endpoint.path)
+        return frozenset(c for c in identity if c not in self.lexicon.generic)
 
     def _input_concepts(self, endpoint: Endpoint) -> set[frozenset[str]]:
         return {

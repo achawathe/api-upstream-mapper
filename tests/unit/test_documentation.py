@@ -68,7 +68,8 @@ def test_docx_keeps_paragraph_citations():
     with ZipFile(stream, "w") as archive:
         archive.writestr(
             "word/document.xml",
-            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>reading: Temperature in Celsius.</w:t></w:r></w:p></w:body></w:document>',
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            "<w:body><w:p><w:r><w:t>reading: Temperature in Celsius.</w:t></w:r></w:p></w:body></w:document>",
         )
     passages = read_documentation("manual.docx", stream.getvalue())
     assert passages[0].text == "reading: Temperature in Celsius."

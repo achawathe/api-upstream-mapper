@@ -1,0 +1,16 @@
+{
+  "repository": "ConsumerDataStandardsAustralia/standards",
+  "revision": "45f31a807cf6770456eb26aa2c68003d634ea53c",
+  "licence": "MIT (LICENCE.md, copied unchanged)",
+  "retrieved": "2026-10-20",
+  "files": {
+    "cds_banking.json": {
+      "url": "https://raw.githubusercontent.com/ConsumerDataStandardsAustralia/standards/45f31a807cf6770456eb26aa2c68003d634ea53c/swagger-gen/api/cds_banking.json",
+      "sha256": "b12d3835d073a3b08993a6081f111cf1e0f011c0a442b7c3d6850f19a5f1faf9"
+    },
+    "cds_common.json": {
+      "url": "https://raw.githubusercontent.com/ConsumerDataStandardsAustralia/standards/45f31a807cf6770456eb26aa2c68003d634ea53c/swagger-gen/api/cds_common.json",
+      "sha256": "fa92d790aaaf2ac3083fd252681b5d0eca4492275bc3a98e0ec1f40b1fab09c0"
+    }
+  }
+}

@@ -94,6 +94,10 @@ vocabulary:
 phrases:
   - [line of credit, loc]
   - [home line of credit, loc]
+  - [direct debit, directdebit]
+  - [posting date, posted date]
+  - [posting time, posted time]
+  - [posting timestamp, posted timestamp]
   - [credit card, creditcard]
   - [home equity line of credit, loc]
   - [annual percentage rate, apr]
@@ -417,6 +421,7 @@ purpose_rules:
   - group: presentation
     role: product_label
     label: human-readable product name
+    expects_labels: true
     patterns:
       - '\bhuman.readable\s+name\b[^.;]{0,60}\bproduct\b'
       - '\b(?:display|marketing)\s+name\b[^.;]{0,60}\bproduct\b'

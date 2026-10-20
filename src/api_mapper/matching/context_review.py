@@ -1,6 +1,6 @@
 """Eligibility for advisory definition/NLP matches, independent of lexical ranking."""
 
-from api_mapper.models import Evidence, EvidenceEffect, FieldProfile
+from api_mapper.models import Evidence, EvidenceEffect, FieldProfile, Signal
 from api_mapper.transforms.inference import TypeFit
 
 
@@ -23,11 +23,11 @@ def can_review(
     )
     if target.node.array_depth != source.node.array_depth and not record_selection:
         return False
-    allowed = {"anchor", "spelling"}
+    allowed = {Signal.ANCHOR, Signal.SPELLING}
     if definition_match:
-        allowed.add("enum")
+        allowed.add(Signal.ENUM)
     if record_selection:
-        allowed.add("list-to-one")
+        allowed.add(Signal.LIST_TO_ONE)
     return not any(
         e.effect is EvidenceEffect.VETO or (e.effect is EvidenceEffect.MULTIPLIER and e.signal not in allowed)
         for e in evidence

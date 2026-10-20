@@ -1,0 +1,170 @@
+# Held-out ground truth: FDX (Core Exchange 6.4) <- Australian Consumer Data Right (CDR) Banking and Common APIs.
+#
+# Written on 2026-10-20 from the two specs alone, before the mapper was ever run on CDR, and not
+# used to tune rules or lexicon. Do not edit it to match tool output; if the mapper improves,
+# this file measures it, and if a label is wrong, fix it with a reason in the commit message.
+#
+# Format: see samples/answer_key.yaml. `expect` = a correct source exists; `optional` = a
+# defensible source exists but leaving the field unmapped is also correct.
+# Deliberate traps: CDR `reference` is an originator reference, not a related transaction id;
+# CDR transaction `currency` is the transaction's currency, not a foreign currency; CDR has no
+# debit/credit indicator (the amount is signed) and no customer id.
+#
+# Corrections after the first run (labels only, never to fit a result):
+# - 2026-10-20: CDR addresses come in two shapes chosen by addressUType, `simple` and `paf`
+#   (Australia Post's structured format). Both carry a genuine postcode and state, so the
+#   `paf` paths were added as acceptable sources for postalCode and region.
+
+sources:
+  L: "cds-banking|GET /banking/accounts|data.accounts[]."
+  D: "cds-banking|GET /banking/accounts/{accountId}|data."
+  B: "cds-banking|GET /banking/accounts/{accountId}/balance|data."
+  T: "cds-banking|GET /banking/accounts/{accountId}/transactions|data.transactions[]."
+  C: "cds-common|GET /common/customer/detail|data.person."
+
+groups:
+  - endpoint: GET /accounts
+    variants: [DepositAccountDescriptor, LoanAccountDescriptor, LineOfCreditAccountDescriptor]
+    expect:
+      accounts[].accountCategory: derived
+      accounts[].accountId: [L:accountId]
+      accounts[].accountNumberDisplay: [L:maskedNumber]
+      accounts[].productName: [L:productName]
+      accounts[].nickname: [L:nickname]
+      accounts[].status: [L:openStatus]
+    optional:
+      accounts[].accountType: [L:productCategory]
+
+  - endpoint: GET /accounts
+    variants: [InvestmentAccountDescriptor, AnnuityAccountDescriptor, CommercialAccountDescriptor,
+               DigitalWalletDescriptor, InsuranceAccountDescriptor]
+    expect:
+      accounts[].accountCategory: derived
+    optional:
+      accounts[].accountId: [L:accountId]
+      accounts[].accountNumberDisplay: [L:maskedNumber]
+      accounts[].productName: [L:productName]
+      accounts[].nickname: [L:nickname]
+      accounts[].status: [L:openStatus]
+      accounts[].accountType: [L:productCategory]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [DepositAccount, LoanAccount, LineOfCreditAccount]
+    expect:
+      accountCategory: derived
+      accountId: [D:accountId, B:accountId]
+      accountNumberDisplay: [D:maskedNumber]
+      productName: [D:productName]
+      nickname: [D:nickname]
+      status: [D:openStatus]
+    optional:
+      accountType: [D:productCategory]
+      currency.currencyCode: [B:currency]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [DepositAccount]
+    expect:
+      currentBalance: [B:currentBalance]
+      availableBalance: [B:availableBalance]
+    optional:
+      earnedInterest.rate: [D:depositRate]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [LineOfCreditAccount]
+    expect:
+      currentBalance: [B:currentBalance]
+      creditLine: [B:creditLimit]
+      minimumPaymentAmount: [D:creditCard.minPaymentAmount]
+      nextPaymentAmount: [D:creditCard.paymentDueAmount]
+      nextPaymentDate: [D:creditCard.paymentDueDate]
+    optional:
+      availableCredit: [B:availableBalance]
+      purchasesApr: [D:lendingRate]
+      chargedInterest.rate: [D:lendingRate]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [LoanAccount]
+    expect:
+      accountNumber: [D:accountNumber]
+      originalPrincipal: [D:loan.originalLoanAmount]
+      originatingDate: [D:loan.originalStartDate]
+      maturityDate: [D:loan.loanEndDate]
+      nextPaymentDate: [D:loan.nextInstalmentDate]
+    optional:
+      principalBalance: [B:currentBalance]
+      nextPaymentAmount: [D:loan.minInstalmentAmount]
+      interestRate: [D:lendingRate]
+      chargedInterest.rate: [D:lendingRate]
+
+  - endpoint: GET /accounts/{accountId}
+    variants: [InvestmentAccount]
+    expect:
+      accountCategory: derived
+    optional:
+      accountId: [D:accountId, B:accountId]
+      accountNumberDisplay: [D:maskedNumber]
+      productName: [D:productName]
+      nickname: [D:nickname]
+      status: [D:openStatus]
+      accountType: [D:productCategory]
+      currency.currencyCode: [B:currency]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [DepositTransaction, LoanTransaction, LineOfCreditTransaction]
+    expect:
+      transactions[].accountCategory: derived
+      transactions[].transactionId: [T:transactionId]
+      transactions[].postedTimestamp: [T:postingDateTime]
+      transactions[].transactionTimestamp: [T:executionDateTime]
+      transactions[].description: [T:description]
+      transactions[].status: [T:status]
+      transactions[].amount: [T:amount]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [DepositTransaction]
+    optional:
+      transactions[].payee: [T:merchantName]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [LoanTransaction, LineOfCreditTransaction]
+    optional:
+      transactions[].transactionType: [T:type]
+
+  - endpoint: GET /accounts/{accountId}/transactions
+    variants: [InvestmentTransaction]
+    expect:
+      transactions[].accountCategory: derived
+    optional:
+      transactions[].transactionId: [T:transactionId]
+      transactions[].postedTimestamp: [T:postingDateTime]
+      transactions[].transactionTimestamp: [T:executionDateTime]
+      transactions[].description: [T:description]
+      transactions[].status: [T:status]
+      transactions[].amount: [T:amount]
+      transactions[].transactionType: [T:type]
+
+  - endpoint: GET /accounts/{accountId}/contact
+    expect:
+      addresses[].line1: ["D:addresses[].simple.addressLine1"]
+      addresses[].line2: ["D:addresses[].simple.addressLine2"]
+      addresses[].line3: ["D:addresses[].simple.addressLine3"]
+      addresses[].city: ["D:addresses[].simple.city"]
+      addresses[].region: ["D:addresses[].simple.state", "D:addresses[].paf.state"]
+      addresses[].postalCode: ["D:addresses[].simple.postcode", "D:addresses[].paf.postcode"]
+      addresses[].country: ["D:addresses[].simple.country"]
+    optional:
+      holders[].name.first: [C:firstName]
+      holders[].name.last: [C:lastName]
+      holders[].name.middle: ["C:middleNames[]"]
+      holders[].name.prefix: [C:prefix]
+      holders[].name.suffix: [C:suffix]
+      emails[]: ["C:emailAddresses[].address"]
+      telephones[].number: ["C:phoneNumbers[].fullNumber", "C:phoneNumbers[].number"]
+      telephones[].country: ["C:phoneNumbers[].countryCode"]
+      telephones[].type: ["C:phoneNumbers[].purpose"]
+      telephones[].primary: ["C:phoneNumbers[].isPreferred"]
+
+  - endpoint: GET /accounts/{accountId}/payment-networks
+    optional:
+      paymentNetworks[].bankId: [D:bsb]
+      paymentNetworks[].identifier: [D:accountNumber]

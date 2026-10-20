@@ -7,7 +7,9 @@ from api_mapper.normalize.definitions import leading_definition
 
 _NUMERIC = re.compile(r"-?\d+(?:\.\d+)?")
 _ENCODING = re.compile(
-    r"\b(?:numeric string|string containing (?:an? )?(?:integer|number)|(?:integer|number|numeric value) (?:encoded|represented|serialized|stored|returned) as (?:a )?string)\b",
+    r"\b(?:numeric\ string"
+    r"|string\ containing\ (?:an?\ )?(?:integer|number)"
+    r"|(?:integer|number|numeric\ value)\ (?:encoded|represented|serialized|stored|returned)\ as\ (?:a\ )?string)\b",
     re.IGNORECASE,
 )
 

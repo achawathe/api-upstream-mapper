@@ -1,6 +1,6 @@
 """Explain decisions using recorded evidence, never generated or unverified rationales."""
 
-from api_mapper.models import Candidate, FieldMapping, MappingStatus
+from api_mapper.models import Candidate, FieldMapping, MappingStatus, Signal
 from api_mapper.reporting.rationale import (
     concerns,
     ranking_difference,
@@ -20,8 +20,11 @@ def explain_comparison(mapping: FieldMapping) -> dict:
         summary = "No source selected. The alternatives below show the available evidence and conflicts."
     elif mapping.status is MappingStatus.MANUAL:
         summary = "Selected by a reviewer. The automated evidence below may still contain conflicts."
-    elif mapping.status is MappingStatus.REVIEW and any(e.signal == "context_review" for e in chosen.evidence):
-        summary = "Field-purpose evidence supports this suggestion. Confirm the interpretation and record identity before accepting."
+    elif mapping.status is MappingStatus.REVIEW and any(e.signal is Signal.CONTEXT_REVIEW for e in chosen.evidence):
+        summary = (
+            "Field-purpose evidence supports this suggestion. "
+            "Confirm the interpretation and record identity before accepting."
+        )
     else:
         summary = "Selected by the combined matching evidence; scores are ranking signals, not probabilities."
     if chosen:
@@ -67,4 +70,4 @@ def explain_comparison(mapping: FieldMapping) -> dict:
 
 
 def _definition_preferred(candidate: Candidate) -> bool:
-    return any(e.signal == "definition_preferred" for e in candidate.evidence)
+    return any(e.signal is Signal.DEFINITION_PREFERRED for e in candidate.evidence)
