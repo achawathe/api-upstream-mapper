@@ -1,0 +1,11 @@
+{
+  "model": "/Users/akhilchawathe/Documents/Codex/2026-10-16/i-want-you-to-x20/work/model-validation/models/Qwen3-4B-Instruct-2507-4bit",
+  "adapter": null,
+  "data_sha256": "55e4032adfcb32d2ad6a4ae4bae584b9206801882c4da37af16c71a0e279a692",
+  "limit": null,
+  "max_tokens": 32,
+  "temperature": 0,
+  "seed": 0,
+  "network": "blocked",
+  "selection": "No labels in prompts; all choices require review"
+}

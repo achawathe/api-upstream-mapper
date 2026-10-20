@@ -1,0 +1,30 @@
+{
+  "model": "/Users/akhilchawathe/Documents/Codex/2026-10-16/i-want-you-to-x20/work/model-validation/models/Qwen3-4B-Instruct-2507-4bit",
+  "data": "/Users/akhilchawathe/AI-projects/api-mapper/experiments/local_reranker/data",
+  "fine_tune_type": "lora",
+  "num_layers": 8,
+  "lora_parameters": {
+    "rank": 8,
+    "scale": 16.0,
+    "dropout": 0.05,
+    "keys": [
+      "self_attn.q_proj",
+      "self_attn.v_proj"
+    ]
+  },
+  "mask_prompt": true,
+  "train": true,
+  "test": false,
+  "seed": 12,
+  "iterations": 128,
+  "learning_rate": 5e-05,
+  "max_seq_length": 512,
+  "validation_batches": -1,
+  "completion_format": "inference prefix + literal JSON + EOS; no template-inserted reasoning",
+  "eval_every": 64,
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.32.2",
+    "transformers": "5.20.1"
+  }
+}

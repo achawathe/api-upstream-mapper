@@ -1,0 +1,372 @@
+[
+  {
+    "case": 0,
+    "order": "original",
+    "actual": "C1",
+    "expected": [
+      "C1",
+      "C2",
+      "C8",
+      "C11"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C1\"}",
+    "seconds": 10.836
+  },
+  {
+    "case": 1,
+    "order": "original",
+    "actual": "C8",
+    "expected": [
+      "C2",
+      "C8",
+      "C11",
+      "C12"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C8\"}",
+    "seconds": 8.996
+  },
+  {
+    "case": 2,
+    "order": "original",
+    "actual": "NONE",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "abstained",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 8.739
+  },
+  {
+    "case": 3,
+    "order": "original",
+    "actual": "NONE",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "abstained",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 14.07
+  },
+  {
+    "case": 4,
+    "order": "original",
+    "actual": "C12",
+    "expected": [
+      "C12"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C12\"}",
+    "seconds": 8.561
+  },
+  {
+    "case": 5,
+    "order": "original",
+    "actual": "C10",
+    "expected": [
+      "C11",
+      "C12"
+    ],
+    "outcome": "wrong",
+    "raw": "{\"candidate_id\":\"C10\"}",
+    "seconds": 9.279
+  },
+  {
+    "case": 6,
+    "order": "original",
+    "actual": "NONE",
+    "expected": [
+      "NOT_RETRIEVED"
+    ],
+    "outcome": "missed",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 14.675
+  },
+  {
+    "case": 7,
+    "order": "original",
+    "actual": "NONE",
+    "expected": [
+      "C5"
+    ],
+    "outcome": "missed",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 8.972
+  },
+  {
+    "case": 8,
+    "order": "original",
+    "actual": "NONE",
+    "expected": [
+      "NOT_RETRIEVED"
+    ],
+    "outcome": "missed",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 9.166
+  },
+  {
+    "case": 9,
+    "order": "original",
+    "actual": "C9",
+    "expected": [
+      "C9",
+      "C12"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C9\"}",
+    "seconds": 5.48
+  },
+  {
+    "case": 10,
+    "order": "original",
+    "actual": "NONE",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "abstained",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 5.425
+  },
+  {
+    "case": 11,
+    "order": "original",
+    "actual": "NONE",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "abstained",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 5.193
+  },
+  {
+    "case": 12,
+    "order": "original",
+    "actual": "C1",
+    "expected": [
+      "C1",
+      "C2"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C1\"}",
+    "seconds": 1.47
+  },
+  {
+    "case": 13,
+    "order": "original",
+    "actual": "C2",
+    "expected": [
+      "C2"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C2\"}",
+    "seconds": 5.867
+  },
+  {
+    "case": 14,
+    "order": "original",
+    "actual": "C2",
+    "expected": [
+      "C2"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C2\"}",
+    "seconds": 6.124
+  },
+  {
+    "case": 15,
+    "order": "original",
+    "actual": "C1",
+    "expected": [
+      "C1"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C1\"}",
+    "seconds": 4.483
+  },
+  {
+    "case": 0,
+    "order": "reversed",
+    "actual": "C1",
+    "expected": [
+      "C1",
+      "C2",
+      "C8",
+      "C11"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C1\"}",
+    "seconds": 10.714
+  },
+  {
+    "case": 1,
+    "order": "reversed",
+    "actual": "C2",
+    "expected": [
+      "C2",
+      "C8",
+      "C11",
+      "C12"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C2\"}",
+    "seconds": 9.349
+  },
+  {
+    "case": 2,
+    "order": "reversed",
+    "actual": "C1",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "wrong",
+    "raw": "{\"candidate_id\":\"C1\"}",
+    "seconds": 9.123
+  },
+  {
+    "case": 3,
+    "order": "reversed",
+    "actual": "NONE",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "abstained",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 14.822
+  },
+  {
+    "case": 4,
+    "order": "reversed",
+    "actual": "C12",
+    "expected": [
+      "C12"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C12\"}",
+    "seconds": 8.868
+  },
+  {
+    "case": 5,
+    "order": "reversed",
+    "actual": "C12",
+    "expected": [
+      "C11",
+      "C12"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C12\"}",
+    "seconds": 9.592
+  },
+  {
+    "case": 6,
+    "order": "reversed",
+    "actual": "NONE",
+    "expected": [
+      "NOT_RETRIEVED"
+    ],
+    "outcome": "missed",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 15.115
+  },
+  {
+    "case": 7,
+    "order": "reversed",
+    "actual": "NONE",
+    "expected": [
+      "C5"
+    ],
+    "outcome": "missed",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 8.48
+  },
+  {
+    "case": 8,
+    "order": "reversed",
+    "actual": "NONE",
+    "expected": [
+      "NOT_RETRIEVED"
+    ],
+    "outcome": "missed",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 8.833
+  },
+  {
+    "case": 9,
+    "order": "reversed",
+    "actual": "C9",
+    "expected": [
+      "C9",
+      "C12"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C9\"}",
+    "seconds": 5.051
+  },
+  {
+    "case": 10,
+    "order": "reversed",
+    "actual": "NONE",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "abstained",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 5.337
+  },
+  {
+    "case": 11,
+    "order": "reversed",
+    "actual": "NONE",
+    "expected": [
+      "NONE"
+    ],
+    "outcome": "abstained",
+    "raw": "{\"candidate_id\":\"NONE\"}",
+    "seconds": 5.345
+  },
+  {
+    "case": 12,
+    "order": "reversed",
+    "actual": "C1",
+    "expected": [
+      "C1",
+      "C2"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C1\"}",
+    "seconds": 1.436
+  },
+  {
+    "case": 13,
+    "order": "reversed",
+    "actual": "C5",
+    "expected": [
+      "C2"
+    ],
+    "outcome": "wrong",
+    "raw": "{\"candidate_id\":\"C5\"}",
+    "seconds": 5.839
+  },
+  {
+    "case": 14,
+    "order": "reversed",
+    "actual": "C2",
+    "expected": [
+      "C2"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C2\"}",
+    "seconds": 6.103
+  },
+  {
+    "case": 15,
+    "order": "reversed",
+    "actual": "C1",
+    "expected": [
+      "C1"
+    ],
+    "outcome": "correct",
+    "raw": "{\"candidate_id\":\"C1\"}",
+    "seconds": 4.402
+  }
+]

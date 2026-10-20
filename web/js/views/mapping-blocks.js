@@ -25,6 +25,25 @@ export function mappingBlocks(rows) {
   };
   const palette = sourcePalette(mapping, choose, available);
   function renderStage() {
+    const explanation = h("div", { "aria-live": "polite" }, comparisonView(mapping.comparison));
+    let explanationVersion = 0;
+    let explanationTimer;
+    const refreshExplanation = () => {
+      const version = ++explanationVersion;
+      clearTimeout(explanationTimer);
+      mount(explanation, h("p", { class: "small muted", role: "status" }, "Updating mapping explanation…"));
+      explanationTimer = setTimeout(async () => {
+        if (!explanation.isConnected || !draft.source) return;
+        try {
+          const result = await api.explainMapping({
+            target_key: mapping.target.key, source_key: draft.source.source.key, transforms: draft.transforms,
+          });
+          if (version === explanationVersion && explanation.isConnected) mount(explanation, comparisonView(result));
+        } catch (error) {
+          if (version === explanationVersion && explanation.isConnected) mount(explanation, h("p", { class: "error-box" }, error.message));
+        }
+      }, 200);
+    };
     const slot = h("div", {
       class: "source-slot", "aria-label": "Source connection slot",
       ondragover: (event) => { if (event.dataTransfer.types.includes("application/x-mapping-source")) { event.preventDefault(); slot.classList.add("drag-over"); } },
@@ -57,16 +76,17 @@ export function mappingBlocks(rows) {
     };
     mount(stage, h("div", { class: "row" }, h("h2", {}, "Build this mapping"), h("span", { class: "spacer" }), statusPill(mapping.status)),
       h("p", { class: "small muted" }, mapping.target.endpoint, mapping.target.variant ? ` · ${mapping.target.variant}` : ""),
-      categoryEditor(mapping), slot, connector(), conversionBlocks(draft, edited, mapping.target), connector(),
+      categoryEditor(mapping), slot, connector(), conversionBlocks(draft, () => { edited(); refreshExplanation(); }, mapping.target), connector(),
       h("div", { class: "mapping-block output" }, h("span", { class: "block-caption" }, "TO · UPSTREAM"),
         h("strong", { class: "mono" }, mapping.target.path), h("span", { class: "chip" }, mapping.target.type),
         mapping.target.description && h("p", { class: "small" }, mapping.target.description)),
       draft.source?.vetoed_by && h("p", { class: "error-box" }, "Compatibility concern: ", draft.source.vetoed_by, ". Saving records your manual choice; it does not resolve this concern."),
-      preview(mapping, draft), h("details", { class: "block-evidence" }, h("summary", {}, "Why this suggestion? Evidence and alternatives"), comparisonView(mapping.comparison)),
+      preview(mapping, draft), h("details", { class: "block-evidence", open: true }, h("summary", {}, "Mapping explanation"), explanation),
       note, h("div", { class: "row editor-actions" }, h("button", { class: "btn primary", disabled: !draft.source, onclick: save }, "Save mapping"),
         h("button", { class: "btn", onclick: reject }, "Leave unmapped"),
         h("button", { class: "btn", onclick: () => { delete drafts[mapping.target.key]; changed(); } }, "Discard draft"),
         store.result.overrides.some((o) => o.target_key === mapping.target.key) && h("button", { class: "btn", onclick: undo }, "Restore suggestion"), indicator));
+    if (draft.dirty && draft.source) refreshExplanation();
   }
   renderStage();
   return h("div", { class: "block-workbench" }, fieldOrganizer(rows, mapping), palette, stage);

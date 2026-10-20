@@ -1,0 +1,11 @@
+{
+  "model": "/Users/akhilchawathe/Documents/Codex/2026-10-16/i-want-you-to-x20/work/model-validation/models/Qwen3-4B-Instruct-2507-4bit",
+  "adapter": "/Users/akhilchawathe/Documents/Codex/2026-10-16/i-want-you-to-x20/work/local-finetuning-v2/json-pilot-128/selected",
+  "data_sha256": "4efd8ead2e8c4b969ce8e59f20022f01e62957aff76533c225191033b9039d85",
+  "limit": null,
+  "max_tokens": 32,
+  "temperature": 0,
+  "seed": 0,
+  "network": "blocked",
+  "selection": "No labels in prompts; all choices require review"
+}

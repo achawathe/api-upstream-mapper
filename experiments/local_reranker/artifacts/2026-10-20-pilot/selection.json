@@ -1,0 +1,6 @@
+{
+  "iteration": 128,
+  "val_loss": 0.09828458726406097,
+  "final": true,
+  "adapter": "/Users/akhilchawathe/Documents/Codex/2026-10-16/i-want-you-to-x20/work/local-finetuning-v2/json-pilot-128/selected"
+}

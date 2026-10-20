@@ -1,0 +1,342 @@
+[
+  {
+    "id": "test-0010",
+    "family": "sibling",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0030",
+    "family": "sample_labels",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0001",
+    "family": "identity",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0049",
+    "family": "ambiguous",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0012",
+    "family": "sample_labels",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0029",
+    "family": "sample_labels",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0024",
+    "family": "quantity",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0022",
+    "family": "label",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0066",
+    "family": "ambiguous",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0056",
+    "family": "label",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0043",
+    "family": "event",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0016",
+    "family": "unknown",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0061",
+    "family": "sibling",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0000",
+    "family": "identity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0039",
+    "family": "label",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0033",
+    "family": "unknown",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0059",
+    "family": "event",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0011",
+    "family": "sibling",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0060",
+    "family": "event",
+    "expected": "C3"
+  },
+  {
+    "id": "test-0020",
+    "family": "related",
+    "expected": "C3"
+  },
+  {
+    "id": "test-0051",
+    "family": "identity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0046",
+    "family": "sample_labels",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0048",
+    "family": "generated",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0021",
+    "family": "label",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0028",
+    "family": "sibling",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0063",
+    "family": "sample_labels",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0031",
+    "family": "generated",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0047",
+    "family": "sample_labels",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0017",
+    "family": "identity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0065",
+    "family": "generated",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0055",
+    "family": "label",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0018",
+    "family": "identity",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0008",
+    "family": "event",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0054",
+    "family": "related",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0042",
+    "family": "event",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0038",
+    "family": "label",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0025",
+    "family": "event",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0044",
+    "family": "sibling",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0045",
+    "family": "sibling",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0058",
+    "family": "quantity",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0067",
+    "family": "unknown",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0040",
+    "family": "quantity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0014",
+    "family": "generated",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0007",
+    "family": "quantity",
+    "expected": "C3"
+  },
+  {
+    "id": "test-0036",
+    "family": "related",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0057",
+    "family": "quantity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0062",
+    "family": "sibling",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0035",
+    "family": "identity",
+    "expected": "C3"
+  },
+  {
+    "id": "test-0053",
+    "family": "related",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0015",
+    "family": "ambiguous",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0004",
+    "family": "label",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0026",
+    "family": "event",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0027",
+    "family": "sibling",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0005",
+    "family": "label",
+    "expected": "C3"
+  },
+  {
+    "id": "test-0002",
+    "family": "related",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0013",
+    "family": "sample_labels",
+    "expected": "C2"
+  },
+  {
+    "id": "test-0032",
+    "family": "ambiguous",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0003",
+    "family": "related",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0037",
+    "family": "related",
+    "expected": "C3"
+  },
+  {
+    "id": "test-0023",
+    "family": "quantity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0064",
+    "family": "sample_labels",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0034",
+    "family": "identity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0052",
+    "family": "identity",
+    "expected": "C1"
+  },
+  {
+    "id": "test-0009",
+    "family": "event",
+    "expected": "C3"
+  },
+  {
+    "id": "test-0006",
+    "family": "quantity",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0050",
+    "family": "unknown",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0019",
+    "family": "related",
+    "expected": "NONE"
+  },
+  {
+    "id": "test-0041",
+    "family": "quantity",
+    "expected": "C3"
+  }
+]

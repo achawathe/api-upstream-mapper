@@ -1,0 +1,21 @@
+{
+  "original": {
+    "correct": 2,
+    "wrong": 1,
+    "missed": 5,
+    "abstained": 8,
+    "invalid": 0,
+    "cases": 16,
+    "seconds": 18.69
+  },
+  "reversed": {
+    "correct": 1,
+    "wrong": 0,
+    "missed": 6,
+    "abstained": 9,
+    "invalid": 0,
+    "cases": 16,
+    "seconds": 18.26
+  },
+  "order_changes": 4
+}

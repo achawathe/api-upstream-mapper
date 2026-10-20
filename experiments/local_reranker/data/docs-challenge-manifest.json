@@ -1,0 +1,86 @@
+{
+  "purpose": "New synthetic challenge. Independent API definitions, not mapping instructions. Not used for training or checkpoint selection.",
+  "sha256": "4efd8ead2e8c4b969ce8e59f20022f01e62957aff76533c225191033b9039d85",
+  "cases": [
+    {
+      "id": "weather-temperature",
+      "expected": "C2",
+      "case": 0
+    },
+    {
+      "id": "weather-no-air-reading",
+      "expected": "NONE",
+      "case": 1
+    },
+    {
+      "id": "stock-available",
+      "expected": "C2",
+      "case": 2
+    },
+    {
+      "id": "stock-only-total",
+      "expected": "NONE",
+      "case": 3
+    },
+    {
+      "id": "request-versus-entity",
+      "expected": "C2",
+      "case": 4
+    },
+    {
+      "id": "request-only",
+      "expected": "NONE",
+      "case": 5
+    },
+    {
+      "id": "readable-name",
+      "expected": "C1",
+      "case": 6
+    },
+    {
+      "id": "no-readable-name",
+      "expected": "NONE",
+      "case": 7
+    },
+    {
+      "id": "event-origin",
+      "expected": "C2",
+      "case": 8
+    },
+    {
+      "id": "missing-origin-event",
+      "expected": "NONE",
+      "case": 9
+    },
+    {
+      "id": "channel-generated",
+      "expected": "NONE",
+      "case": 10
+    },
+    {
+      "id": "ambiguous-ownership",
+      "expected": "NONE",
+      "case": 11
+    },
+    {
+      "id": "numeric-string",
+      "expected": "C2",
+      "case": 12
+    },
+    {
+      "id": "numeric-id-only",
+      "expected": "NONE",
+      "case": 13
+    },
+    {
+      "id": "same-enum-different-meaning",
+      "expected": "C2",
+      "case": 14
+    },
+    {
+      "id": "verification-is-not-lifecycle",
+      "expected": "NONE",
+      "case": 15
+    }
+  ]
+}

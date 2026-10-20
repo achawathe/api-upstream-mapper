@@ -1,0 +1,143 @@
+{
+  "passes_focused_gate": false,
+  "reasons": [
+    "docs/reversed: selection accuracy must improve without additional wrong choices",
+    "public/original: needs zero wrong/invalid choices and at least five correct origins",
+    "public/reversed: needs zero wrong/invalid choices and at least five correct origins"
+  ],
+  "results": {
+    "heldout": {
+      "base": {
+        "original": {
+          "correct": 13,
+          "wrong": 46,
+          "missed": 0,
+          "abstained": 9,
+          "invalid": 0,
+          "cases": 68,
+          "seconds": 79.96
+        },
+        "reversed": {
+          "correct": 14,
+          "wrong": 45,
+          "missed": 1,
+          "abstained": 8,
+          "invalid": 0,
+          "cases": 68,
+          "seconds": 79.72
+        },
+        "order_changes": 18
+      },
+      "trained": {
+        "original": {
+          "correct": 15,
+          "wrong": 11,
+          "missed": 7,
+          "abstained": 35,
+          "invalid": 0,
+          "cases": 68,
+          "seconds": 80.16
+        },
+        "reversed": {
+          "correct": 13,
+          "wrong": 13,
+          "missed": 5,
+          "abstained": 37,
+          "invalid": 0,
+          "cases": 68,
+          "seconds": 79.76
+        },
+        "order_changes": 15
+      }
+    },
+    "docs": {
+      "base": {
+        "original": {
+          "correct": 4,
+          "wrong": 5,
+          "missed": 2,
+          "abstained": 5,
+          "invalid": 0,
+          "cases": 16,
+          "seconds": 18.63
+        },
+        "reversed": {
+          "correct": 6,
+          "wrong": 4,
+          "missed": 1,
+          "abstained": 5,
+          "invalid": 0,
+          "cases": 16,
+          "seconds": 18.42
+        },
+        "order_changes": 7
+      },
+      "trained": {
+        "original": {
+          "correct": 2,
+          "wrong": 1,
+          "missed": 5,
+          "abstained": 8,
+          "invalid": 0,
+          "cases": 16,
+          "seconds": 18.69
+        },
+        "reversed": {
+          "correct": 1,
+          "wrong": 0,
+          "missed": 6,
+          "abstained": 9,
+          "invalid": 0,
+          "cases": 16,
+          "seconds": 18.26
+        },
+        "order_changes": 4
+      }
+    },
+    "public": {
+      "base": {
+        "original": {
+          "correct": 8,
+          "wrong": 3,
+          "missed": 2,
+          "abstained": 3,
+          "invalid": 0,
+          "cases": 16,
+          "seconds": 119.28
+        },
+        "reversed": {
+          "correct": 6,
+          "wrong": 7,
+          "missed": 0,
+          "abstained": 2,
+          "invalid": 1,
+          "cases": 16,
+          "seconds": 123.97
+        },
+        "order_changes": 8
+      },
+      "trained": {
+        "original": {
+          "correct": 8,
+          "wrong": 1,
+          "missed": 3,
+          "abstained": 4,
+          "invalid": 0,
+          "cases": 16,
+          "seconds": 127.34
+        },
+        "reversed": {
+          "correct": 8,
+          "wrong": 2,
+          "missed": 3,
+          "abstained": 3,
+          "invalid": 0,
+          "cases": 16,
+          "seconds": 128.41
+        },
+        "order_changes": 4
+      }
+    }
+  },
+  "deployment": "Never automatic; a pass requires the full public-contract evaluation and integration checks"
+}

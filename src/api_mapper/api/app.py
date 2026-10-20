@@ -18,7 +18,9 @@ from api_mapper.errors.error_mapper import ErrorMapper
 from api_mapper.loaders import SpecLoadError
 from api_mapper.matching.assigner import Thresholds
 from api_mapper.matching.semantic import NlpSettings
+from api_mapper.models.explanation import ExplanationRequest
 from api_mapper.reporting.excel_report import write_excel_report
+from api_mapper.reporting.explanation_preview import explain_draft
 from api_mapper.reporting.serialize import (
     candidate_to_dict,
     execution_to_dict,
@@ -62,9 +64,16 @@ async def log_request_outcomes(request: Request, call_next):
         workspace.activity.record("Request failed", "failed", method=request.method, error_type=type(error).__name__)
         raise
     route = request.scope.get("route")
-    if request.url.path.startswith("/api/") and (response.status_code >= 400 or getattr(route, "name", "") in {"validate", "excel", "json_report"}):
-        workspace.activity.record("API request", "failed" if response.status_code >= 400 else "success",
-                                  method=request.method, route=getattr(route, "path", "unknown"), status=response.status_code)
+    if request.url.path.startswith("/api/") and (
+        response.status_code >= 400 or getattr(route, "name", "") in {"validate", "excel", "json_report"}
+    ):
+        workspace.activity.record(
+            "API request",
+            "failed" if response.status_code >= 400 else "success",
+            method=request.method,
+            route=getattr(route, "path", "unknown"),
+            status=response.status_code,
+        )
     return response
 
 
@@ -78,7 +87,7 @@ class SettingsBody(BaseModel):
     auto: float = Field(ge=0, le=1)
     review: float = Field(ge=0, le=1)
     nlp: NlpBody | None = None
-    domain: Literal['finance', 'general'] | None = None
+    domain: Literal["finance", "general"] | None = None
 
 
 class ValidateBody(BaseModel):
@@ -147,7 +156,9 @@ async def attach_model_files(file_id: str, files: Annotated[list[UploadFile], Fi
 
 @app.post("/api/files/{file_id}/response-samples")
 async def attach_response_samples(
-    file_id: str, endpoint: Annotated[str, Form()], files: Annotated[list[UploadFile], File()],
+    file_id: str,
+    endpoint: Annotated[str, Form()],
+    files: Annotated[list[UploadFile], File()],
 ) -> dict[str, Any]:
     uploads = [(f.filename or "response.json", await f.read()) for f in files]
     try:
@@ -163,17 +174,18 @@ def remove_response_samples(sample_id: str) -> dict[str, Any]:
     return workspace.state()
 
 
-@app.post('/api/files/{file_id}/documentation')
-async def attach_documentation(file_id: str, files: Annotated[list[UploadFile], File()],
-                               endpoint: Annotated[str, Form()] = '') -> dict[str, Any]:
-    uploads = [(f.filename or 'pasted.txt', await f.read()) for f in files]
+@app.post("/api/files/{file_id}/documentation")
+async def attach_documentation(
+    file_id: str, files: Annotated[list[UploadFile], File()], endpoint: Annotated[str, Form()] = ""
+) -> dict[str, Any]:
+    uploads = [(f.filename or "pasted.txt", await f.read()) for f in files]
     try:
-        return {'document': asdict(workspace.add_documentation(file_id, uploads, endpoint))}
+        return {"document": asdict(workspace.add_documentation(file_id, uploads, endpoint))}
     except (ValueError, KeyError, SpecLoadError) as error:
         raise HTTPException(400, str(error)) from error
 
 
-@app.delete('/api/documentation/{document_id}')
+@app.delete("/api/documentation/{document_id}")
 def remove_documentation(document_id: str) -> dict[str, Any]:
     try:
         workspace.remove_documentation(document_id)
@@ -184,8 +196,10 @@ def remove_documentation(document_id: str) -> dict[str, Any]:
 
 @app.post("/api/sample-endpoints")
 async def add_sample_endpoint(
-    api_name: Annotated[str, Form()], path: Annotated[str, Form()],
-    files: Annotated[list[UploadFile], File()], method: Annotated[str, Form()] = "GET",
+    api_name: Annotated[str, Form()],
+    path: Annotated[str, Form()],
+    files: Annotated[list[UploadFile], File()],
+    method: Annotated[str, Form()] = "GET",
 ) -> dict[str, Any]:
     payloads = [(f.filename or "sample.json", await f.read()) for f in files]
     stored = workspace.add_sample_endpoint(api_name, method, path, payloads)
@@ -277,9 +291,9 @@ def set_override(payload: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(400, f"invalid override: {error}") from error
     prepared = _require_result().prepared
     if override.target_key not in prepared.targets:
-        raise HTTPException(400, 'Choose a field from the current mapping run')
+        raise HTTPException(400, "Choose a field from the current mapping run")
     if override.source_key and override.source_key not in prepared.sources:
-        raise HTTPException(400, 'Choose a source from the current mapping run')
+        raise HTTPException(400, "Choose a source from the current mapping run")
     try:
         validate_enum_outputs(override.transforms, prepared.targets[override.target_key].node)
     except ValueError as error:
@@ -288,7 +302,7 @@ def set_override(payload: dict[str, Any]) -> dict[str, Any]:
     return _after_override(override.target_key, warnings)
 
 
-@app.put('/api/mapping-category')
+@app.put("/api/mapping-category")
 def set_category(body: CategoryBody) -> dict[str, Any]:
     try:
         workspace.set_category(body.target_key, body.category)
@@ -297,24 +311,41 @@ def set_category(body: CategoryBody) -> dict[str, Any]:
     return _after_override(body.target_key, [])
 
 
-@app.post('/api/conversion-preview')
+@app.post("/api/conversion-preview")
 def preview_conversion(body: PreviewBody) -> dict[str, Any]:
     prepared = _require_result().prepared
     target = prepared.targets.get(body.target_key)
     source = prepared.sources.get(body.source_key)
     if target is None or source is None:
-        raise HTTPException(400, 'Choose a target and source from the current run')
-    sample = body.sample if 'sample' in body.model_fields_set else source.node.example
-    if sample is None and 'sample' not in body.model_fields_set:
-        raise HTTPException(400, 'This source has no example. Enter a JSON value to preview.')
+        raise HTTPException(400, "Choose a target and source from the current run")
+    sample = body.sample if "sample" in body.model_fields_set else source.node.example
+    if sample is None and "sample" not in body.model_fields_set:
+        raise HTTPException(400, "This source has no example. Enter a JSON value to preview.")
     try:
         steps = parse_steps(body.transforms) or ()
         validate_enum_outputs(steps, target.node)
         output = apply_transforms(steps, sample)
-        issues = check_document({'value': output}, [replace(target.node, path='value')])
-        return {'input': sample, 'output': output, 'issues': [issue.message for issue in issues],
-                'message': 'Example only; confirm conversions for all expected values'}
+        issues = check_document({"value": output}, [replace(target.node, path="value")])
+        return {
+            "input": sample,
+            "output": output,
+            "issues": [issue.message for issue in issues],
+            "message": "Example only; confirm conversions for all expected values",
+        }
     except (ValueError, TypeError, OverflowError, TransformError) as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.post("/api/mapping-explanation")
+def mapping_explanation(body: ExplanationRequest) -> dict[str, Any]:
+    result = _require_result()
+    mapping = next((m for m in result.run.mappings if m.target.key == body.target_key), None)
+    candidate = result.prepared.score_pair(body.target_key, body.source_key)
+    if mapping is None or candidate is None:
+        raise HTTPException(400, "Choose a target and source from the current run")
+    try:
+        return explain_draft(mapping, candidate, body.transforms)
+    except (ValueError, TypeError) as error:
         raise HTTPException(400, str(error)) from error
 
 
@@ -332,7 +363,9 @@ def excel() -> FileResponse:
 
 @app.get("/api/report.json")
 def json_report() -> JSONResponse:
-    return JSONResponse(run_to_dict(_require_result().run), headers={"Content-Disposition": "attachment; filename=mapping-report.json"})
+    return JSONResponse(
+        run_to_dict(_require_result().run), headers={"Content-Disposition": "attachment; filename=mapping-report.json"}
+    )
 
 
 @app.get("/api/validate/options")
@@ -348,12 +381,17 @@ def validate_options() -> dict[str, Any]:
                 "endpoint": endpoint.key,
                 "path_params": [p.name for p in endpoint.parameters if p.location == "path"],
                 "query_params": [p.name for p in endpoint.parameters if p.location == "query"],
-                "context_params": sorted({b.parameter for s in plan.steps for b in s.bindings if b.source.value == "unresolved"}),
+                "context_params": sorted(
+                    {b.parameter for s in plan.steps for b in s.bindings if b.source.value == "unresolved"}
+                ),
                 "variants": [{"name": v, "value": value} for v, value in variants],
                 "steps": len(plan.steps),
             }
         )
-    apis = [{"name": s.name, "statuses": sorted({r.status for e in s.endpoints for r in e.error_responses})} for s in run.downstreams]
+    apis = [
+        {"name": s.name, "statuses": sorted({r.status for e in s.endpoints for r in e.error_responses})}
+        for s in run.downstreams
+    ]
     return {"endpoints": options, "apis": apis}
 
 
@@ -365,7 +403,9 @@ async def validate(body: ValidateBody) -> dict[str, Any]:
     lexicon = workspace.pipeline.lexicon
     catalog_file = next((f for f in workspace.files if f.role == FileRole.CATALOG), None)
     resolver = ErrorMapper(load_error_catalog(Path(catalog_file.path)), lexicon).map if catalog_file else None
-    mocks = MockDownstreams(result.run.downstreams, lexicon, FaultPlan(statuses=body.faults, latency_ms=body.latency_ms))
+    mocks = MockDownstreams(
+        result.run.downstreams, lexicon, FaultPlan(statuses=body.faults, latency_ms=body.latency_ms)
+    )
     executor = PlanExecutor(result.run, mocks, resolver, include_review=body.include_review)
     return execution_to_dict(await executor.execute(body.endpoint, body.params, body.variant_hint))
 

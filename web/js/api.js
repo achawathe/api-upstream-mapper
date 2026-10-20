@@ -58,6 +58,7 @@ export const api = {
   clearOverride: (targetKey) => request("DELETE", `/api/overrides?target_key=${encodeURIComponent(targetKey)}`),
   setCategory: (targetKey, category) => request("PUT", "/api/mapping-category", { target_key: targetKey, category }),
   previewConversion: (body) => request("POST", "/api/conversion-preview", body),
+  explainMapping: (body) => request("POST", "/api/mapping-explanation", body),
   validateOptions: () => request("GET", "/api/validate/options"),
   validate: (body) => request("POST", "/api/validate", body),
   events: (runId) => new EventSource(`/api/runs/${runId}/events`),

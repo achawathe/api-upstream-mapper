@@ -51,13 +51,36 @@ def write_excel_report(run: MappingRun, path: Path) -> Path:
 
 
 def _comparisons(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
-    rows = [("Upstream field", "Chosen source", "Decision", "Supporting evidence", "Alternative", "Why not selected")]
+    rows = [
+        (
+            "Upstream field",
+            "Chosen source",
+            "Decision",
+            "Supporting evidence",
+            "Alternative",
+            "Why not selected",
+            "Uncertainties",
+            "Conversions and conditions",
+            "API references",
+        )
+    ]
     for mapping in mappings:
         comparison = explain_comparison(mapping)
         alternatives = comparison["alternatives"] or [{"source": "", "reason": ""}]
         for other in alternatives:
-            rows.append((mapping.target.key, _source_text(mapping.chosen), comparison["summary"],
-                         "; ".join(comparison["support"]), other["source"], other["reason"]))
+            rows.append(
+                (
+                    mapping.target.key,
+                    _source_text(mapping.chosen),
+                    comparison["summary"],
+                    "; ".join(comparison["support"]),
+                    other["source"],
+                    other["reason"],
+                    "; ".join(comparison["concerns"]),
+                    "; ".join(comparison["requirements"]),
+                    "\n".join(f"{r['side']} — {r['location']}: {r['text']}" for r in comparison["references"]),
+                )
+            )
     _table(sheet, rows)
 
 
@@ -73,7 +96,9 @@ def _summary(sheet: Worksheet, run: MappingRun) -> None:
     start = len(rows) + 5
     _table(sheet, [("Status", "Fields"), *((status, count) for status, count in counts.items())], start_row=start)
 
-    coverage_rows: list[Sequence[Any]] = [("Upstream endpoint", "Fields", "Mapped", "Mapped %", "Required", "Required mapped", "Required %")]
+    coverage_rows: list[Sequence[Any]] = [
+        ("Upstream endpoint", "Fields", "Mapped", "Mapped %", "Required", "Required mapped", "Required %")
+    ]
     by_endpoint: dict[str, list[FieldMapping]] = defaultdict(list)
     for mapping in run.mappings:
         by_endpoint[mapping.target.endpoint].append(mapping)
@@ -82,7 +107,15 @@ def _summary(sheet: Worksheet, run: MappingRun) -> None:
         required = [m for m in mappings if m.target.required]
         required_mapped = [m for m in required if m.is_mapped]
         coverage_rows.append(
-            (endpoint, len(mappings), len(mapped), _ratio(mapped, mappings), len(required), len(required_mapped), _ratio(required_mapped, required))
+            (
+                endpoint,
+                len(mappings),
+                len(mapped),
+                _ratio(mapped, mappings),
+                len(required),
+                len(required_mapped),
+                _ratio(required_mapped, required),
+            )
         )
     _table(sheet, coverage_rows, start_row=start + len(counts) + 3)
 
@@ -90,18 +123,44 @@ def _summary(sheet: Worksheet, run: MappingRun) -> None:
 def _field_mapping(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
     rows: list[Sequence[Any]] = [
         (
-            "Upstream endpoint", "Variant", "Condition", "Upstream field", "Type", "Required", "Status", "Confidence",
-            "Downstream API", "Downstream endpoint", "Downstream field", "Downstream type", "Transforms", "Why", "Notes", "Category",
+            "Upstream endpoint",
+            "Variant",
+            "Condition",
+            "Upstream field",
+            "Type",
+            "Required",
+            "Status",
+            "Confidence",
+            "Downstream API",
+            "Downstream endpoint",
+            "Downstream field",
+            "Downstream type",
+            "Transforms",
+            "Why",
+            "Notes",
+            "Category",
         )
     ]
     for m in mappings:
         source = m.chosen.source if m.chosen else None
         rows.append(
             (
-                m.target.endpoint, m.target.variant or "", m.target.condition or "", m.target.path, _type(m.target),
-                "yes" if m.target.required else "", m.status.value, m.chosen.score if m.chosen else None,
-                source.api if source else "", source.endpoint if source else "", source.path if source else "",
-                _type(source) if source else "", _transforms_text(m.chosen), _why(m.chosen), "; ".join(m.notes), m.category,
+                m.target.endpoint,
+                m.target.variant or "",
+                m.target.condition or "",
+                m.target.path,
+                _type(m.target),
+                "yes" if m.target.required else "",
+                m.status.value,
+                m.chosen.score if m.chosen else None,
+                source.api if source else "",
+                source.endpoint if source else "",
+                source.path if source else "",
+                _type(source) if source else "",
+                _transforms_text(m.chosen),
+                _why(m.chosen),
+                "; ".join(m.notes),
+                m.category,
             )
         )
     _table(sheet, rows)
@@ -109,79 +168,208 @@ def _field_mapping(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
 
 
 def _needs_review(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
-    rows: list[Sequence[Any]] = [("Upstream endpoint", "Variant", "Upstream field", "Proposed source", "Score", "Why", "Notes", "Next best", "Next score")]
+    rows: list[Sequence[Any]] = [
+        (
+            "Upstream endpoint",
+            "Variant",
+            "Upstream field",
+            "Proposed source",
+            "Score",
+            "Why",
+            "Notes",
+            "Next best",
+            "Next score",
+        )
+    ]
     for m in mappings:
         if m.status is not MappingStatus.REVIEW:
             continue
         runner_up = next((c for c in m.alternatives if c.vetoed_by is None), None)
         rows.append(
             (
-                m.target.endpoint, m.target.variant or "", m.target.path, _source_text(m.chosen), m.chosen.score,
-                _why(m.chosen), "; ".join(m.notes), _source_text(runner_up), runner_up.score if runner_up else None,
+                m.target.endpoint,
+                m.target.variant or "",
+                m.target.path,
+                _source_text(m.chosen),
+                m.chosen.score,
+                _why(m.chosen),
+                "; ".join(m.notes),
+                _source_text(runner_up),
+                runner_up.score if runner_up else None,
             )
         )
     _table(sheet, rows)
 
 
 def _gaps(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
-    rows: list[Sequence[Any]] = [("Upstream endpoint", "Variant", "Upstream field", "Required", "Status", "Closest candidate", "Score", "Why it was not used")]
+    rows: list[Sequence[Any]] = [
+        (
+            "Upstream endpoint",
+            "Variant",
+            "Upstream field",
+            "Required",
+            "Status",
+            "Closest candidate",
+            "Score",
+            "Why it was not used",
+        )
+    ]
     gaps = [m for m in mappings if m.status in (MappingStatus.UNMAPPED, MappingStatus.REJECTED)]
     gaps.sort(key=lambda m: (not m.target.required, m.target.endpoint, m.target.variant or "", m.target.path))
     for m in gaps:
         closest = m.alternatives[0] if m.alternatives else None
         rows.append(
             (
-                m.target.endpoint, m.target.variant or "", m.target.path, "yes" if m.target.required else "", m.status.value,
-                _source_text(closest), closest.score if closest else None, _rejection_reason(closest),
+                m.target.endpoint,
+                m.target.variant or "",
+                m.target.path,
+                "yes" if m.target.required else "",
+                m.status.value,
+                _source_text(closest),
+                closest.score if closest else None,
+                _rejection_reason(closest),
             )
         )
     _table(sheet, rows)
 
 
 def _transforms(sheet: Worksheet, mappings: list[FieldMapping]) -> None:
-    rows: list[Sequence[Any]] = [("Upstream field", "Variant", "Source", "Transform", "Description", "Source value", "Upstream value")]
+    rows: list[Sequence[Any]] = [
+        ("Upstream field", "Variant", "Source", "Transform", "Description", "Source value", "Upstream value")
+    ]
     for m in mappings:
         if not m.chosen:
             continue
         for step in m.chosen.transforms:
             if step.kind is TransformKind.ENUM_MAP:
                 for source_value, target_value in step.params.get("mapping", {}).items():
-                    rows.append((m.target.path, m.target.variant or "", _source_text(m.chosen), step.kind.value, "", source_value, target_value))
+                    rows.append(
+                        (
+                            m.target.path,
+                            m.target.variant or "",
+                            _source_text(m.chosen),
+                            step.kind.value,
+                            "",
+                            source_value,
+                            target_value,
+                        )
+                    )
                 for source_value in step.params.get("unmapped", []):
-                    rows.append((m.target.path, m.target.variant or "", _source_text(m.chosen), step.kind.value, "no match", source_value, ""))
+                    rows.append(
+                        (
+                            m.target.path,
+                            m.target.variant or "",
+                            _source_text(m.chosen),
+                            step.kind.value,
+                            "no match",
+                            source_value,
+                            "",
+                        )
+                    )
             else:
-                rows.append((m.target.path, m.target.variant or "", _source_text(m.chosen), step.kind.value, step.description, "", ""))
+                rows.append(
+                    (
+                        m.target.path,
+                        m.target.variant or "",
+                        _source_text(m.chosen),
+                        step.kind.value,
+                        step.description,
+                        "",
+                        "",
+                    )
+                )
     _table(sheet, rows)
 
 
 def _call_plan(sheet: Worksheet, run: MappingRun) -> None:
     rows: list[Sequence[Any]] = [
-        ("Upstream endpoint", "Step", "Downstream API", "Downstream endpoint", "Only for variants", "Inputs", "Fan-out", "Fields supplied", "Pending review", "Purpose")
+        (
+            "Upstream endpoint",
+            "Step",
+            "Downstream API",
+            "Downstream endpoint",
+            "Only for variants",
+            "Inputs",
+            "Fan-out",
+            "Fields supplied",
+            "Pending review",
+            "Purpose",
+        )
     ]
     for plan in run.call_plans:
         if not plan.steps:
             rows.append((plan.upstream_endpoint, "", "", "", "", "no downstream source", "", 0, 0, ""))
         for step in plan.steps:
-            inputs = "; ".join(f"{b.location} {b.parameter} <- {b.reference or b.source.value}" + (" (each item)" if b.fanout else "") for b in step.bindings)
-            purpose = "supplies inputs for later calls" if step.supplies_only_inputs else ("all fields await review" if step.awaits_review else "")
+            inputs = "; ".join(
+                f"{b.location} {b.parameter} <- {b.reference or b.source.value}" + (" (each item)" if b.fanout else "")
+                for b in step.bindings
+            )
+            purpose = (
+                "supplies inputs for later calls"
+                if step.supplies_only_inputs
+                else ("all fields await review" if step.awaits_review else "")
+            )
             rows.append(
                 (
-                    plan.upstream_endpoint, step.order, step.api, step.endpoint, ", ".join(step.variants), inputs,
-                    "yes" if step.is_fanout else "", step.supplies_fields, step.pending_review_fields, purpose,
+                    plan.upstream_endpoint,
+                    step.order,
+                    step.api,
+                    step.endpoint,
+                    ", ".join(step.variants),
+                    inputs,
+                    "yes" if step.is_fanout else "",
+                    step.supplies_fields,
+                    step.pending_review_fields,
+                    purpose,
                 )
             )
         for unresolved in plan.unresolved_inputs:
-            rows.append((plan.upstream_endpoint, "", "", "", "", f"UNRESOLVED {unresolved}", "", "", "", "must come from caller context"))
+            rows.append(
+                (
+                    plan.upstream_endpoint,
+                    "",
+                    "",
+                    "",
+                    "",
+                    f"UNRESOLVED {unresolved}",
+                    "",
+                    "",
+                    "",
+                    "must come from caller context",
+                )
+            )
     _table(sheet, rows)
 
 
 def _errors(sheet: Worksheet, run: MappingRun) -> None:
     rows: list[Sequence[Any]] = [
-        ("Downstream API", "Endpoint", "Status", "Code", "Message", "Upstream status", "Upstream code", "Rule", "Confidence")
+        (
+            "Downstream API",
+            "Endpoint",
+            "Status",
+            "Code",
+            "Message",
+            "Upstream status",
+            "Upstream code",
+            "Rule",
+            "Confidence",
+        )
     ]
     for e in run.error_mappings:
         d = e.downstream
-        rows.append((d.api, d.endpoint, d.http_status, d.code or "", d.message, e.upstream_status, e.upstream_code or "", e.rule, e.confidence))
+        rows.append(
+            (
+                d.api,
+                d.endpoint,
+                d.http_status,
+                d.code or "",
+                d.message,
+                e.upstream_status,
+                e.upstream_code or "",
+                e.rule,
+                e.confidence,
+            )
+        )
     _table(sheet, rows)
 
 

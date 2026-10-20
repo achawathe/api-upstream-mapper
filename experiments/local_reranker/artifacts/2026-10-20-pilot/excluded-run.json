@@ -1,0 +1,6 @@
+{
+  "run": "pilot-320",
+  "excluded_from_promotion": true,
+  "reason": "Full-chat template inserted empty thinking block and text after EOS into training targets. Interrupted after 112 reported steps; checkpoint from step 63 preserved for diagnosis. Replaced by literal-JSON training from unmodified base.",
+  "base_sha256": "2a73c6c248601ab904e035548abd8e6abb65ea27dcb5f342fb0a8910eb44173f"
+}

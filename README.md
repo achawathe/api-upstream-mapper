@@ -66,10 +66,15 @@ versions and runtime; byte-identical output across runtimes is not promised.
 
 ## Why one candidate fits better
 
-Mapping details now include **Why this choice?** and a collapsed **Compare alternatives**
-section. JSON reports include the same comparison, and Excel includes a **Candidate
-Comparison** sheet. Explanations come from recorded matching evidence and quote the
-definition or example location; they are not model-generated rationales.
+Mapping details include **Why this mapping?**, with supporting evidence, uncertainties,
+conversions and conditions, and expandable API references and alternative comparisons.
+The block editor updates this explanation when you change the source or conversion
+steps, without saving the draft. JSON reports include the same comparison, and Excel's
+**Candidate Comparison** sheet includes the uncertainties, conditions and references.
+Explanations come from recorded matching evidence and quote the definition or example
+location. Attached documentation is reference material; its presence alone is not
+evidence that two fields match. Local NLP similarity is identified as a similarity
+signal, so reviewers can assess plausible suggestions even when they may be inaccurate.
 
 Both matching modes use a small, configurable purpose vocabulary in
 `lexicon/finance.yaml` (`purpose_rules`). It currently recognizes explicit account
