@@ -233,7 +233,7 @@ def unreachable(target: FieldProfile, source: FieldProfile, ctx: SignalContext) 
     if ctx.reachability is None:
         return False
     endpoint = (source.node.api, source.node.endpoint)
-    if source.node.map_path is not None:
+    if source.node.map_path is not None or ctx.reachability.keyed(endpoint):
         return not ctx.reachability.selectable(target.endpoint_inputs, endpoint)
     return not ctx.reachability.reachable(target.endpoint_inputs, endpoint)
 

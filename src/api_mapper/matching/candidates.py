@@ -1,7 +1,9 @@
 """Narrows the sources worth scoring for a target, so large API sets stay fast.
 
 A source is a candidate when it shares a concept (or a related concept) with the
-target, or when the names are spelled almost alike (catches unknown abbreviations).
+target, when the names are spelled almost alike (catches unknown abbreviations), or
+when its sample values are the specific kind of data the target needs (dates, currency
+codes, UUIDs, emails, URLs), however it is named.
 """
 
 from rapidfuzz import fuzz, process
@@ -9,6 +11,7 @@ from rapidfuzz import fuzz, process
 from api_mapper.matching.purpose import has_labels, roles
 from api_mapper.matching.semantic import SemanticIndex
 from api_mapper.models import FieldProfile
+from api_mapper.normalize import value_kinds
 from api_mapper.normalize.lexicon import Lexicon
 
 MIN_INDEXED_SHARE = 0.5
@@ -28,6 +31,11 @@ class CandidateIndex:
         self._compact_names = [source.compact_leaf for source in sources]
         self._by_purpose: dict[tuple[str, str], set[int]] = {}
         self._labels = set()
+        self._by_kind: dict[str, set[int]] = {}
+        for index, source in enumerate(sources):
+            seen = value_kinds.observed_kind(source.node)
+            if seen and seen[0] in value_kinds.SPECIFIC:
+                self._by_kind.setdefault(seen[0], set()).add(index)
         for index, source in enumerate(sources):
             for group, values in roles(source).items():
                 if len(values) == 1:
@@ -42,6 +50,10 @@ class CandidateIndex:
                 indexes |= self._by_purpose.get((group, next(iter(values))), set())
         if any(fact.expects_labels for fact in target.purposes):
             indexes |= self._labels
+        expected = value_kinds.expected_kind(target.node)
+        for kind, members in self._by_kind.items():
+            if value_kinds.agreement(expected, kind):
+                indexes |= members
         for concept, share in target.bag.items():
             if share < MIN_INDEXED_SHARE:
                 continue

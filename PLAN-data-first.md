@@ -107,6 +107,18 @@ Deterministic first; each step lands with its benchmark result.
   Value-key benchmark: recall 25% to 62.5%, no wrong automatic mapping, decoys never chosen.
   Northwind, CDR and UK/Plaid unchanged. Still missed: `temperature` (needs B2 and B3), and
   `observedAt` ← `takenAt`, `asOf` ← `date`.
+- **B3, value checks:** done. `value_kinds` reads the kind of data a source holds from its
+  samples (date, timestamp, currency code, UUID, email, URL, number, text) and the kind a
+  target needs from its format, type and definition ("ISO 4217 currency code"). A sample that
+  contradicts the target vetoes the candidate (`"TS-104"` cannot be a temperature); agreement
+  on a specific kind adds weighted support and brings a source in as a candidate whatever its
+  name, but never makes a match on its own. Fields beside a keyed map are reachable in the same
+  call, and the call plan binds a map key by value kind (`rates` <- `{currency}`, because the
+  keys are currency codes and the echoed `currency` field is one). Value-key benchmark recall
+  62.5% to 87.5%, no wrong mapping; Northwind automatic decisions 87.2% to 89.6%, precision
+  still 100%; CDR and UK/Plaid unchanged. Units and ranges were left out: they need domain
+  priors that would be fitted to this benchmark's decoys. Still missed: `temperature`, whose
+  source is named only by its parents (`snapshot.weather.city`), which is B2.
 
 ## Order
 

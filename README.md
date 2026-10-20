@@ -305,12 +305,12 @@ the API's name, never from the API's tag list.
 
 | Benchmark | Precision of automatic decisions | Expected mappings found |
 |---|---|---|
-| FDX 6.4 against the eight Northwind sample APIs, including a decoy API | 100% (0 wrong of 188) | 100% (87% automatically) |
+| FDX 6.4 against the eight Northwind sample APIs, including a decoy API | 100% (0 wrong of 192) | 100% (90% automatically) |
 | Same, every downstream renamed with lexicon abbreviations, synonyms and casing (8 seeds) | 100% | 100% |
 | Same, renamed with spellings no lexicon lists: dropped vowels, truncation, reversed word order, filler words (16 seeds) | 100% | 73–96% |
 | Same, plus 42 generated noise APIs sharing generic field names (50 APIs) | 100% | 100% |
 | **Held-out:** Australian Consumer Data Right banking and common APIs | 100% (0 wrong of 85) | 98.5% (70% automatically) |
-| Spec-less APIs whose JSON keys are data, with decoys (`samples/benchmarks/value-keys`) | 100% (2 automatic) | 62.5% (25% before value keys); map fields always need review |
+| Spec-less APIs whose JSON keys are data, with decoys (`samples/benchmarks/value-keys`) | 100% (3 automatic) | 87.5% (25% before value keys and value checks); map fields always need review |
 | UK Open Banking and Plaid excerpts (99 labelled cases) | 100% (9 automatic) | 40 of 48 origins; 51 of 51 no-source cases left unmapped |
 
 The Northwind APIs were written for this project and the UK Open Banking and Plaid excerpts

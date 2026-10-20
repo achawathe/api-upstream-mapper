@@ -15,6 +15,7 @@ from api_mapper.matching.semantic import SemanticIndex
 from api_mapper.matching.semantic_evidence import add_semantic_evidence
 from api_mapper.matching.signals import SignalContext
 from api_mapper.models import Candidate, Evidence, EvidenceEffect, FieldProfile, Signal
+from api_mapper.normalize import value_kinds
 from api_mapper.transforms.inference import TypeFit, TypeFitter
 
 OBSERVED_VALUES_FOR_FULL_TRUST = 5
@@ -32,6 +33,7 @@ class ScoringWeights:
     endpoint: float = 0.04
     context: float = 0.10
     qualifier_agreement: float = 0.08
+    value_kind: float = 0.15
     local_nlp: float = 0.20
 
 
@@ -85,7 +87,10 @@ class PairScorer:
         semantic_score = self.semantic.similarity(target, source) if self.semantic else None
         semantic_match = semantic_score is not None and semantic_score >= self.semantic.settings.min_similarity
         purpose = compare_purposes(target, source)
-        if gate and not lexical_match and not semantic_match and not purpose.support:
+        expected = value_kinds.expected_kind(target.node)
+        seen = value_kinds.observed_kind(source.node)
+        value_match = value_kinds.agreement(expected, seen and seen[0])
+        if gate and not lexical_match and not semantic_match and not purpose.support and not value_match:
             return None
 
         fit = self.fitter.fit(target.node, source.node, source.temporal)
@@ -106,6 +111,16 @@ class PairScorer:
         self._add(evidence, Signal.CONTEXT, signals.context_signal(target, source, self.ctx), self.weights.context)
         evidence.extend(self._penalties(target, source, fit))
         evidence.extend(comparison_evidence(purpose))
+        if value_match:
+            evidence.append(
+                Evidence(
+                    Signal.SAMPLE, 1.0, self.weights.value_kind, f"sample values are {seen[0]}s, as the target needs"
+                )
+            )
+        value_veto = None
+        if seen and value_kinds.contradiction(expected, seen[0]):
+            value_veto = f"sample value {seen[1]!r} is {seen[0]}, not the {expected} the target needs"
+            evidence.append(Evidence(Signal.SAMPLE, 0.0, 0.0, value_veto, EvidenceEffect.VETO))
         unmet = self.meanings.unmet_requirements(target, source)
         evidence.extend(Evidence(Signal.ORIGIN_REQUIREMENT, 0.0, 0.0, detail, EvidenceEffect.VETO) for detail in unmet)
         for label, profile in (("Target", target), ("Source", source)):
@@ -179,7 +194,7 @@ class PairScorer:
                 evidence, target, source, fit, semantic_score, weight, rules_score, semantic_match, lexical_match
             )
 
-        veto = fit.veto or next(iter((*purpose.conflicts, *unmet)), None)
+        veto = fit.veto or value_veto or next(iter((*purpose.conflicts, *unmet)), None)
         if veto:
             if fit.veto:
                 evidence.append(Evidence(Signal.TYPE, 0.0, 0.0, fit.veto, EvidenceEffect.VETO))

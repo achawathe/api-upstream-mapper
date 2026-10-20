@@ -41,8 +41,11 @@ class Reachability:
                     if p.location in ("path", "query")
                 ]
         self._outputs: dict[EndpointKey, set[Identity]] = {}
+        self._keyed: set[EndpointKey] = set()
         for source in sources:
             self._outputs.setdefault((source.node.api, source.node.endpoint), set()).add(source.identity)
+            if source.node.map_path is not None:
+                self._keyed.add((source.node.api, source.node.endpoint))
         self._cache: dict[frozenset[Identity], frozenset[EndpointKey]] = {}
         self._without_body: dict[frozenset[Identity], frozenset[EndpointKey]] = {}
 
@@ -52,6 +55,10 @@ class Reachability:
         if inputs not in self._cache:
             self._cache[inputs] = self._scoped(inputs)
         return endpoint in self._cache[inputs]
+
+    def keyed(self, endpoint: EndpointKey) -> bool:
+        """The response holds a map keyed by data, so one call serves any record its keys name."""
+        return endpoint in self._keyed
 
     def selectable(self, inputs: frozenset[Identity], endpoint: EndpointKey) -> bool:
         """A map keyed by data returns every record, and the request's input picks the entry; it only

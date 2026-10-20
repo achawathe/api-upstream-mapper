@@ -22,9 +22,12 @@ def run(lexicon):
 def test_no_wrong_automatic_mapping_and_decoys_never_chosen(run):
     report = grade(run.mappings, load_answer_key(BENCHMARK / "answer_key.yaml", run.upstream.name))
     assert report.counts[Outcome.WRONG_AUTO] + report.counts[Outcome.SPURIOUS_AUTO] == 0, report.failures()
-    assert report.recall >= 0.6, report.summary()
+    assert report.recall >= 0.85, report.summary()
     chosen = {m.chosen.source.path for m in run.mappings if m.chosen}
     assert not chosen & {"cpu.temp", "station.tempSensorId"}
+    temperature = next(m for m in run.mappings if m.target.path == "temperature")
+    sensor = next(c for c in temperature.alternatives if c.source.path == "station.tempSensorId")
+    assert sensor.vetoed_by == "sample value 'TS-104' is text, not the number the target needs"
 
 
 def test_map_sources_wait_for_review_with_the_entry_to_choose(run):
@@ -33,7 +36,7 @@ def test_map_sources_wait_for_review_with_the_entry_to_choose(run):
     assert all(any("whose keys are data" in note for note in m.notes) for m in from_maps)
 
 
-def test_call_plan_binds_the_map_key_to_a_matching_request_input(run):
+def test_call_plan_binds_the_map_key_by_name_or_by_value_kind(run):
     bindings = {
         plan.upstream_endpoint: [b for step in plan.steps for b in step.bindings if b.location == "map key"]
         for plan in run.call_plans
@@ -42,4 +45,6 @@ def test_call_plan_binds_the_map_key_to_a_matching_request_input(run):
     assert [(b.parameter, b.source, b.reference) for b in weather] == [
         ("snapshot.weather.city", BindingSource.UPSTREAM_REQUEST, "city")
     ]
-    assert [b.source for b in bindings["GET /rates/{currency}"]] == [BindingSource.UNRESOLVED]
+    rates = bindings["GET /rates/{currency}"]
+    assert [(b.source, b.reference) for b in rates] == [(BindingSource.UPSTREAM_REQUEST, "currency")]
+    assert [b.source for b in bindings["GET /accounts/{accountId}/balance"]] == [BindingSource.UNRESOLVED]

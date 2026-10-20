@@ -19,12 +19,15 @@ from api_mapper.models import (
     Endpoint,
     EndpointCallPlan,
     FieldMapping,
+    FieldNode,
     FieldProfile,
     InputBinding,
     MappingStatus,
     Parameter,
 )
 from api_mapper.models.field_node import MAP_KEY_SEGMENT
+from api_mapper.normalize import value_kinds
+from api_mapper.normalize.flattener import flatten_spec
 from api_mapper.normalize.inputs import bindable_body, compatible_body_input, input_name
 from api_mapper.normalize.lexicon import ENTITY_CONCEPT, Lexicon
 
@@ -61,6 +64,10 @@ class CallPlanner:
         self.fields: dict[EndpointKey, list[FieldProfile]] = {}
         for profile in profiles:
             self.fields.setdefault((profile.node.api, profile.node.endpoint), []).append(profile)
+        self.echoes: dict[str, dict[str, FieldNode]] = {}
+        for node in flatten_spec(upstream):
+            if not node.parent_segments:
+                self.echoes.setdefault(node.endpoint, {})[node.path] = node
 
     def plan(self, mappings: list[FieldMapping]) -> list[EndpointCallPlan]:
         by_endpoint: dict[str, list[FieldMapping]] = {}
@@ -173,6 +180,16 @@ class _EndpointPlanner:
         for name, (_, concepts) in self.upstream_params.items():
             if self.p.overlap(wanted, concepts) >= EXACT:
                 return InputBinding(map_path, BindingSource.UPSTREAM_REQUEST, name, location=MAP_KEY_LOCATION)
+        # Keys hold the same specific kind of data as the response field that echoes an input (currency codes).
+        keys = value_kinds.observed_kind(field.node) if field else None
+        echoes = self.p.echoes.get(self.upstream_endpoint.key, {})
+        matching = [
+            name
+            for name in self.upstream_params
+            if name in echoes and keys and value_kinds.agreement(value_kinds.expected_kind(echoes[name]), keys[0])
+        ]
+        if len(matching) == 1:
+            return InputBinding(map_path, BindingSource.UPSTREAM_REQUEST, matching[0], location=MAP_KEY_LOCATION)
         self.unresolved.append(f"{key[0]} {key[1]}: entry of {map_path}")
         return InputBinding(
             map_path, BindingSource.UNRESOLVED, "choose which entry this request needs", location=MAP_KEY_LOCATION
