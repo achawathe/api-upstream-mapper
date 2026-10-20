@@ -132,6 +132,11 @@ Deterministic first; each step lands with its benchmark result.
   word order and add filler words to a clearly spelled array name, and leaf spellings the
   resolver cannot read (`NmNick`, `stts`); CDR without descriptions keeps one wrong automatic
   mapping that predates this work.
+- **Undocumented CDR:** that wrong automatic mapping was FDX `category` again: without its
+  description, `merchantCategoryCode` lost its MCC purpose and `type` won on name similarity.
+  Purpose rules can now opt in to reading field names (`match_names`) when a name alone is
+  unambiguous; only the merchant-category-code rule does. CDR without descriptions: 0 wrong
+  automatic mappings, recall 94.0%; a golden test now runs it.
 
 ## Order
 

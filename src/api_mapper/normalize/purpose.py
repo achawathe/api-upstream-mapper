@@ -6,16 +6,18 @@ from functools import lru_cache
 from api_mapper.models.field_node import FieldNode
 from api_mapper.models.purpose import ContextClue, PurposeFact, PurposeRule
 from api_mapper.normalize.definitions import leading_definition
+from api_mapper.normalize.tokenizer import split_identifier
 
 
 def field_purposes(node: FieldNode, rules: tuple[PurposeRule, ...]) -> tuple[PurposeFact, ...]:
     clues = (ContextClue(node.description, f"schema:{node.path}.description"), *node.context_clues, *node.documentation)
+    name = ContextClue(" ".join(split_identifier(node.name)), f"name:{node.path}")
     return tuple(
         PurposeFact(rule.group, rule.role, rule.label, clue.location, definition, rule.expects_labels)
-        for clue in clues
+        for clue in (*clues, name)
         if (definition := _affirmative(clue.text))
         for rule in rules
-        if any(_pattern(p).search(definition) for p in rule.patterns)
+        if (clue is not name or rule.match_names) and any(_pattern(p).search(definition) for p in rule.patterns)
     )
 
 

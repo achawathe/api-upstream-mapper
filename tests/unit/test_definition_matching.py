@@ -1,9 +1,10 @@
 """Regressions for lost definitions, record ownership and misleading field names."""
 
 from api_mapper.matching.engine import MatchingEngine
-from api_mapper.models import ApiSpec, Endpoint, MappingStatus, SpecKind
+from api_mapper.models import ApiSpec, Endpoint, FieldNode, MappingStatus, SpecKind
 from api_mapper.normalize.flattener import flatten_spec
 from api_mapper.normalize.profiler import Profiler
+from api_mapper.normalize.purpose import field_purposes
 
 
 def match(lexicon, target_properties, source_properties):
@@ -152,3 +153,30 @@ def test_category_defined_as_mcc_prefers_a_merchant_category_code_over_a_transac
         },
     )[0]
     assert mapping.chosen.source.path == "transactions[].merchantCategoryCode"
+
+
+def test_an_undocumented_merchant_category_code_is_named_clearly_enough(lexicon):
+    mapping = match(
+        lexicon,
+        {
+            "transactions": records(
+                {"category": {"type": "string", "description": "Transaction category, preferably MCC or SIC."}}
+            )
+        },
+        {
+            "transactions": records(
+                {
+                    "type": {"type": "string", "enum": ["FEE", "PAYMENT", "TRANSFER_OUTGOING"]},
+                    "merchantCategoryCode": {"type": "string"},
+                }
+            )
+        },
+    )[0]
+    assert mapping.chosen.source.path == "transactions[].merchantCategoryCode"
+
+
+def test_only_rules_that_opt_in_read_field_names(lexicon):
+    named = FieldNode("api", "GET /x", "merchantCategoryCode", "string")
+    status = FieldNode("api", "GET /x", "accountStatus", "string")
+    assert [fact.role for fact in field_purposes(named, lexicon.purpose_rules)] == ["merchant_category"]
+    assert field_purposes(status, lexicon.purpose_rules) == ()

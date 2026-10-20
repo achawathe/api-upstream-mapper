@@ -310,6 +310,7 @@ the API's name, never from the API's tag list.
 | Same, renamed with spellings no lexicon lists: dropped vowels, truncation, reversed word order, filler words (16 seeds) | 100% | 79–98% (mean 92.5%) |
 | Same, plus 42 generated noise APIs sharing generic field names (50 APIs) | 100% | 100% |
 | **Held-out:** Australian Consumer Data Right banking and common APIs | 100% (0 wrong of 85) | 98.5% (70% automatically) |
+| Same, with every description and summary removed (a poorly documented API) | 100% (0 wrong of 85) | 94.0% (70% automatically) |
 | Spec-less APIs whose JSON keys are data, with decoys (`samples/benchmarks/value-keys`) | 100% (3 automatic) | 100% (25% before value keys, value checks and context); map fields always need review |
 | UK Open Banking and Plaid excerpts (99 labelled cases) | 100% (9 automatic) | 40 of 48 origins; 51 of 51 no-source cases left unmapped |
 

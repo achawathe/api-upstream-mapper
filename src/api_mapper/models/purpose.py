@@ -19,13 +19,16 @@ class ValueProfile:
 
 @dataclass(frozen=True)
 class PurposeRule:
-    """`expects_labels` marks purposes whose values are human-readable words, not codes."""
+    """`expects_labels` marks purposes whose values are human-readable words, not codes.
+    `match_names` lets a field's name state the purpose when the name alone is unambiguous
+    (`merchantCategoryCode`); other rules read definitions only."""
 
     group: str
     role: str
     label: str
     patterns: tuple[str, ...]
     expects_labels: bool = False
+    match_names: bool = False
 
 
 @dataclass(frozen=True)

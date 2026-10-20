@@ -441,6 +441,7 @@ purpose_rules:
   - group: classification_code
     role: merchant_category
     label: merchant category code (MCC)
+    match_names: true
     patterns:
       - '\bmerchant\s+category\s+code\b'
       - '\bmcc\b'
