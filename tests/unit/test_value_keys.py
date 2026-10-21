@@ -1,5 +1,7 @@
 """Object keys that are data (cities, currency codes, account IDs) are read as a map, not as field names."""
 
+import pytest
+
 from api_mapper.loaders.sample_inference import MAP_KEYS_KEY, infer_schema
 from api_mapper.models import Endpoint
 from api_mapper.normalize.flattener import flatten_endpoint
@@ -48,3 +50,18 @@ def test_declared_maps_expose_their_key():
     }
     endpoint = Endpoint(method="GET", path="/x", operation_id="x", response_schema=schema)
     assert {n.path for n in flatten_endpoint("api", endpoint)} == {"limits.@key", "limits.{key}"}
+
+
+@pytest.mark.parametrize(
+    "sample",
+    [
+        {"a": {}, "b": {}, "c": {}},
+        {"a": {}, "b": None, "c": {}},
+        {"EUR": {}, "CAD": {}, "GBP": {}},
+    ],
+)
+def test_empty_objects_do_not_provide_enough_shape_evidence_for_a_map(sample):
+    schema = infer_schema([sample])
+    assert schema["type"] == "object"
+    assert set(schema["properties"]) == set(sample)
+    assert "additionalProperties" not in schema

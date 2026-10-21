@@ -190,4 +190,9 @@ valid aliases, dependency calls and fan-out remain covered. Three negative cases
 failed before the fix; all 46 focused planner, body, execution and value-key tests
 pass afterward, as does focused lint.
 
-Next action: repair the reproduced empty-object crash and context-review bypass.
+Completed: sample map inference now treats empty object shapes as insufficient
+evidence rather than dividing by zero. Three regressions cover ordinary empty
+objects, nullable empty objects, and value-like keys with empty values.
+
+Next action: repair the context-review bypass (reproduced for an origin veto and
+an unselected outer array), then exercise map execution end to end.

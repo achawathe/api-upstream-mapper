@@ -101,7 +101,8 @@ def _same_shape(values: list[Any]) -> bool:
         return True
     key_sets = [set(v) for v in present]
     common = set.intersection(*key_sets)
-    return len(common) / len(set.union(*key_sets)) >= MIN_SHAPE_OVERLAP
+    union = set.union(*key_sets)
+    return bool(union) and len(common) / len(union) >= MIN_SHAPE_OVERLAP
 
 
 def _json_type(value: Any) -> str:
