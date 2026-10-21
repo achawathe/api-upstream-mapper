@@ -1,3 +1,6 @@
+# Keep source and data line endings consistent regardless of core.autocrlf.
+* text=auto eol=lf
+
 # Store model bytes directly in Git and prevent text/line-ending conversion.
 *.bin binary
 *.onnx binary
@@ -6,3 +9,7 @@
 
 # The model's provenance hashes include its text configuration and license files.
 /models/all-MiniLM-L6-v2/** -text
+
+# Preserve byte-for-byte snapshots referenced by provenance checksums.
+/samples/real-contracts/** -text
+/samples/held-out/cdr/** -text

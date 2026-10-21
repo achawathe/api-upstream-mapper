@@ -240,3 +240,13 @@ No runtime or matching rules changed. Fresh clones need no download helpers,
 archives or extraction step. Older historical commits keep their original storage
 format. Existing LFS users may need to remove repository-local generated hooks;
 `models/README.md` explains this without making LFS a new-clone requirement.
+
+First portability check: a fresh clone and pull succeeded with LFS absent, no LFS
+configuration, a path containing spaces and `core.autocrlf=true`. All 16 weight
+hashes and all 12 model provenance-file hashes matched. The suite found one
+pre-existing cross-platform issue: CRLF checkout changed a public-contract fixture
+checksum (379 passed, one failed). Attributes now preserve pinned model/API
+snapshots byte-for-byte and use LF for other text. A new clone will verify this fix.
+
+The first HTTPS push returned HTTP 400; remote `main` was verified to remain at
+`e72b659`. Retry only with command-scoped transfer settings, then verify remote refs.
