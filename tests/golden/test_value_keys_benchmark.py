@@ -50,3 +50,10 @@ def test_call_plan_binds_the_map_key_by_name_or_by_value_kind(run):
     rates = bindings["GET /rates/{currency}"]
     assert [(b.source, b.reference) for b in rates] == [(BindingSource.UPSTREAM_REQUEST, "currency")]
     assert [b.source for b in bindings["GET /accounts/{accountId}/balance"]] == [BindingSource.UNRESOLVED]
+
+
+def test_account_balance_does_not_use_an_account_id_as_a_customer_id(run):
+    plan = next(p for p in run.call_plans if p.upstream_endpoint == "GET /accounts/{accountId}/balance")
+    customer = next(b for step in plan.steps for b in step.bindings if b.parameter == "customerId")
+    assert customer.source is BindingSource.UNRESOLVED
+    assert "account-balances GET /customers/{customerId}/balances: customerId" in plan.unresolved_inputs

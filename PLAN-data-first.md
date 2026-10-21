@@ -155,3 +155,39 @@ Deterministic first; each step lands with its benchmark result.
 3. When a value-key map has no matching upstream input, the app may suggest a fixed key
    (`city{toronto}`) for review, with a note; never automatically.
 4. Workstream A first, then B1 with the weather benchmark.
+
+## Continuation checkpoint (Codex, 20 October)
+
+Objective: verify Claude's completed A/B1/B3/B2 and undocumented-CDR work, repair
+reproducible correctness defects, and make small benchmark-backed commits on
+`review-fixes`. The user subsequently authorized pushing and getting the completed
+work into `main`. The checkout started clean at `c281596`.
+
+Scope: call planning and recent sample/context matching changes. B5/B4/B6 remain
+open; no new model training or learned vocabulary is included in this repair pass.
+
+Progress:
+- [x] Recover the latest Claude conversation, commits, approved decisions and plan.
+- [x] Reproduce and fix `customerId <- accountId` in the account-balances call plan;
+  preserve valid direct bindings, dependency calls and fan-out.
+- [ ] Check recent map/context paths for bypassed matching safeguards and malformed
+  sample failures; add focused regression coverage for confirmed defects.
+- [ ] Run the full suite, lint, and golden accuracy benchmarks; inspect the diff and
+  commit fixes in small increments, push, and merge into `main` after validation.
+
+Evidence: `_EndpointPlanner._best_supply` accepts partial overlap >= 0.4, so
+unrelated resource identifiers can bind through their common identifier token.
+`suggest_from_context` checks type fit before scoring, then assigns its candidate
+without checking `vetoed_by` or the existing review safeguards. Both need direct
+reproduction before a fix. Baseline: 354 tests passed (40.12 seconds); one existing
+Starlette/httpx deprecation warning. The account-balances binding is reproduced.
+Sample inference also raises `ZeroDivisionError` on an object with three empty
+object values (`_same_shape` divides by an empty union).
+
+Completed: path inputs now require exact concept agreement, after abbreviation,
+synonym and resource-context normalization. Unknown customer IDs stay unresolved;
+valid aliases, dependency calls and fan-out remain covered. Three negative cases
+failed before the fix; all 46 focused planner, body, execution and value-key tests
+pass afterward, as does focused lint.
+
+Next action: repair the reproduced empty-object crash and context-review bypass.

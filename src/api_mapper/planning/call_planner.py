@@ -33,7 +33,6 @@ from api_mapper.normalize.lexicon import ENTITY_CONCEPT, Lexicon
 
 EXACT = 0.99
 MAP_KEY_LOCATION = "map key"
-WEAK = 0.4
 QUERY_MATCH = 0.75
 MAX_SUPPLIER_DEPTH = 2
 _PLANNED_STATUSES = (MappingStatus.AUTO, MappingStatus.REVIEW, MappingStatus.MANUAL)
@@ -260,7 +259,8 @@ class _EndpointPlanner:
         ]
         if max((o.score for o in options), default=0.0) < EXACT:
             options.extend(self._field_supplies(requester, wanted, depth))
-        viable = sorted((o for o in options if o.score >= WEAK), key=lambda o: o.reference)
+        # Sharing `identifier` does not make an account ID a customer ID.
+        viable = sorted((o for o in options if o.score >= EXACT), key=lambda o: o.reference)
         if not viable:
             return None
         return max(viable, key=self._preference)
@@ -299,7 +299,7 @@ class _EndpointPlanner:
         )
 
     def _preference(self, supply: _Supply) -> tuple:
-        """Exact over partial, the request over extra calls, single records over lists, calls already
+        """The request over extra calls, single records over lists, calls already
         planned, then sources valid for every account type. Ties keep alphabetical order."""
         already_called = supply.supplier in self.ordered if supply.supplier else True
         return (
