@@ -31,6 +31,7 @@ from api_mapper.transforms.apply import TransformError, apply_transforms
 from api_mapper.validation.assembler import (
     AssemblyNotes,
     Broadcast,
+    MapSelectionError,
     align,
     extract,
     transform_nested,
@@ -107,6 +108,7 @@ class PlanExecutor:
         variants = _variants_of(targets, variant_hint)
         per_item = _variants_live_in_items(targets)
         responses: dict[int, Any] = {}
+        selections = _map_selections(plan, params)
         async with httpx.AsyncClient(transport=self.mocks.transport(), timeout=30) as client:
             needed = self._needed_steps(plan, mappings, variants)
             pending = [s for s in plan.steps if s.order in needed]
@@ -117,7 +119,7 @@ class PlanExecutor:
                 if not wave:
                     break
                 outcomes = await asyncio.gather(
-                    *(self._call(client, step, params, responses, started, result) for step in wave)
+                    *(self._call(client, step, params, responses, selections, started, result) for step in wave)
                 )
                 for step, outcome in zip(wave, outcomes, strict=True):
                     if isinstance(outcome, _Failure):
@@ -133,14 +135,14 @@ class PlanExecutor:
                     responses[step.order] = outcome
                 pending = [s for s in pending if s not in wave]
                 if not per_item and len(variants) > 1:
-                    variants = self._narrow(variants, plan, responses)
+                    variants = self._narrow(variants, plan, responses, selections)
                 needed = self._needed_steps(plan, mappings, variants)
                 pending = [s for s in pending if s.order in needed]
             called = {c.step for c in result.calls}
             result.skipped_steps = [f"{s.order}. {s.api} {s.endpoint}" for s in plan.steps if s.order not in called]
 
         result.body, result.variants, issues = self._assemble(
-            plan, mappings, derived, targets, responses, variants, per_item
+            plan, mappings, derived, targets, responses, variants, per_item, selections
         )
         result.issues = issues
         result.elapsed_ms = _ms(started)
@@ -154,7 +156,7 @@ class PlanExecutor:
     def _inputs_ready(self, step: CallStep, responses: dict[int, Any]) -> bool:
         return all(b.from_step is None or b.from_step in responses for b in step.bindings)
 
-    async def _call(self, client, step: CallStep, params, responses, started, result) -> Any:
+    async def _call(self, client, step: CallStep, params, responses, selections, started, result) -> Any:
         endpoint = self.endpoints[(step.api, step.endpoint)]
         fixed: dict[str, Any] = {}
         fanout_values: list[str] = []
@@ -164,7 +166,17 @@ class PlanExecutor:
                 if binding.reference in params:
                     fixed[binding.key] = params[binding.reference]
             elif binding.source is BindingSource.PRIOR_STEP:
-                values = _flatten(_extract_all(responses[binding.from_step], binding.reference.split(" -> ", 1)[1]))
+                try:
+                    values = _flatten(
+                        _extract_all(
+                            responses[binding.from_step],
+                            binding.reference.split(" -> ", 1)[1],
+                            selections.get(binding.from_step),
+                        )
+                    )
+                except MapSelectionError as error:
+                    result.warnings.append(f"step {step.order}: {error}")
+                    return _Failure(422, {"error": str(error)})
                 if binding.fanout:
                     fanout_name, fanout_values = binding.key, [str(v) for v in values if v is not None]
                 elif values:
@@ -256,7 +268,7 @@ class PlanExecutor:
         )
         return ErrorMapping(error, status, None, "status passthrough", 0.5)
 
-    def _narrow(self, variants: set[str], plan: EndpointCallPlan, responses: dict[int, Any]) -> set[str]:
+    def _narrow(self, variants: set[str], plan: EndpointCallPlan, responses: dict[int, Any], selections) -> set[str]:
         """Drops variants the data already fetched contradicts.
 
         For each enum field of a variant, every candidate source already fetched is tried,
@@ -271,11 +283,11 @@ class PlanExecutor:
                 for m in self.run.mappings
                 if m.target.endpoint == plan.upstream_endpoint and m.target.variant == variant and m.target.enum
             ]
-            if not any(self._contradicted(m, done, responses) for m in enum_mappings):
+            if not any(self._contradicted(m, done, responses, selections) for m in enum_mappings):
                 surviving.add(variant)
         return surviving or variants
 
-    def _contradicted(self, mapping: FieldMapping, done: dict, responses: dict[int, Any]) -> bool:
+    def _contradicted(self, mapping: FieldMapping, done: dict, responses: dict[int, Any], selections) -> bool:
         tried = False
         for candidate in (mapping.chosen, *mapping.alternatives):
             if candidate is None or candidate.vetoed_by or candidate.score < CANDIDATE_FLOOR:
@@ -283,7 +295,11 @@ class PlanExecutor:
             order = done.get((candidate.source.api, candidate.source.endpoint))
             if order is None or isinstance(responses[order], _FanOut):
                 continue
-            values = [v for v in _flatten(extract(responses[order], candidate.source.path)) if v is not None]
+            try:
+                value = extract(responses[order], candidate.source.path, selections.get(order))
+            except MapSelectionError:
+                continue
+            values = [v for v in _flatten(value) if v is not None]
             if not values:
                 continue
             tried = True
@@ -309,16 +325,16 @@ class PlanExecutor:
             needed |= suppliers
         return needed
 
-    def _assemble(self, plan, mappings, derived, targets, responses, variants, per_item):
+    def _assemble(self, plan, mappings, derived, targets, responses, variants, per_item, selections):
         if not variants:
             notes = AssemblyNotes()
-            document = self._document_for(None, plan, mappings, derived, responses, notes)
+            document = self._document_for(None, plan, mappings, derived, responses, notes, selections)
             return document, [], [Issue("", n) for n in notes.issues] + check_document(document, targets)
 
         built = {}
         for variant in sorted(variants):
             notes = AssemblyNotes()
-            document = self._document_for(variant, plan, mappings, derived, responses, notes)
+            document = self._document_for(variant, plan, mappings, derived, responses, notes, selections)
             fields = [t for t in targets if t.variant in (None, variant)]
             built[variant] = (document, notes, fields)
 
@@ -361,7 +377,7 @@ class PlanExecutor:
         item = items[index] if index < len(items) else None
         return len(check_document(item or {}, item_fields)), -_filled(item), variant, item, item_fields
 
-    def _document_for(self, variant, plan, mappings, derived, responses, notes) -> dict:
+    def _document_for(self, variant, plan, mappings, derived, responses, notes, selections) -> dict:
         document: dict = {}
         step_by_source = {(s.api, s.endpoint): s for s in plan.steps}
         available = set(responses)
@@ -372,7 +388,11 @@ class PlanExecutor:
                 continue
             raw = responses[step.order]
             depth = mapping.chosen.source.array_depth + (1 if isinstance(raw, _FanOut) else 0)
-            value = _extract_all(raw, mapping.chosen.source.path)
+            try:
+                value = _extract_all(raw, mapping.chosen.source.path, selections.get(step.order))
+            except MapSelectionError as error:
+                notes.issues.append(f"{mapping.target.path}: {error}")
+                continue
             value = transform_nested(align(value, depth, mapping.target.array_depth), mapping, notes)
             if isinstance(value, Broadcast):
                 broadcasts.append((mapping.target.path, value))
@@ -443,10 +463,27 @@ def _flatten(value: Any) -> list[Any]:
     return [value]
 
 
-def _extract_all(raw: Any, path: str) -> Any:
+def _map_selections(plan: EndpointCallPlan, params: dict[str, Any]) -> dict[int, dict[str, str]]:
+    selections = {}
+    for step in plan.steps:
+        keys = {}
+        for binding in step.bindings:
+            if binding.location != "map key":
+                continue
+            if binding.source is BindingSource.UPSTREAM_REQUEST:
+                value = params.get(binding.reference)
+            else:
+                value = params.get(binding.key, params.get(binding.parameter))
+            if value is not None:
+                keys[binding.parameter] = str(value)
+        selections[step.order] = keys
+    return selections
+
+
+def _extract_all(raw: Any, path: str, map_keys: dict[str, str] | None = None) -> Any:
     if isinstance(raw, _FanOut):
-        return [extract(body, path) for body in raw.bodies]
-    return extract(raw, path)
+        return [extract(body, path, map_keys) for body in raw.bodies]
+    return extract(raw, path, map_keys)
 
 
 def _ms(started: float) -> float:

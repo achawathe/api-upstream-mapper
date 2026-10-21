@@ -303,6 +303,14 @@ the API's name, never from the API's tag list.
 
 ## Measured accuracy
 
+Mock validation applies each planned map-key selection when reading a response,
+including nested maps and keys containing dots. It reports missing selections and
+keys absent from the response instead of silently omitting mapped fields. An
+unresolved selector can be supplied as caller context, for example
+`"map key:balances": "ACC-2002"`; that selector is not sent to the downstream API.
+Path inputs require agreement on the resource they identify, so an account ID does
+not supply a customer ID merely because both names contain `Id`.
+
 | Benchmark | Precision of automatic decisions | Expected mappings found |
 |---|---|---|
 | FDX 6.4 against the eight Northwind sample APIs, including a decoy API | 100% (0 wrong of 192) | 100% (90% automatically) |

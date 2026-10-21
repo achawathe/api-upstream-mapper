@@ -209,3 +209,14 @@ Additional confirmed defect: `/api/validate/options` crashes after an endpoint-s
 run because it looks for plans for excluded endpoints. The existing API test now
 checks that validation lists exactly the mapped endpoints. The route skips excluded
 plans; complete validation execution coverage is being expanded for keyed maps.
+
+Completed: map selectors now reach response assembly, variant checks and chained
+source extraction. Missing selectors and absent keys report issues. Nested maps
+schedule every required selection; map values containing arrays retain their named
+path and array shape. Selections remain local to the execution and are not sent as
+downstream request parameters. The 52 focused tests pass (map extraction/execution,
+ordinary validation, flattening, planning and value-key golden checks); focused lint
+is clean. Optional benchmark fields that the matcher abstains on remain unmapped.
+
+Next action: check caller-context name collisions for unresolved identifiers, then
+run full verification and integrate the small commits into the remote branches.

@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from api_mapper.models import FieldMapping
+from api_mapper.models.field_node import MAP_KEY_SEGMENT, MAP_VALUE_SEGMENT
 from api_mapper.transforms.apply import TransformError, apply_transforms
 
 
@@ -23,15 +24,29 @@ class AssemblyNotes:
     issues: list[str] = field(default_factory=list)
 
 
-def extract(document: Any, path: str) -> Any:
+class MapSelectionError(ValueError):
+    """A mapping needs a map entry that the request did not select or the response lacks."""
+
+
+def extract(document: Any, path: str, map_keys: dict[str, str] | None = None) -> Any:
+    """Read a field without choosing arbitrary map entries; map paths use the schema's wildcard notation."""
     segments = path.split(".")
+    map_keys = map_keys or {}
 
     def walk(node: Any, index: int) -> Any:
         if index == len(segments):
             return node
         segment = segments[index]
         name, is_array = segment.removesuffix("[]"), segment.endswith("[]")
-        if name:
+        if name in (MAP_KEY_SEGMENT, MAP_VALUE_SEGMENT):
+            map_path = ".".join(segments[:index])
+            if map_path not in map_keys:
+                raise MapSelectionError(f"select an entry of {map_path or 'the response map'}")
+            key = map_keys[map_path]
+            if not isinstance(node, dict) or key not in node:
+                raise MapSelectionError(f"entry {key!r} not found in {map_path or 'the response map'}")
+            node = key if name == MAP_KEY_SEGMENT else node[key]
+        elif name:
             node = node.get(name) if isinstance(node, dict) else None
         if node is None:
             return None

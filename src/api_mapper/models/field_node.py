@@ -55,19 +55,27 @@ class FieldNode:
     def segments(self) -> tuple[str, ...]:
         """Named path segments; map segments stand for data, so `rates.{key}` is named by `rates`."""
         return tuple(
-            s.removesuffix("[]") for s in self.path.split(".") if s.removesuffix("[]") and s not in _MAP_SEGMENTS
+            s.removesuffix("[]")
+            for s in self.path.split(".")
+            if s.removesuffix("[]") and s.removesuffix("[]") not in _MAP_SEGMENTS
+        )
+
+    @property
+    def map_paths(self) -> tuple[str, ...]:
+        """Every map needing an entry selection, from outermost to innermost; an empty path is the root map."""
+        parts = self.path.split(".")
+        return tuple(
+            ".".join(parts[:i]) for i, segment in enumerate(parts) if segment.removesuffix("[]") in _MAP_SEGMENTS
         )
 
     @property
     def map_path(self) -> str | None:
         """The innermost map this field belongs to, as `balances` for `balances.{key}.current`."""
-        parts = self.path.split(".")
-        found = [i for i, segment in enumerate(parts) if segment in _MAP_SEGMENTS]
-        return ".".join(parts[: found[-1]]) if found else None
+        return self.map_paths[-1] if self.map_paths else None
 
     @property
     def is_map_key(self) -> bool:
-        return self.path.endswith(f".{MAP_KEY_SEGMENT}")
+        return self.path.rsplit(".", 1)[-1] == MAP_KEY_SEGMENT
 
     @property
     def parent_segments(self) -> tuple[str, ...]:

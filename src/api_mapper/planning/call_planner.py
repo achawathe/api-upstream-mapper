@@ -126,7 +126,7 @@ class _EndpointPlanner:
         for mapping in mappings:
             key = (mapping.chosen.source.api, mapping.chosen.source.endpoint)
             if mapping.chosen.source.map_path is not None:
-                self.maps.setdefault(key, set()).add(mapping.chosen.source.map_path)
+                self.maps.setdefault(key, set()).update(mapping.chosen.source.map_paths)
             self.variants.setdefault(key, set()).add(mapping.target.variant or "")
             self.field_counts[key] = self.field_counts.get(key, 0) + 1
             if mapping.status is MappingStatus.REVIEW:
@@ -174,7 +174,8 @@ class _EndpointPlanner:
 
     def _bind_map_key(self, key: EndpointKey, map_path: str) -> InputBinding:
         """A map keyed by data needs the entry chosen: by a request input that names the same thing, or by a person."""
-        field = next((f for f in self.p.fields.get(key, []) if f.node.path == f"{map_path}.{MAP_KEY_SEGMENT}"), None)
+        key_path = f"{map_path}.{MAP_KEY_SEGMENT}" if map_path else MAP_KEY_SEGMENT
+        field = next((f for f in self.p.fields.get(key, []) if f.node.path == key_path), None)
         wanted = self.p.field_concepts(field) if field else frozenset()
         for name, (_, concepts) in self.upstream_params.items():
             if self.p.overlap(wanted, concepts) >= EXACT:

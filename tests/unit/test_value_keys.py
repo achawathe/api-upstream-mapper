@@ -3,7 +3,7 @@
 import pytest
 
 from api_mapper.loaders.sample_inference import MAP_KEYS_KEY, infer_schema
-from api_mapper.models import Endpoint
+from api_mapper.models import Endpoint, FieldNode
 from api_mapper.normalize.flattener import flatten_endpoint
 
 
@@ -65,3 +65,11 @@ def test_empty_objects_do_not_provide_enough_shape_evidence_for_a_map(sample):
     assert schema["type"] == "object"
     assert set(schema["properties"]) == set(sample)
     assert "additionalProperties" not in schema
+
+
+def test_nested_maps_and_map_values_containing_arrays_keep_all_selections():
+    node = FieldNode("down", "GET /x", "regions.{key}.cities.{key}[].temperature", "number", array_depth=1)
+    assert node.map_paths == ("regions", "regions.{key}.cities")
+    assert node.map_path == "regions.{key}.cities"
+    assert node.segments == ("regions", "cities", "temperature")
+    assert fields([{"EUR": 0.92, "CAD": 1.37, "GBP": 0.79}])["@key"].is_map_key
