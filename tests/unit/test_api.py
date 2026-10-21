@@ -99,6 +99,9 @@ def test_endpoint_selection_limits_the_run_and_persists(client):
     result = _run(client)
     assert {m["target"]["endpoint"] for m in result["mappings"]} == set(chosen)
     assert result["endpoints_mapped"] == sorted(chosen)
+    validation_options = client.get("/api/validate/options")
+    assert validation_options.status_code == 200
+    assert {item["endpoint"] for item in validation_options.json()["endpoints"]} == set(chosen)
     assert [item["key"] for item in client.get("/api/upstream/endpoints").json()["endpoints"] if item["selected"]] == [
         key for key in (item["key"] for item in listed) if key in chosen
     ]

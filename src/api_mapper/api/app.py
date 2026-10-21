@@ -390,8 +390,11 @@ def json_report() -> JSONResponse:
 def validate_options() -> dict[str, Any]:
     run = _require_result().run
     options = []
+    plans = {plan.upstream_endpoint: plan for plan in run.call_plans}
     for endpoint in run.upstream.endpoints:
-        plan = next(p for p in run.call_plans if p.upstream_endpoint == endpoint.key)
+        plan = plans.get(endpoint.key)
+        if plan is None:
+            continue
         targets = [m.target for m in run.mappings if m.target.endpoint == endpoint.key and m.target.variant]
         variants = sorted({(t.variant, (t.condition or "").rpartition("= ")[2]) for t in targets})
         options.append(

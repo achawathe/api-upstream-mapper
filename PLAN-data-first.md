@@ -204,3 +204,8 @@ value-key tests pass, including the original temperature suggestion.
 
 Next action: verify map bindings actually select the requested entry during
 mock validation; the current extractor only understands named fields and arrays.
+
+Additional confirmed defect: `/api/validate/options` crashes after an endpoint-scoped
+run because it looks for plans for excluded endpoints. The existing API test now
+checks that validation lists exactly the mapped endpoints. The route skips excluded
+plans; complete validation execution coverage is being expanded for keyed maps.
