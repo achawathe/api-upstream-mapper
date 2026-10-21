@@ -395,6 +395,7 @@ def validate_options() -> dict[str, Any]:
         plan = plans.get(endpoint.key)
         if plan is None:
             continue
+        upstream_names = {p.name for p in endpoint.parameters}
         targets = [m.target for m in run.mappings if m.target.endpoint == endpoint.key and m.target.variant]
         variants = sorted({(t.variant, (t.condition or "").rpartition("= ")[2]) for t in targets})
         options.append(
@@ -403,7 +404,12 @@ def validate_options() -> dict[str, Any]:
                 "path_params": [p.name for p in endpoint.parameters if p.location == "path"],
                 "query_params": [p.name for p in endpoint.parameters if p.location == "query"],
                 "context_params": sorted(
-                    {b.parameter for s in plan.steps for b in s.bindings if b.source.value == "unresolved"}
+                    {
+                        b.key if b.parameter in upstream_names else b.parameter
+                        for s in plan.steps
+                        for b in s.bindings
+                        if b.source.value == "unresolved"
+                    }
                 ),
                 "variants": [{"name": v, "value": value} for v, value in variants],
                 "steps": len(plan.steps),

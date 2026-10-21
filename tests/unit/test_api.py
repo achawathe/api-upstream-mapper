@@ -2,6 +2,7 @@
 
 import importlib
 import time
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -108,3 +109,14 @@ def test_endpoint_selection_limits_the_run_and_persists(client):
 
     client.put("/api/endpoint-scope", json={"endpoints": []})
     assert {m["target"]["endpoint"] for m in _run(client)["mappings"]} > set(chosen)
+
+
+def test_unresolved_context_ids_are_distinct_from_upstream_request_ids(client, lexicon, monkeypatch):
+    from api_mapper.api import app as app_module
+    from tests.unit.test_call_planner import planned_run
+
+    run = planned_run(lexicon, "/accounts/{id}", "id", "/customers/{id}/balances", "id")
+    monkeypatch.setattr(app_module.workspace, "result", SimpleNamespace(run=run))
+    options = client.get("/api/validate/options").json()["endpoints"][0]
+    assert options["path_params"] == ["id"]
+    assert options["context_params"] == ["path:id"]

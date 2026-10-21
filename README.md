@@ -310,6 +310,9 @@ unresolved selector can be supplied as caller context, for example
 `"map key:balances": "ACC-2002"`; that selector is not sent to the downstream API.
 Path inputs require agreement on the resource they identify, so an account ID does
 not supply a customer ID merely because both names contain `Id`.
+If unrelated upstream and downstream inputs share a name such as `id`, validation
+asks for a separate caller-context value (`path:id`) rather than reusing the
+upstream ID. The validation form exposes that separate input.
 
 | Benchmark | Precision of automatic decisions | Expected mappings found |
 |---|---|---|

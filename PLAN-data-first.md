@@ -218,5 +218,11 @@ downstream request parameters. The 52 focused tests pass (map extraction/executi
 ordinary validation, flattening, planning and value-key golden checks); focused lint
 is clean. Optional benchmark fields that the matcher abstains on remain unmapped.
 
-Next action: check caller-context name collisions for unresolved identifiers, then
-run full verification and integrate the small commits into the remote branches.
+Completed: an unresolved downstream `id` no longer falls back to a same-named
+upstream input from another resource. Explicit `path:id` context still works; the
+validation form receives a separate context input for that collision. The negative
+execution test failed before this fix. All 55 focused API, planner, map, body and
+ordinary validation tests now pass, with focused lint clean.
+
+Next action: run full verification, compare benchmark decisions against `c281596`,
+then push and integrate the small commits into `main`.

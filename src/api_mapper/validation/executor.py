@@ -97,6 +97,8 @@ class PlanExecutor:
     ) -> ExecutionResult:
         started = perf_counter()
         plan = next(p for p in self.run.call_plans if p.upstream_endpoint == upstream_endpoint)
+        endpoint = next(e for e in self.run.upstream.endpoints if e.key == upstream_endpoint)
+        upstream_names = {p.name for p in endpoint.parameters}
         mappings = [m for m in self.run.mappings if m.target.endpoint == upstream_endpoint and self._usable(m)]
         derived = [
             m for m in self.run.mappings if m.target.endpoint == upstream_endpoint and m.status is MappingStatus.DERIVED
@@ -108,7 +110,7 @@ class PlanExecutor:
         variants = _variants_of(targets, variant_hint)
         per_item = _variants_live_in_items(targets)
         responses: dict[int, Any] = {}
-        selections = _map_selections(plan, params)
+        selections = _map_selections(plan, params, upstream_names)
         async with httpx.AsyncClient(transport=self.mocks.transport(), timeout=30) as client:
             needed = self._needed_steps(plan, mappings, variants)
             pending = [s for s in plan.steps if s.order in needed]
@@ -119,7 +121,10 @@ class PlanExecutor:
                 if not wave:
                     break
                 outcomes = await asyncio.gather(
-                    *(self._call(client, step, params, responses, selections, started, result) for step in wave)
+                    *(
+                        self._call(client, step, params, upstream_names, responses, selections, started, result)
+                        for step in wave
+                    )
                 )
                 for step, outcome in zip(wave, outcomes, strict=True):
                     if isinstance(outcome, _Failure):
@@ -156,7 +161,9 @@ class PlanExecutor:
     def _inputs_ready(self, step: CallStep, responses: dict[int, Any]) -> bool:
         return all(b.from_step is None or b.from_step in responses for b in step.bindings)
 
-    async def _call(self, client, step: CallStep, params, responses, selections, started, result) -> Any:
+    async def _call(
+        self, client, step: CallStep, params, upstream_names, responses, selections, started, result
+    ) -> Any:
         endpoint = self.endpoints[(step.api, step.endpoint)]
         fixed: dict[str, Any] = {}
         fanout_values: list[str] = []
@@ -183,7 +190,7 @@ class PlanExecutor:
                     fixed[binding.key] = str(values[0])
             elif binding.key in params:
                 fixed[binding.key] = params[binding.key]
-            elif binding.parameter in params:
+            elif binding.parameter in params and binding.parameter not in upstream_names:
                 fixed[binding.key] = params[binding.parameter]
 
         semaphore = asyncio.Semaphore(self.max_concurrency)
@@ -463,7 +470,9 @@ def _flatten(value: Any) -> list[Any]:
     return [value]
 
 
-def _map_selections(plan: EndpointCallPlan, params: dict[str, Any]) -> dict[int, dict[str, str]]:
+def _map_selections(
+    plan: EndpointCallPlan, params: dict[str, Any], upstream_names: set[str]
+) -> dict[int, dict[str, str]]:
     selections = {}
     for step in plan.steps:
         keys = {}
@@ -473,7 +482,8 @@ def _map_selections(plan: EndpointCallPlan, params: dict[str, Any]) -> dict[int,
             if binding.source is BindingSource.UPSTREAM_REQUEST:
                 value = params.get(binding.reference)
             else:
-                value = params.get(binding.key, params.get(binding.parameter))
+                fallback = params.get(binding.parameter) if binding.parameter not in upstream_names else None
+                value = params.get(binding.key, fallback)
             if value is not None:
                 keys[binding.parameter] = str(value)
         selections[step.order] = keys
