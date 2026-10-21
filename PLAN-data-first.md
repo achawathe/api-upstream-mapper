@@ -159,70 +159,59 @@ Deterministic first; each step lands with its benchmark result.
 ## Continuation checkpoint (Codex, 20 October)
 
 Objective: verify Claude's completed A/B1/B3/B2 and undocumented-CDR work, repair
-reproducible correctness defects, and make small benchmark-backed commits on
-`review-fixes`. The user subsequently authorized pushing and getting the completed
-work into `main`. The checkout started clean at `c281596`.
+reproducible defects, and integrate the work into `main`. The checkout started clean
+on `review-fixes` at `c281596`. The user authorized small commits, pushing, and
+integration into `main`, superseding the earlier no-push instruction.
 
-Scope: call planning and recent sample/context matching changes. B5/B4/B6 remain
-open; no new model training or learned vocabulary is included in this repair pass.
+Status: repair pass complete. Both remote branches were pushed at `7ba5739`, and
+local `main` was fast-forwarded without conflicts. This checkpoint update is the
+final documentation commit on `main`.
 
-Progress:
-- [x] Recover the latest Claude conversation, commits, approved decisions and plan.
-- [x] Reproduce and fix `customerId <- accountId` in the account-balances call plan;
-  preserve valid direct bindings, dependency calls and fan-out.
-- [ ] Check recent map/context paths for bypassed matching safeguards and malformed
-  sample failures; add focused regression coverage for confirmed defects.
-- [ ] Run the full suite, lint, and golden accuracy benchmarks; inspect the diff and
-  commit fixes in small increments, push, and merge into `main` after validation.
+- [x] Recover the Claude conversation, approved decisions and current state.
+- [x] Reproduce defects before fixing them; preserve unrelated work.
+- [x] Commit focused fixes with regression coverage.
+- [x] Run the complete suite, code checks and benchmark comparisons.
+- [x] Push `review-fixes`, fast-forward `main`, and push `main`.
 
-Evidence: `_EndpointPlanner._best_supply` accepts partial overlap >= 0.4, so
-unrelated resource identifiers can bind through their common identifier token.
-`suggest_from_context` checks type fit before scoring, then assigns its candidate
-without checking `vetoed_by` or the existing review safeguards. Both need direct
-reproduction before a fix. Baseline: 354 tests passed (40.12 seconds); one existing
-Starlette/httpx deprecation warning. The account-balances binding is reproduced.
-Sample inference also raises `ZeroDivisionError` on an object with three empty
-object values (`_same_shape` divides by an empty union).
+### Fixes
 
-Completed: path inputs now require exact concept agreement, after abbreviation,
-synonym and resource-context normalization. Unknown customer IDs stay unresolved;
-valid aliases, dependency calls and fan-out remain covered. Three negative cases
-failed before the fix; all 46 focused planner, body, execution and value-key tests
-pass afterward, as does focused lint.
+| Commit | Corrected behavior |
+|---|---|
+| `4ca141b` | Path bindings require the same resource identity after normalization; `accountId` cannot supply `customerId`. Valid aliases, dependency calls and fan-out still work. |
+| `51563d8` | Empty object shapes cannot divide by zero during sample map inference. They remain ordinary objects until evidence supports a map. |
+| `83139c4` | Context-only suggestions respect scorer vetoes and existing review safeguards, including required origins and unselected arrays. |
+| `4d07deb` | Validation options list only endpoints with a call plan; selecting a subset no longer crashes validation. |
+| `4154f8d` | Planned map selectors reach extraction and assembly. Nested maps schedule every selector; keys containing dots and map values containing arrays work. Missing selectors and absent keys report issues; selectors are not sent downstream. |
+| `7ba5739` | An unresolved downstream `id` cannot reuse a same-named upstream input from another resource. A separate `path:id` caller-context input is exposed and required for that collision. |
 
-Completed: sample map inference now treats empty object shapes as insufficient
-evidence rather than dividing by zero. Three regressions cover ordinary empty
-objects, nullable empty objects, and value-like keys with empty values.
+### Verification
 
-Next action: repair the context-review bypass (reproduced for an origin veto and
-an unselected outer array), then exercise map execution end to end.
+- Baseline: 354 tests passed. Final: **380 tests passed in 39.46 seconds**.
+  One existing Starlette/httpx deprecation warning remains.
+- `ruff check .` passes. Formatting passes for all 166 maintained Python files in
+  `src`, `tests`, `tools` and `experiments`. Repository-wide formatting also scans a
+  bundled third-party model README whose code examples are unformatted; that model
+  card was preserved.
+- Comparing `c281596` with the completed code gives **zero changed mapping
+  decisions** on Northwind, CDR, undocumented CDR, value keys, UK Open Banking and
+  Plaid. All six sets retain zero wrong automatic mappings.
+- Expected-source recall: Northwind 100%, CDR 98.5%, undocumented CDR 94.0%, value
+  keys 100%. UK/Plaid retain 40 correct origins and 51 correct abstentions.
+- All 8 lexicon-renamed and 16 hard-renamed sets have zero wrong or spurious
+  automatic mappings. Hard-renamed recall is 79.3–98.2%, mean 92.5%.
+- The full suite includes 50-API scale checks, deterministic output, API scope,
+  exports, source selection, request bodies, chained calls, and mock execution.
+- The local, ignored `output/review-verification.json` contains before/after metrics
+  and per-seed stress results. Committed regression tests preserve the behaviors.
 
-Completed: context-only suggestions now respect candidate vetoes and the existing
-`can_review` guards for origin, record, array, enum and other conflicts. Both new
-regressions failed before the fix. All 41 focused context, origin, review-guard and
-value-key tests pass, including the original temperature suggestion.
+### Remaining work
 
-Next action: verify map bindings actually select the requested entry during
-mock validation; the current extractor only understands named fields and arrays.
+B5 (narrow local NLP), B4 (broader attached-document definition matching), and B6
+(project vocabulary learned from accepted review) remain open in the approved order.
+No model was trained, promoted or replaced during this repair pass. Sample-value
+range/unit inference also remains outside the completed B3 implementation, as noted
+in its progress entry. Optional benchmark fields where matching abstains still remain
+unmapped; map execution does not invent new field matches.
 
-Additional confirmed defect: `/api/validate/options` crashes after an endpoint-scoped
-run because it looks for plans for excluded endpoints. The existing API test now
-checks that validation lists exactly the mapped endpoints. The route skips excluded
-plans; complete validation execution coverage is being expanded for keyed maps.
-
-Completed: map selectors now reach response assembly, variant checks and chained
-source extraction. Missing selectors and absent keys report issues. Nested maps
-schedule every required selection; map values containing arrays retain their named
-path and array shape. Selections remain local to the execution and are not sent as
-downstream request parameters. The 52 focused tests pass (map extraction/execution,
-ordinary validation, flattening, planning and value-key golden checks); focused lint
-is clean. Optional benchmark fields that the matcher abstains on remain unmapped.
-
-Completed: an unresolved downstream `id` no longer falls back to a same-named
-upstream input from another resource. Explicit `path:id` context still works; the
-validation form receives a separate context input for that collision. The negative
-execution test failed before this fix. All 55 focused API, planner, map, body and
-ordinary validation tests now pass, with focused lint clean.
-
-Next action: run full verification, compare benchmark decisions against `c281596`,
-then push and integrate the small commits into `main`.
+Next development action: investigate B5 against undocumented CDR and renamed sets,
+retain only measured improvements, and preserve zero wrong automatic decisions.
