@@ -1,4 +1,8 @@
-*.bin filter=lfs diff=lfs merge=lfs -text
-*.onnx filter=lfs diff=lfs merge=lfs -text
-*.safetensors filter=lfs diff=lfs merge=lfs -text
-*.gguf filter=lfs diff=lfs merge=lfs -text
+# Store model bytes directly in Git and prevent text/line-ending conversion.
+*.bin binary
+*.onnx binary
+*.safetensors binary
+*.gguf binary
+
+# The model's provenance hashes include its text configuration and license files.
+/models/all-MiniLM-L6-v2/** -text

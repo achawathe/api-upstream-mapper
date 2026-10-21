@@ -215,3 +215,28 @@ unmapped; map execution does not invent new field matches.
 
 Next development action: investigate B5 against undocumented CDR and renamed sets,
 retain only measured improvements, and preserve zero wrong automatic decisions.
+
+## Plain-Git portability checkpoint (21 October)
+
+Objective: remove the Git LFS requirement while keeping a complete, portable clone.
+The user authorized committing and pushing this change. Started clean on `main`
+at `e72b659`; retain the existing model, experiment artifacts and published history.
+
+Approach: all 16 current LFS files fit ordinary Git. MiniLM is 90,868,376 bytes
+(86.7 MiB), and adapters are 1.8–2.5 MiB, below GitHub's 100 MiB per-file limit.
+Replace pointer blobs with the exact existing bytes. Binary attributes protect
+weights from line-ending conversion; the bundled model snapshot also preserves
+text files so its provenance hashes stay valid on Windows-style Git settings.
+
+- [x] Verify every weight against its previous LFS SHA-256 and size.
+- [x] Stage all 16 complete binaries and remove LFS filter attributes.
+- [x] Remove only this checkout's generated LFS hooks/configuration; leave global
+  configuration for other repositories untouched.
+- [x] Update current setup documentation and label historical LFS shipping plans.
+- [ ] Test a fresh clone with no LFS executable/config and Windows-style line endings.
+- [ ] Commit and push; verify the remote checkout has complete binary files.
+
+No runtime or matching rules changed. Fresh clones need no download helpers,
+archives or extraction step. Older historical commits keep their original storage
+format. Existing LFS users may need to remove repository-local generated hooks;
+`models/README.md` explains this without making LFS a new-clone requirement.

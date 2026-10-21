@@ -1,5 +1,10 @@
 # Plan: Qwen3-1.7B-8bit against the pilot's promotion gate
 
+Storage-policy update, 21 October 2026: the current repository uses ordinary Git
+binaries and does not require Git LFS. The LFS shipping proposal below is retained
+as experiment history and is superseded by that policy. The failed Qwen base was
+never added to the repository; only its small adapters are included.
+
 Status: completed 20 October 2026. Failed the gate; see
 [RESULTS.md](artifacts/2026-10-20-qwen3-1.7b/RESULTS.md). One deviation: `audit.py` also renders
 prompts and needed the same `enable_thinking=False` change. The planned template-rendering test

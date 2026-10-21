@@ -21,14 +21,15 @@ Install the optional dependency in this checkout's environment:
 .venv/bin/python -m pip install -e ".[nlp]"
 ```
 
-The repository includes `models/all-MiniLM-L6-v2`. Model weights (`*.safetensors`, `*.bin`,
-`*.gguf`, `*.onnx`) are stored with Git LFS, so install it once before cloning or pulling;
-without it the weight files arrive as small text pointers and the model fails to load:
+The repository includes the complete `models/all-MiniLM-L6-v2` folder. Model weights
+and saved experimental adapters are ordinary Git binaries: a normal `git clone` or
+`git pull` retrieves them. No Git LFS, separate model download or extraction step is
+required. Binary attributes prevent line-ending conversion on Windows, macOS and
+Linux. File hashes and licensing are preserved.
 
-```bash
-brew install git-lfs && git lfs install
-git lfs pull   # in a checkout made before LFS was installed
-```
+The largest bundled file is 90,868,376 bytes (86.7 MiB), below GitHub's
+[100 MiB per-file limit](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
+See [models/README.md](models/README.md) for existing-checkout migration notes.
 
 Install the optional dependencies above, then use the model folder's absolute
 path. You can also supply another trusted, complete Sentence Transformers model,
