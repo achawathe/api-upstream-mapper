@@ -10,6 +10,7 @@ Never automatic: nothing but context and type connects the two.
 from collections import Counter
 from dataclasses import replace
 
+from api_mapper.matching.context_review import can_review
 from api_mapper.matching.engine import PreparedMatch
 from api_mapper.matching.review import map_entry_reason
 from api_mapper.models import Evidence, FieldMapping, FieldProfile, MappingStatus, Signal
@@ -45,6 +46,9 @@ def suggest_from_context(mappings: list[FieldMapping], prepared: PreparedMatch, 
             continue
         source, context = options[0]
         candidate = prepared.scorer.score(target, source, gate=False)
+        fit = prepared.scorer.fitter.fit(target.node, source.node, source.temporal)
+        if candidate.vetoed_by or not can_review(target, source, fit, list(candidate.evidence)):
+            continue
         detail = (
             f"its name only says what its keys are; it is the only {mapping.target.type} value in the shared "
             f"{', '.join(context)} context, and this request selects its entry"

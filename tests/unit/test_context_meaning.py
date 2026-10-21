@@ -77,3 +77,28 @@ def test_no_suggestion_when_another_number_could_be_it(lexicon):
     ]
     found = run(lexicon, upstream("/cities/{city}/weather", WEATHER, CITY), {"GET /weather/snapshot": payloads})
     assert found["temperature"].status is MappingStatus.UNMAPPED
+
+
+def test_context_cannot_bypass_a_required_origin(lexicon):
+    properties = {
+        "city": {"type": "string"},
+        "foreignCurrency": {"type": "string", "description": "Currency code of the foreign amount."},
+    }
+    payloads = [
+        {"currency": {"city": {"toronto": "CAD", "ottawa": "CAD", "calgary": "CAD"}}},
+        {"currency": {"city": {"toronto": "CAD", "regina": "CAD", "halifax": "CAD"}}},
+    ]
+    found = run(lexicon, upstream("/cities/{city}/currency", properties, CITY), {"GET /currency/snapshot": payloads})
+    assert found["city"].chosen.source.path == "currency.city.@key"
+    assert found["foreignCurrency"].status is MappingStatus.UNMAPPED
+    assert found["foreignCurrency"].chosen is None
+
+
+def test_context_does_not_choose_one_value_from_an_unselected_array(lexicon):
+    payloads = [
+        {"reports": [{"weather": {"city": {"toronto": 12.5, "ottawa": 8.4, "calgary": 4.2}}}]},
+        {"reports": [{"weather": {"city": {"toronto": 13.1, "regina": 2.0, "halifax": 9.9}}}]},
+    ]
+    found = run(lexicon, upstream("/cities/{city}/weather", WEATHER, CITY), {"GET /weather/snapshot": payloads})
+    assert found["temperature"].status is MappingStatus.UNMAPPED
+    assert found["temperature"].chosen is None

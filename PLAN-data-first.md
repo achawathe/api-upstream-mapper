@@ -196,3 +196,11 @@ objects, nullable empty objects, and value-like keys with empty values.
 
 Next action: repair the context-review bypass (reproduced for an origin veto and
 an unselected outer array), then exercise map execution end to end.
+
+Completed: context-only suggestions now respect candidate vetoes and the existing
+`can_review` guards for origin, record, array, enum and other conflicts. Both new
+regressions failed before the fix. All 41 focused context, origin, review-guard and
+value-key tests pass, including the original temperature suggestion.
+
+Next action: verify map bindings actually select the requested entry during
+mock validation; the current extractor only understands named fields and arrays.
