@@ -218,35 +218,41 @@ retain only measured improvements, and preserve zero wrong automatic decisions.
 
 ## Plain-Git portability checkpoint (21 October)
 
-Objective: remove the Git LFS requirement while keeping a complete, portable clone.
-The user authorized committing and pushing this change. Started clean on `main`
-at `e72b659`; retain the existing model, experiment artifacts and published history.
+Status: complete. The user requested vanilla Git, portability, and a committed,
+pushed configuration change. Started clean on `main` at `e72b659`. Configuration
+commits `fd939e7` and `e9ceb7d` were pushed to `main`; the remote tip was verified
+before this final documentation update.
 
-Approach: all 16 current LFS files fit ordinary Git. MiniLM is 90,868,376 bytes
-(86.7 MiB), and adapters are 1.8–2.5 MiB, below GitHub's 100 MiB per-file limit.
-Replace pointer blobs with the exact existing bytes. Binary attributes protect
-weights from line-ending conversion; the bundled model snapshot also preserves
-text files so its provenance hashes stay valid on Windows-style Git settings.
+- [x] Replace all 16 LFS pointer blobs with their complete, original model/adapter
+  files, verified against previous SHA-256 hashes and sizes.
+- [x] Use ordinary Git binary attributes, stable LF text, and byte-preserved model
+  and pinned API snapshots. No model download/extraction helper is needed.
+- [x] Remove this checkout's generated LFS hooks/configuration while preserving
+  global Git settings for other repositories.
+- [x] Update setup docs, old-checkout migration notes, and superseded LFS plans.
+- [x] Commit and push the configuration and full binaries; preserve published
+  history and existing runtime/model choices.
+- [x] Verify a new clone and pull without LFS or its configuration, under a path
+  containing spaces and `core.autocrlf=true`.
 
-- [x] Verify every weight against its previous LFS SHA-256 and size.
-- [x] Stage all 16 complete binaries and remove LFS filter attributes.
-- [x] Remove only this checkout's generated LFS hooks/configuration; leave global
-  configuration for other repositories untouched.
-- [x] Update current setup documentation and label historical LFS shipping plans.
-- [ ] Test a fresh clone with no LFS executable/config and Windows-style line endings.
-- [ ] Commit and push; verify the remote checkout has complete binary files.
+Verification: all 16 weight files and all 12 files listed in the bundled model's
+provenance manifest retain their exact hashes. **All 380 tests pass in 39.15 seconds
+from that isolated clone**, with one existing Starlette/httpx deprecation warning.
+These are tests on macOS with Windows-style Git line-ending settings, not native
+Windows/Linux execution. The application's optional NLP extra is not installed in
+this test environment, so actual model inference was not rerun; the complete model
+and tokenizer bytes were verified unchanged. Local evidence is in ignored
+`output/plain-git-portability.json` and `output/plain-git-clone-tests.log`.
 
-No runtime or matching rules changed. Fresh clones need no download helpers,
-archives or extraction step. Older historical commits keep their original storage
-format. Existing LFS users may need to remove repository-local generated hooks;
-`models/README.md` explains this without making LFS a new-clone requirement.
+The first clone exposed a fixture checksum failure under CRLF conversion (379 tests
+passed); preserving pinned snapshots and setting LF text fixed it. The first HTTPS
+push returned HTTP 400, and remote refs proved it had not landed. A command-scoped
+150 MiB HTTP buffer and HTTP/1.1 retry succeeded; those options were not saved in
+local or global configuration. GitHub accepted the 86.7 MiB model with its standard
+large-file advisory. All other weights are at most 2.5 MiB; every file is below its
+100 MiB limit.
 
-First portability check: a fresh clone and pull succeeded with LFS absent, no LFS
-configuration, a path containing spaces and `core.autocrlf=true`. All 16 weight
-hashes and all 12 model provenance-file hashes matched. The suite found one
-pre-existing cross-platform issue: CRLF checkout changed a public-contract fixture
-checksum (379 passed, one failed). Attributes now preserve pinned model/API
-snapshots byte-for-byte and use LF for other text. A new clone will verify this fix.
-
-The first HTTPS push returned HTTP 400; remote `main` was verified to remain at
-`e72b659`. Retry only with command-scoped transfer settings, then verify remote refs.
+Ordinary clones of the current branches include complete files. Older historical
+commits retain their original storage format; there was no history rewrite. Existing
+LFS checkouts may need generated-hook cleanup, documented in `models/README.md`.
+B5/B4/B6 and other application-development scope remain unchanged.
